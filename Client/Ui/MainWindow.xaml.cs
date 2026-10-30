@@ -6174,7 +6174,7 @@ public partial class MainWindow : Window
     /// All in One modes, whose picture is multicoloured), the others show their picture on the plain button background.</summary>
     private void ApplyModeButtons()
     {
-        Brush plain = (Brush)FindResource("Brush.Control");
+        Brush plain = Brushes.Transparent; // flat until chosen
         void Single(Button button, Image image, string key, bool active, Brush activeBackground)
         {
             button.Background = active ? activeBackground : plain;

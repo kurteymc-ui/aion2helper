@@ -90,7 +90,8 @@
              its ControlTemplate.Triggers, not TemplateBinding'd, so a lighter idle color alone
              would leave hover barely distinguishable from idle (or, worse, darker than it). -->
         <Style x:Key="ToolbarIconButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
-            <Setter Property="Background" Value="{DynamicResource Brush.ControlHover}"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
@@ -1122,7 +1123,7 @@
                                                      Foreground="#993AA0FF"
                                                      Visibility="{Binding ShowShareBar, Converter={StaticResource BoolToVis}}"/>
                                         <ProgressBar Style="{StaticResource RowFillBar}" Value="{Binding FillPercent, Mode=OneWay}"
-                                                     Foreground="{Binding ClassBrush}"
+                                                     Foreground="{Binding ClassBrush}" BorderBrush="{Binding ClassEdgeBrush}" BorderThickness="1" Margin="2,2"
                                                      Visibility="{Binding ShowShareBar, Converter={StaticResource BoolToVis}}"/>
                                         <StackPanel VerticalAlignment="Center" Margin="8,3,8,3">
                                             <Grid>
@@ -1313,11 +1314,8 @@
                     </Border>
                     <TextBlock x:Name="OverlayTimeText" DockPanel.Dock="Right" Foreground="{DynamicResource Brush.TextSubtle}"
                                FontFamily="Cascadia Mono, Consolas" FontSize="12" VerticalAlignment="Center" Margin="8,0,0,0"/>
-                    <!-- The brand, then the fight: the boss shown, or all targets. -->
-                    <TextBlock DockPanel.Dock="Left" Text="A2H" Foreground="{DynamicResource Brush.Accent}" FontWeight="Bold" FontSize="11"
-                               VerticalAlignment="Center" Margin="0,0,8,0"/>
-                    <TextBlock x:Name="OverlayTargetText" DockPanel.Dock="Left" MaxWidth="120" Foreground="{DynamicResource Brush.OverlayText}" FontWeight="SemiBold"
-                               FontSize="12" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                    <TextBlock DockPanel.Dock="Left" Text="A2H" Foreground="{DynamicResource Brush.Accent}" FontWeight="Bold" FontSize="11.5"
+                               VerticalAlignment="Center" Margin="0,0,4,0"/>
                     <!-- What the rows show: everybody / my group / my corps (two parties together). -->
                     <StackPanel x:Name="OverlayScopeSwitch" Orientation="Horizontal" Margin="8,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left">
                         <Border x:Name="OverlayScopeAll" Tag="All" Padding="6,1" CornerRadius="5,0,0,5" Cursor="Hand" MouseLeftButtonDown="OnOverlayScopeClicked">
@@ -1332,17 +1330,27 @@
                     </StackPanel>
                 </DockPanel>
                 </Border>
-                <!-- The fought boss's health (Settings: show the boss's health), with the HP check's verdict. -->
-                <Grid x:Name="OverlayHpBlock" Margin="12,8,12,2" Visibility="Collapsed">
+                <!-- The fight: the boss shown (or all targets); with Settings' "show the boss's health", its health, the HP check's
+                     verdict and a thin red bar. -->
+                <Grid Margin="12,8,12,0">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="5"/>
+                        <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
-                    <TextBlock x:Name="OverlayHpCheckText" HorizontalAlignment="Left" FontSize="10.5" Foreground="{DynamicResource Brush.TextSubtle}" Margin="0,0,0,4"/>
-                    <TextBlock x:Name="OverlayHpText" HorizontalAlignment="Right" FontSize="10.5" Foreground="{DynamicResource Brush.OverlayText}"
-                               FontFamily="Cascadia Mono, Consolas" Margin="0,0,0,4"/>
-                    <ProgressBar x:Name="OverlayHpBar" Grid.Row="1" Template="{StaticResource FlatBar}" Minimum="0" Maximum="100"
-                                 Background="#1FFFFFFF" Foreground="#E5484D"/>
+                    <TextBlock x:Name="OverlayTargetText" MaxWidth="210" HorizontalAlignment="Left" Foreground="{DynamicResource Brush.OverlayText}" FontWeight="SemiBold"
+                               FontSize="12" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                    <Grid x:Name="OverlayHpBlock" Grid.RowSpan="2" Visibility="Collapsed">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                            <TextBlock x:Name="OverlayHpCheckText" FontSize="10.5" Foreground="{DynamicResource Brush.TextSubtle}" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                            <TextBlock x:Name="OverlayHpText" FontSize="10.5" Foreground="{DynamicResource Brush.OverlayText}" FontFamily="Cascadia Mono, Consolas" VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <ProgressBar x:Name="OverlayHpBar" Grid.Row="1" Height="4" Margin="0,6,0,0" Template="{StaticResource FlatBar}" Minimum="0" Maximum="100"
+                                     Background="#1FFFFFFF" Foreground="#E5484D"/>
+                    </Grid>
                 </Grid>
                 <!-- Column legend: kept for the code that names the columns per mode; the numbers read on their own (bold = the rate). -->
                 <Grid Margin="4,0,4,1" Visibility="Collapsed">
@@ -1450,7 +1458,7 @@
                                      Foreground="#993AA0FF"
                                      Visibility="{Binding ShowShareBar, Converter={StaticResource BoolToVis}}"/>
                         <ProgressBar Style="{StaticResource RowFillBar}" Value="{Binding FillPercent, Mode=OneWay}"
-                                     Foreground="{Binding ClassBrush}"
+                                     Foreground="{Binding ClassBrush}" BorderBrush="{Binding ClassEdgeBrush}" BorderThickness="1" Margin="2,2"
                                      Visibility="{Binding ShowShareBar, Converter={StaticResource BoolToVis}}"/>
                         <StackPanel VerticalAlignment="Center">
                             <!-- Same fixed columns as the window's row: rank, class icon, name, then DPS and
