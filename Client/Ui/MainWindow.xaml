@@ -833,7 +833,7 @@
                             </StackPanel>
                         </Button>
                         <Button x:Name="UploadReplayButton" Style="{StaticResource ToolbarIconButton}" Click="OnUploadReplayClicked" Padding="6,5" Margin="1,0"
-                                Margin="4" Visibility="Collapsed"
+                                Visibility="Collapsed"
                                 ToolTip="{local:Loc Main.UploadReplay.Tooltip}">
                             <Canvas Width="20" Height="20">
                                 <Path Data="M10,3 A7,7 0 1 0 15.6,5.6 M10,0.6 L10,5.4 L14.2,3 Z"
