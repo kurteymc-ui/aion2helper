@@ -21,5 +21,5 @@ public static class Brand
     public const string DataFolder = "AION 2 Helper Meter";
 
     /// <summary>Where updates come from: full releases of this repository only (never test versions).</summary>
-    public const string RepositoryUrl = "https://github.com/OWNER/REPO";
+    public const string RepositoryUrl = "https://github.com/kurteymc-ui/aion2helper";
 }
