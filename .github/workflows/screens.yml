@@ -1,0 +1,56 @@
+name: Screens
+
+# Draws the meter's main windows with sample data (the app's own render-* modes, no window is shown) after every change to
+# the app, and puts the pictures on the "screens" branch, so the look can be checked without a Windows PC.
+on:
+  push:
+    branches: [main]
+    paths: ["Client/**", ".github/workflows/screens.yml"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: screens
+  cancel-in-progress: true
+
+jobs:
+  screens:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+      - name: Build
+        run: dotnet build Client/AionDPS.csproj -c Release --nologo -o out
+      - name: Draw the windows
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory screens | Out-Null
+          $exe = (Resolve-Path out/A2HMeter.exe).Path
+          $shots = @(
+            @('render-overlay', 'window.png', 'window'),
+            @('render-overlay', 'compact.png', 'compact'),
+            @('render-overlay', 'chips.png', 'chips'),
+            @('render-details', 'details-skills.png', 'skills'),
+            @('render-details', 'details-buffs.png', 'buffs'),
+            @('render-settings', 'settings.png', 'Interface')
+          )
+          foreach ($s in $shots) {
+            $out = Join-Path (Resolve-Path screens).Path $s[1]
+            $p = Start-Process -FilePath $exe -ArgumentList @($s[0], "`"$out`"", $s[2]) -WorkingDirectory (Resolve-Path out).Path -Wait -PassThru
+            "$($s[0]) $($s[2]): exit $($p.ExitCode), $(if (Test-Path $out) { (Get-Item $out).Length } else { 'no picture' })"
+          }
+          "Built from $env:GITHUB_SHA" | Set-Content screens/README.txt
+      - name: Put the pictures on the screens branch
+        shell: pwsh
+        run: |
+          cd screens
+          git init -q
+          git checkout -q -b screens
+          git add .
+          git -c user.name="screens" -c user.email="screens@users.noreply.github.com" commit -q -m "Screens for $env:GITHUB_SHA"
+          git push -q -f "https://x-access-token:$env:GH_TOKEN@github.com/$env:GITHUB_REPOSITORY" screens
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
