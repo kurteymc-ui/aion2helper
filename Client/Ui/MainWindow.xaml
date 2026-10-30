@@ -885,8 +885,9 @@
                         <ComboBoxItem Tag="Templar" AutomationProperties.Name="Templar"><StackPanel Orientation="Horizontal"><Image Source="pack://siteoforigin:,,,/assets/classes/icons/Templar.png" Height="18" Margin="0,0,4,0"/><TextBlock Text="Templar" VerticalAlignment="Center"/></StackPanel></ComboBoxItem>
                     </ComboBox>
                 </WrapPanel>
-                <StackPanel DockPanel.Dock="Bottom" Background="{DynamicResource Brush.Panel}">
-                    <StackPanel Orientation="Horizontal" Height="22">
+                <StackPanel DockPanel.Dock="Bottom" Background="{DynamicResource Brush.TitleBar}">
+                    <Border Height="1" Background="{DynamicResource Brush.Border}"/>
+                    <StackPanel Orientation="Horizontal" Height="30" Margin="6,0,0,0">
 
                         <!-- Update notice. Deliberately a quiet line in the status row and NOT a
                              popup: the meter sits on top of a running game, and a modal dialog
@@ -1055,7 +1056,7 @@
                                                 <Image Grid.Column="1" Source="{Binding ClassName, Converter={StaticResource ClassIconConverter}}"
                                                        Height="24" Width="24" Margin="4,0,8,0" ToolTip="{Binding Faction}"/>
                                                 <StackPanel Grid.Column="2" VerticalAlignment="Center">
-                                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="14" TextTrimming="CharacterEllipsis"/>
                                                     <local:AllLine FontSize="10.5" TextElement.Foreground="{DynamicResource Brush.Text}" Opacity="0.85"/>
                                                 </StackPanel>
                                                 <Grid Grid.Column="3" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="10,0,0,0" ToolTip="Damage this player received in the shown window">
@@ -1067,10 +1068,10 @@
                                                     <TextBlock Grid.Column="1" Text="{Binding AbsorbedDisplay}" Foreground="#3AA0FF" FontSize="11" Margin="8,0,0,0" HorizontalAlignment="Right"
                                                                ToolTip="Damage the group shield absorbed on this player"/>
                                                 </Grid>
-                                                <TextBlock Grid.Column="4" Text="{Binding RateOrHealDisplay}" Style="{StaticResource AllHealMuted}"
-                                                           VerticalAlignment="Center" HorizontalAlignment="Right" Margin="12,0,0,0"/>
-                                                <TextBlock Grid.Column="5" Text="{Binding DamageDisplay}" FontWeight="SemiBold"
-                                                           VerticalAlignment="Center" HorizontalAlignment="Right" Margin="12,0,0,0"/>
+                                                <TextBlock Grid.Column="4" Text="{Binding RateOrHealDisplay}" Style="{StaticResource AllHealMuted}" FontSize="13"
+                                                           Typography.NumeralAlignment="Tabular" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="12,0,0,0"/>
+                                                <TextBlock Grid.Column="5" Text="{Binding DamageDisplay}" FontWeight="Bold" FontSize="14.5"
+                                                           Typography.NumeralAlignment="Tabular" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="14,0,4,0"/>
                                             </Grid>
                                             <StackPanel Orientation="Horizontal" Margin="50,0,0,0"
                                                         Visibility="{Binding HasExtraInfo, Converter={StaticResource BoolToVis}}">
