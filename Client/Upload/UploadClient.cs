@@ -6,13 +6,19 @@ using System.Text.Json.Serialization;
 namespace AionDPS.Upload;
 
 /// <summary>
-/// Sends an encounter to the community backend (aiondps.com). One static HttpClient for the
+/// Sends an encounter to AION 2 Helper (aion2helper.com/meter), signed in as the player (<see cref="Account"/>): without a sign-in
+/// nothing is sent. One static HttpClient for the
 /// process's lifetime, per the usual .NET guidance (a fresh client per call exhausts sockets under
 /// load) - not a concern here at this call volume, but free to get right.
 /// </summary>
 public static class UploadClient
 {
     internal const string ApiBaseUrl = Brand.Api;
+
+    /// <summary>AION 2 Helper keeps boss fights; character profiles without a fight are not kept (yet), so the meter does not send them.</summary>
+    public static bool TakesProfiles => false;
+
+    private const string NotSignedIn = "Sign in first: App menu → AION 2 Helper account → Sign in with Discord.";
 
     private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(15) };
 
@@ -80,9 +86,15 @@ public static class UploadClient
         UploadResult.Failed("Old client version, please update (" + RequiredVersion + "). No uploads are possible until you do.");
 
     /// <summary>The server's answer to an upload: 426 Upgrade Required switches the uploads off. Returns the failure to report.</summary>
-    private static async Task<UploadResult> FailureOf(HttpResponseMessage response)
+    private static async Task<UploadResult> FailureOf(HttpResponseMessage response, string? usedToken)
     {
         string body = await response.Content.ReadAsStringAsync();
+        if ((int)response.StatusCode == 401)
+        {
+            Account.Rejected(usedToken);
+            return UploadResult.Failed(NotSignedIn);
+        }
+
         if ((int)response.StatusCode == 426)
         {
             string required = "?";
@@ -103,8 +115,51 @@ public static class UploadClient
             return BlockedResult();
         }
 
+        try
+        {
+            using JsonDocument doc = JsonDocument.Parse(body);
+            if (doc.RootElement.ValueKind == JsonValueKind.Object && doc.RootElement.TryGetProperty("error", out JsonElement e) && e.ValueKind == JsonValueKind.String)
+            {
+                return UploadResult.Failed(Truncate(e.GetString()!, 200));
+            }
+        }
+        catch (JsonException)
+        {
+            // not the site's own answer (a proxy, an outage): the raw text below
+        }
+
         return UploadResult.Failed($"{(int)response.StatusCode} {response.ReasonPhrase}: {Truncate(body, 200)}");
     }
+
+    /// <summary>One signed-in POST of a JSON body to the site. The caller has checked <see cref="Account.SignedIn"/>.</summary>
+    private static async Task<UploadResult> PostAsync(string path, HttpContent content, bool wantsId = false)
+    {
+        string? token = Account.Token;
+        if (token is null)
+        {
+            return UploadResult.Failed(NotSignedIn);
+        }
+
+        using var request = new HttpRequestMessage(HttpMethod.Post, $"{ApiBaseUrl}{path}") { Content = content };
+        request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+        using HttpResponseMessage response = await Http.SendAsync(request);
+        if (!response.IsSuccessStatusCode)
+        {
+            return await FailureOf(response, token);
+        }
+
+        if (!wantsId)
+        {
+            return UploadResult.Ok;
+        }
+
+        (int? id, string? url) = await AnswerOfAsync(response);
+        LastFightUrl = url ?? LastFightUrl;
+        return UploadResult.OkWith(id);
+    }
+
+    /// <summary>The page of the fight uploaded last (aion2helper.com/meter/logs/...), for "open it".</summary>
+    public static string? LastFightUrl { get; private set; }
 
     /// <summary>Asks the community server right at start-up whether this version may upload, so a client that is too old learns it at once
     /// and not with its first fight. A server that cannot be reached changes nothing (the upload itself is checked as well).</summary>
@@ -155,14 +210,7 @@ public static class UploadClient
 
         try
         {
-            using HttpResponseMessage response =
-                await Http.PostAsJsonAsync($"{ApiBaseUrl}/api/uploads", payload, JsonOptions);
-            if (response.IsSuccessStatusCode)
-            {
-                return UploadResult.OkWith(await EncounterIdOfAsync(response));
-            }
-
-            return await FailureOf(response);
+            return await PostAsync("/api/uploads", JsonContent.Create(payload, options: JsonOptions), wantsId: true);
         }
         catch (Exception ex)
         {
@@ -170,17 +218,20 @@ public static class UploadClient
         }
     }
 
-    /// <summary>The fight's id on the server from the answer of a boss upload (null when the answer names none, e.g. a fight held back for review).</summary>
-    private static async Task<int?> EncounterIdOfAsync(HttpResponseMessage response)
+    /// <summary>The fight's id and page on the site from the answer of a boss upload (nulls when the answer names none).</summary>
+    private static async Task<(int? Id, string? Url)> AnswerOfAsync(HttpResponseMessage response)
     {
         try
         {
             using JsonDocument doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
-            return doc.RootElement.TryGetProperty("encounterId", out JsonElement id) && id.ValueKind == JsonValueKind.Number ? id.GetInt32() : null;
+            JsonElement root = doc.RootElement;
+            int? id = root.TryGetProperty("encounterId", out JsonElement i) && i.ValueKind == JsonValueKind.Number && i.TryGetInt32(out int n) ? n : null;
+            string? url = root.TryGetProperty("url", out JsonElement u) && u.ValueKind == JsonValueKind.String && (u.GetString() ?? "").StartsWith(Brand.Site + "/", StringComparison.Ordinal) ? u.GetString() : null;
+            return (id, url);
         }
         catch (Exception ex) when (ex is JsonException or InvalidOperationException or FormatException)
         {
-            return null;
+            return (null, null);
         }
     }
 
@@ -199,8 +250,7 @@ public static class UploadClient
 
         try
         {
-            using HttpResponseMessage response = await Http.PostAsJsonAsync($"{ApiBaseUrl}/api/uploads/replay", payload, JsonOptions);
-            return response.IsSuccessStatusCode ? UploadResult.Ok : await FailureOf(response);
+            return await PostAsync("/api/uploads/replay", JsonContent.Create(payload, options: JsonOptions));
         }
         catch (Exception ex)
         {
@@ -245,6 +295,11 @@ public static class UploadClient
     /// never-throws contract as <see cref="SendAsync"/>.</summary>
     public static async Task<UploadResult> SendProfilesAsync(ProfilesUploadRequest payload)
     {
+        if (!TakesProfiles)
+        {
+            return UploadResult.Failed("AION 2 Helper keeps boss fights only, not character profiles on their own.");
+        }
+
         if (!Ui.PrivacyConsent.CanUpload)
         {
             return UploadResult.Failed("The privacy policy is not accepted: nothing is uploaded.");
@@ -257,14 +312,7 @@ public static class UploadClient
 
         try
         {
-            using HttpResponseMessage response =
-                await Http.PostAsJsonAsync($"{ApiBaseUrl}/api/uploads/profiles", payload, JsonOptions);
-            if (response.IsSuccessStatusCode)
-            {
-                return UploadResult.Ok;
-            }
-
-            return await FailureOf(response);
+            return await PostAsync("/api/uploads/profiles", JsonContent.Create(payload, options: JsonOptions));
         }
         catch (Exception ex)
         {
@@ -287,9 +335,7 @@ public static class UploadClient
 
         try
         {
-            using HttpResponseMessage response =
-                await Http.PostAsJsonAsync($"{ApiBaseUrl}/api/uploads/login-dump", payload, JsonOptions);
-            return response.IsSuccessStatusCode ? UploadResult.Ok : await FailureOf(response);
+            return await PostAsync("/api/uploads/login-dump", JsonContent.Create(payload, options: JsonOptions));
         }
         catch (Exception ex)
         {
@@ -322,9 +368,7 @@ public static class UploadClient
 
         try
         {
-            using var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
-            using HttpResponseMessage response = await Http.PostAsync($"{ApiBaseUrl}{path}", content);
-            return response.IsSuccessStatusCode ? UploadResult.Ok : await FailureOf(response);
+            return await PostAsync(path, new StringContent(json, System.Text.Encoding.UTF8, "application/json"));
         }
         catch (Exception ex)
         {

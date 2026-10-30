@@ -3311,7 +3311,7 @@ public partial class MainWindow : Window
         {
             ShowUploadStatus(uploadedNames.Count == 1
                 ? "Uploaded."
-                : $"Uploaded {uploadedNames.Count} boss fights: {string.Join(", ", uploadedNames)}.");
+                : $"Uploaded {uploadedNames.Count} boss fights: {string.Join(", ", uploadedNames)}.", uploadedNames.Count == 1 ? UploadClient.LastFightUrl : null);
         }
         else
         {
@@ -3741,7 +3741,7 @@ public partial class MainWindow : Window
 
         if (uploaded > 0)
         {
-            ShowUploadStatus(uploaded == 1 ? "Boss fight uploaded." : $"{uploaded} boss fights uploaded.");
+            ShowUploadStatus(uploaded == 1 ? "Boss fight uploaded." : $"{uploaded} boss fights uploaded.", uploaded == 1 ? UploadClient.LastFightUrl : null);
         }
         else if (lastError is not null)
         {
@@ -3751,6 +3751,11 @@ public partial class MainWindow : Window
 
     private async Task UploadOwnProfileAsync()
     {
+        if (!UploadClient.TakesProfiles)
+        {
+            return;
+        }
+
         if (_source?.Entities is not Aion2.Aion2EntityDirectory { LocalCharacter: { Restored: false } own } directory
             || directory.LocalEquipment.Count == 0)
         {
@@ -3850,7 +3855,7 @@ public partial class MainWindow : Window
     private async Task UploadArenaPlayersAsync()
     {
         var settings = MeterSettings.Load();
-        if (_arenaUploadBusy || !settings.AutoUploadProfile || !settings.UploadOtherPlayersProfiles
+        if (!UploadClient.TakesProfiles || _arenaUploadBusy || !settings.AutoUploadProfile || !settings.UploadOtherPlayersProfiles
             || _source?.Entities is not Aion2.Aion2EntityDirectory { LocalCharacter: { Restored: false } } directory
             || directory.LocalEquipment.Count == 0
             || ResolveServerIdentity() is not (string fingerprint, var displayName))
@@ -3925,7 +3930,7 @@ public partial class MainWindow : Window
     private async Task UploadInspectedAsync()
     {
         var settings = MeterSettings.Load();
-        if (_inspectedUploadBusy || !settings.AutoUploadProfile || !settings.UploadOtherPlayersProfiles
+        if (!UploadClient.TakesProfiles || _inspectedUploadBusy || !settings.AutoUploadProfile || !settings.UploadOtherPlayersProfiles
             || _source?.Entities is not Aion2.Aion2EntityDirectory { LocalCharacter: { Restored: false } } directory
             || directory.LocalEquipment.Count == 0
             || ResolveServerIdentity() is not (string fingerprint, var displayName))
@@ -4272,9 +4277,12 @@ public partial class MainWindow : Window
             : $"Upload failed: {lastError}");
     }
 
-    private void ShowUploadStatus(string message)
+    private void ShowUploadStatus(string message, string? url = null)
     {
-        UploadStatusText.Text = message;
+        _uploadStatusUrl = url;
+        UploadStatusText.Text = url is null ? message : message + " Click to open it.";
+        UploadStatusText.Cursor = url is not null || message.Contains("Sign in first", StringComparison.Ordinal) ? System.Windows.Input.Cursors.Hand : null;
+        UploadStatusText.TextDecorations = url is not null ? System.Windows.TextDecorations.Underline : null;
         UploadStatusText.Visibility = Visibility.Visible;
     }
 
@@ -4764,7 +4772,7 @@ public partial class MainWindow : Window
         {
             _trayIcon = new TrayIcon(this,
                 Path.Combine(AppContext.BaseDirectory, "assets", "app", "aiondps.ico"),
-                "Aion DPS Meter " + AppVersion.Text,
+                Brand.AppName + " " + AppVersion.Text,
                 new (string?, Action?)[]
                 {
                     (loc["Main.Tray.Show"], () => _trayIcon?.Restore()),
@@ -5082,6 +5090,45 @@ public partial class MainWindow : Window
         return $"Running from: {folder}\nUpdate.exe expected at: {updater}\n"
             + (File.Exists(updater) ? "Update.exe: found." : "Update.exe: MISSING.");
     }
+
+    private AccountWindow? _accountWindow;
+
+    /// <summary>App menu → AION 2 Helper: the sign-in window (one at a time).</summary>
+    private void OnAccountClicked(object sender, RoutedEventArgs e)
+    {
+        AppMenu.IsSubmenuOpen = false;
+        if (_accountWindow is { IsLoaded: true })
+        {
+            _accountWindow.Activate();
+            return;
+        }
+
+        _accountWindow = new AccountWindow { Owner = this };
+        _accountWindow.Closed += (_, _) => _accountWindow = null;
+        _accountWindow.Show();
+    }
+
+    /// <summary>After an upload the status line links the fight's page: a click opens it in the browser.</summary>
+    private void OnUploadStatusClicked(object sender, MouseButtonEventArgs e)
+    {
+        if (_uploadStatusUrl is { } url)
+        {
+            try
+            {
+                Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+            }
+            catch (Exception)
+            {
+                // no browser set up
+            }
+        }
+        else if (!Account.SignedIn && UploadStatusText.Text.Contains("Sign in first", StringComparison.Ordinal))
+        {
+            OnAccountClicked(sender, e);
+        }
+    }
+
+    private string? _uploadStatusUrl;
 
     private void OnCheckForUpdatesClicked(object sender, RoutedEventArgs e)
     {

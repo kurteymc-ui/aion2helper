@@ -1,7 +1,7 @@
 name: Tests
 
-# Runs on every push to main and on every pull request, so the result is public on the repository page:
-# the type check and all backend tests (the upload checks, the matching, the pacing against the NC server, the SEO pages ...).
+# Runs on every push to main and on every pull request: the Windows app must build. (The upstream project's own upload server in
+# Backend/ is not used by AION 2 Helper Meter, whose fights go to aion2helper.com, so its tests are not run here.)
 on:
   push:
     branches: [main]
@@ -11,29 +11,6 @@ permissions:
   contents: read
 
 jobs:
-  backend:
-    name: Backend type check and tests
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: Backend
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 11
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          cache: pnpm
-          cache-dependency-path: Backend/pnpm-lock.yaml
-      - name: Install the dependencies
-        run: pnpm install --frozen-lockfile
-      - name: Type check
-        run: npx tsc --noEmit
-      - name: Tests
-        run: pnpm test
-
   client:
     name: Client build
     runs-on: windows-latest

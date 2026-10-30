@@ -28,7 +28,7 @@
          match. -->
     <AssemblyName>AION 2 Helper Meter</AssemblyName>
     <Product>AION 2 Helper Meter</Product>
-    <AssemblyTitle>Aion DPS</AssemblyTitle>
+    <AssemblyTitle>AION 2 Helper Meter</AssemblyTitle>
     <!-- asInvoker: the meter reads network traffic through the Npcap driver, which the user installs
          separately, so it needs no elevation itself. See app.manifest. -->
     <ApplicationManifest>app.manifest</ApplicationManifest>
