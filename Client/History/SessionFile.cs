@@ -21,7 +21,7 @@ public static class SessionFile
     public const string Extension = ".aiondps";
 
     public static string DefaultDirectory => Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Aion DPS Meter", "Sessions");
+        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), Brand.DataFolder, "Sessions");
 
     private sealed record EventDto(long T, int K, int S, int G, long A, bool H, string? Sk, bool C,
         [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] int? F = null,

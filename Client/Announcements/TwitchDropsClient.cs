@@ -11,8 +11,8 @@ namespace AionDPS.Announcements;
 /// </summary>
 public static class TwitchDropsClient
 {
-    public const string PageUrl = "https://aiondps.com/twitch-drops";
-    private const string StatusUrl = "https://aiondps.com/api/twitch-drops/latest";
+    public const string PageUrl = Brand.Site + "/";
+    private const string StatusUrl = Brand.Api + "/api/twitch-drops/latest";
     private static readonly HttpClient Http = new(new HttpClientHandler { AllowAutoRedirect = false }) { Timeout = TimeSpan.FromSeconds(10) }; // no redirects: the host is fixed
 
     /// <summary>Whether a campaign runs now and the start (epoch seconds) of the newest started one; null when the server cannot be reached.</summary>

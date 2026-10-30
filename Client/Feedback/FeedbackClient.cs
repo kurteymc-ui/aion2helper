@@ -25,7 +25,7 @@ public static class FeedbackClient
     {
         try
         {
-            using HttpResponseMessage response = await Http.PostAsJsonAsync("https://aiondps.com/api/feedback", request, JsonOptions);
+            using HttpResponseMessage response = await Http.PostAsJsonAsync(Brand.Api + "/api/feedback", request, JsonOptions);
             if (response.IsSuccessStatusCode)
             {
                 return UploadResult.Ok;

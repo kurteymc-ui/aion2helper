@@ -15,7 +15,7 @@ public static class NetworkLog
     public static string? PathOverride { get; set; }
 
     public static string Path_ => PathOverride ?? Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Aion DPS Meter", "network.log");
+        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), Brand.DataFolder, "network.log");
 
     public static void Write(string message, DateTime? at = null)
     {

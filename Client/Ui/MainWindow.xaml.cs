@@ -285,7 +285,7 @@ public partial class MainWindow : Window
         // AionDPS.csproj's <Version> is the only place it is written. Needed because builds are
         // handed around the group by hand -- a screenshot from someone else is
         // otherwise impossible to pin to a build, which already cost a round of guesswork once.
-        Title = AppVersion.Text.Length > 0 ? $"Aion DPS {AppVersion.Text}" : "Aion DPS";
+        Title = AppVersion.Text.Length > 0 ? $"{Brand.AppName} {AppVersion.Text}" : Brand.AppName;
 
         PlayersGrid.ItemsSource = _rows;
         OverlayContent.ItemsSource = _rows;
@@ -1125,7 +1125,7 @@ public partial class MainWindow : Window
     /// <summary>The old per-fight history (fights.db) is gone for good - sessions replaced it - so a file left by an earlier version is removed.</summary>
     private static void DeleteLegacyFightHistory()
     {
-        string folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Aion DPS Meter");
+        string folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), Brand.DataFolder);
         foreach (string name in new[] { "fights.db", "fights.db-wal", "fights.db-shm" })
         {
             try
@@ -3389,7 +3389,8 @@ public partial class MainWindow : Window
     private const string LoginShareLegion = "Akatsuki";
     private const int LoginShareServerId = 1304; // Europe - Kaisinel (Elyos)
 
-    private bool IsLoginShareEligible() =>
+    // AION 2 Helper: the upstream login-traffic upload (one legion, off upstream too) is never offered in this copy.
+    private bool IsLoginShareEligible() => false && 
         _source?.Entities is Aion2.Aion2EntityDirectory { LocalCharacter: { } own } directory
         && own.ServerId == LoginShareServerId
         && string.Equals((directory.GuildOf(own.CombatId, own.Name) ?? directory.AccountLegionOf(own.Name))?.Trim(), LoginShareLegion, StringComparison.OrdinalIgnoreCase);

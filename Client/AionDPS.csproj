@@ -26,8 +26,8 @@
          any of the three things above), but per the user that leftover had to go too - every
          `namespace AionSniffer.*`/`using AionSniffer.*` in the project was renamed to AionDPS to
          match. -->
-    <AssemblyName>Aion DPS</AssemblyName>
-    <Product>Aion DPS</Product>
+    <AssemblyName>AION 2 Helper Meter</AssemblyName>
+    <Product>AION 2 Helper Meter</Product>
     <AssemblyTitle>Aion DPS</AssemblyTitle>
     <!-- asInvoker: the meter reads network traffic through the Npcap driver, which the user installs
          separately, so it needs no elevation itself. See app.manifest. -->

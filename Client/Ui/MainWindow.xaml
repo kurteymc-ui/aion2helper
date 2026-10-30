@@ -426,7 +426,7 @@
                                              has no field of its own in the code-behind. -->
                                         <Button Style="{StaticResource AppMenuRow}" Click="OnUploadCurrentBossClicked"
                                                 Visibility="{Binding Tag.ShowBoss, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource BoolToVis}}"
-                                                ToolTip="Uploads the fight currently selected in the Mob/Boss filter to aiondps.com.">
+                                                ToolTip="Uploads the fight currently selected in the Mob/Boss filter to aion2helper.com.">
                                             <StackPanel Orientation="Horizontal">
                                                 <Path Data="M6,11 L6,3 M3,6 L6,3 L9,6 M1,13 L11,13" Stroke="#FFBA42" StrokeThickness="1.4" Width="14" Height="13" Margin="0,0,8,0"/>
                                                 <TextBlock Text="{local:Loc Main.MenuSession.UploadBoss}" Foreground="#f2f5f7" VerticalAlignment="Center"/>
@@ -434,7 +434,7 @@
                                         </Button>
                                         <Button Style="{StaticResource AppMenuRow}" Click="OnUploadLastRunClicked"
                                                 Visibility="{Binding Tag.ShowRun, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource BoolToVis}}"
-                                                ToolTip="Uploads every boss fight recorded since the last Clear, one by one, to aiondps.com.">
+                                                ToolTip="Uploads every boss fight recorded since the last Clear, one by one, to aion2helper.com.">
                                             <StackPanel Orientation="Horizontal">
                                                 <Path Data="M6,11 L6,3 M3,6 L6,3 L9,6 M1,13 L11,13" Stroke="#FFBA42" StrokeThickness="1.4" Width="14" Height="13" Margin="0,0,8,0"/>
                                                 <TextBlock Text="{local:Loc Main.MenuSession.UploadRun}" Foreground="#f2f5f7" VerticalAlignment="Center"/>
@@ -892,7 +892,7 @@
                              where the button physically sits. -->
                         <Button x:Name="UploadBossButton" Style="{StaticResource ToolbarIconButton}" Click="OnUploadCurrentBossClicked" Padding="5"
                                 Margin="4" Visibility="Collapsed"
-                                ToolTip="Uploads this boss fight to aiondps.com.">
+                                ToolTip="Uploads this boss fight to aion2helper.com.">
                             <Path Data="M9,2 L9,10 M4,7 L9,2 L14,7 M3,13 L15,13"
                                   Stroke="{DynamicResource Brush.Text}" StrokeThickness="1.6" StrokeLineJoin="Round"
                                   StrokeStartLineCap="Round" StrokeEndLineCap="Round"

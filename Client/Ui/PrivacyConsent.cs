@@ -17,7 +17,7 @@ public static class PrivacyConsent
 
     public const int NotAsked = 0, Accepted = 1, Declined = 2;
 
-    public const string PolicyUrl = "https://aiondps.com/privacy";
+    public const string PolicyUrl = Brand.Site + "/terms";
 
     /// <summary>Raised after the answer changed (the main window shows or hides what the restricted mode removes).</summary>
     public static event Action? Changed;

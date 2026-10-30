@@ -23,7 +23,7 @@ public static class PortraitClient
 
     private static string CacheDirectory => Path.Combine(
         Environment.GetEnvironmentVariable("AIONDPS_DATA_DIR") is { Length: > 0 } testDir
-            ? testDir : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Aion DPS Meter"),
+            ? testDir : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), Brand.DataFolder),
         "portraits");
 
     /// <summary>The path of a PNG with the character's portrait, or null (not on the server, no portrait yet,

@@ -698,7 +698,7 @@ public sealed class CharacterWindow : Window
             {
                 try
                 {
-                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("https://aiondps.com/players/" + Uri.EscapeDataString(slug)) { UseShellExecute = true });
+                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(Brand.Api + "/players/" + Uri.EscapeDataString(slug)) { UseShellExecute = true });
                 }
                 catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException)
                 {

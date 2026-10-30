@@ -21,7 +21,7 @@ public static class PetFarmLog
     public static string? PathOverride { get; set; }
 
     private static string Path_ => PathOverride ?? Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Aion DPS Meter", "pet-farm.log");
+        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), Brand.DataFolder, "pet-farm.log");
 
     public static void Write(string message)
     {

@@ -11,12 +11,12 @@ namespace AionDPS.Schedule;
 /// </summary>
 public static class ScheduleClient
 {
-    private const string Url = "https://aiondps.com/api/schedule";
+    private const string Url = Brand.Api + "/api/schedule";
     private static readonly HttpClient Http = new(new HttpClientHandler { AllowAutoRedirect = false }) { Timeout = TimeSpan.FromSeconds(10) }; // no redirects: the host is fixed
 
     public static string CachePath => Path.Combine(
         Environment.GetEnvironmentVariable("AIONDPS_DATA_DIR") is { Length: > 0 } testDir
-            ? testDir : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Aion DPS Meter"),
+            ? testDir : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), Brand.DataFolder),
         "schedule-cache.json");
 
     /// <summary>Asks the server for the table and takes it in use when it reads as a whole one. True when the table in use is now the server's.

@@ -1081,7 +1081,7 @@ internal static class Program
         }
 
         var window = new Ui.MainWindow();
-        window.Title = "Aion DPS"; // the pictures carry no version number
+        window.Title = Brand.AppName; // the pictures carry no version number
         var flags = System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public;
         var type = typeof(Ui.MainWindow);
         var rows = (System.Collections.ObjectModel.ObservableCollection<Ui.PlayerRow>)type.GetField("_rows", flags)!.GetValue(window)!;

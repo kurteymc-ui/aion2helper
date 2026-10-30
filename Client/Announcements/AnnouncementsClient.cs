@@ -11,8 +11,8 @@ namespace AionDPS.Announcements;
 /// </summary>
 public static class AnnouncementsClient
 {
-    public const string PageUrl = "https://aiondps.com/announcements";
-    private const string LatestUrl = "https://aiondps.com/api/announcements/latest";
+    public const string PageUrl = Brand.Site + "/#news";
+    private const string LatestUrl = Brand.Api + "/api/announcements/latest";
     private static readonly HttpClient Http = new(new HttpClientHandler { AllowAutoRedirect = false }) { Timeout = TimeSpan.FromSeconds(10) }; // no redirects: the host is fixed
 
     /// <summary>The posting time (epoch seconds) of the newest announcement, or null (offline, server has none yet).</summary>

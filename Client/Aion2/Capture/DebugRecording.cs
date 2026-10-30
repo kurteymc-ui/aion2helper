@@ -37,7 +37,7 @@ public static class DebugRecording
     private static Thread? _thread;
 
     public static string FolderPath => Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Aion DPS Meter", "Debug");
+        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), Brand.DataFolder, "Debug");
 
     public static bool Enabled
     {

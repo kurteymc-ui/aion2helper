@@ -20,10 +20,10 @@ namespace AionDPS.Update;
 /// </summary>
 public static class UpdateService
 {
-    private const string RepositoryUrl = "https://github.com/SkeeveAN/Aion-DPS-Meter";
+    private const string RepositoryUrl = Brand.RepositoryUrl;
 
     private static readonly UpdateManager Manager =
-        new(new GithubSource(RepositoryUrl, accessToken: null, prerelease: true));
+        new(new GithubSource(RepositoryUrl, accessToken: null, prerelease: false));   // AION 2 Helper: full releases only
 
     /// <summary>
     /// False for a build that Velopack did not install -- a "dotnet run" during development, or a

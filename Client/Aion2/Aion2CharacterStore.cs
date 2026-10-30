@@ -63,7 +63,7 @@ public static class Aion2CharacterStore
 
     public static string DefaultPath => Path.Combine(
         Environment.GetEnvironmentVariable("AIONDPS_DATA_DIR") is { Length: > 0 } testDir // tests only: a throw-away data folder
-            ? testDir : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Aion DPS Meter"),
+            ? testDir : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), Brand.DataFolder),
         "aion2-character.json");
 
     /// <summary>The character windows of other players, next to the own character file.</summary>

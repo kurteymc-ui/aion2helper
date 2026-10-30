@@ -1,0 +1,2 @@
+# Our own README stays ours when changes from the upstream project are merged (git config merge.ours.driver true)
+README.md merge=ours
