@@ -26,7 +26,7 @@
              RelativeSource/AncestorType since Path.Stroke isn't an inherited property the way
              TextBlock.Foreground is. -->
         <Style x:Key="SettingsNavItem" TargetType="RadioButton">
-            <Setter Property="Foreground" Value="#9db3c2"/>
+            <Setter Property="Foreground" Value="{DynamicResource Brush.TextMuted}"/>
             <Setter Property="Padding" Value="8,8"/>
             <Setter Property="Margin" Value="0,0,4,0"/>
             <Setter Property="Template">
@@ -37,10 +37,10 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="#1a2b38"/>
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Brush.ControlHover}"/>
                             </Trigger>
                             <Trigger Property="IsChecked" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="#26405a"/>
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Brush.ControlHoverStrong}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -48,7 +48,7 @@
             </Setter>
             <Style.Triggers>
                 <Trigger Property="IsChecked" Value="True">
-                    <Setter Property="Foreground" Value="#ffba42"/>
+                    <Setter Property="Foreground" Value="{DynamicResource Brush.Accent}"/>
                 </Trigger>
             </Style.Triggers>
         </Style>
@@ -68,8 +68,8 @@
                                 <Setter Property="Foreground" Value="{DynamicResource Brush.Text}"/>
                             </Trigger>
                             <Trigger Property="IsChecked" Value="True">
-                                <Setter TargetName="Bd" Property="BorderBrush" Value="#ffba42"/>
-                                <Setter Property="Foreground" Value="#ffba42"/>
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource Brush.Accent}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource Brush.Accent}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -86,7 +86,7 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Line" Property="Fill" Value="#ffba42"/>
+                                <Setter TargetName="Line" Property="Fill" Value="{DynamicResource Brush.Accent}"/>
                                 <Setter TargetName="Line" Property="Width" Value="2"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
@@ -110,8 +110,8 @@
                                 <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource Brush.TextMuted}"/>
                             </Trigger>
                             <Trigger Property="IsChecked" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="#33FFBA42"/>
-                                <Setter TargetName="Bd" Property="BorderBrush" Value="#ffba42"/>
+                                <Setter TargetName="Bd" Property="Background" Value="#2BDCB877"/>
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource Brush.Accent}"/>
                                 <Setter Property="Foreground" Value="{DynamicResource Brush.Text}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
@@ -120,7 +120,7 @@
             </Setter>
         </Style>
         <Style x:Key="GatherLink" TargetType="Button">
-            <Setter Property="Foreground" Value="#ffba42"/>
+            <Setter Property="Foreground" Value="{DynamicResource Brush.Accent}"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
@@ -182,26 +182,38 @@
              Background/Foreground setter alone doesn't do it) - ThemeBox/FontSizeBox were
              rendering with WPF's default light-theme chrome and popup otherwise. -->
         <Style TargetType="ComboBoxItem">
-            <Setter Property="Background" Value="{DynamicResource Brush.Panel}"/>
+            <Setter Property="Background" Value="Transparent"/>
             <Setter Property="Foreground" Value="{DynamicResource Brush.Text}"/>
-            <Setter Property="Padding" Value="6,3"/>
-            <Style.Triggers>
-                <Trigger Property="IsHighlighted" Value="True">
-                    <Setter Property="Background" Value="{DynamicResource Brush.Border}"/>
-                </Trigger>
-                <Trigger Property="IsSelected" Value="True">
-                    <Setter Property="Background" Value="{DynamicResource Brush.Border}"/>
-                </Trigger>
-            </Style.Triggers>
+            <Setter Property="Padding" Value="10,6"/>
+            <Setter Property="Margin" Value="4,1"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ComboBoxItem">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="7" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsHighlighted" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Brush.ControlHover}"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter Property="Foreground" Value="#E6C88F"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
         <Style TargetType="ComboBox">
             <!-- One height for every dropdown and button in this dialog (Button style below), per the
                  user; titlebar buttons set their own Height explicitly. -->
-            <Setter Property="Height" Value="28"/>
+            <Setter Property="Height" Value="32"/>
             <Setter Property="Margin" Value="4"/>
-            <Setter Property="Background" Value="{DynamicResource Brush.Panel}"/>
+            <Setter Property="Background" Value="{DynamicResource Brush.Control}"/>
             <Setter Property="Foreground" Value="{DynamicResource Brush.Text}"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource Brush.Border}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource Brush.CheckBorder}"/>
+            <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ComboBox">
@@ -213,9 +225,10 @@
                                           ClickMode="Press">
                                 <ToggleButton.Template>
                                     <ControlTemplate TargetType="ToggleButton">
-                                        <Border Background="{TemplateBinding Background}"
+                                        <Border Background="{TemplateBinding Background}" CornerRadius="9"
                                                 BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1">
-                                            <Path Data="M0,0 L4,4 L8,0 Z" Fill="{DynamicResource Brush.TextSubtle}" Margin="0,0,8,0"
+                                            <Path Data="M0.5,0.5 L4,4 L7.5,0.5" Stroke="{DynamicResource Brush.TextMuted}" StrokeThickness="1.6"
+                                                  StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" Margin="0,1,12,0"
                                                   HorizontalAlignment="Right" VerticalAlignment="Center"/>
                                         </Border>
                                     </ControlTemplate>
@@ -224,11 +237,11 @@
                             <ContentPresenter IsHitTestVisible="False"
                                               Content="{TemplateBinding SelectionBoxItem}"
                                               ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
-                                              Margin="6,3,20,3" VerticalAlignment="Center" HorizontalAlignment="Left"/>
+                                              Margin="12,3,30,3" VerticalAlignment="Center" HorizontalAlignment="Left"/>
                             <Popup IsOpen="{TemplateBinding IsDropDownOpen}" AllowsTransparency="True"
                                    Focusable="False" PopupAnimation="Slide">
-                                <Border Background="{DynamicResource Brush.Panel}" BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1"
-                                        MinWidth="{Binding ActualWidth, RelativeSource={RelativeSource TemplatedParent}}">
+                                <Border Background="{DynamicResource Brush.Panel}" BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1" CornerRadius="10"
+                                        Padding="0,4" Margin="0,4,0,0" MaxHeight="360" MinWidth="{Binding ActualWidth, RelativeSource={RelativeSource TemplatedParent}}">
                                     <ScrollViewer SnapsToDevicePixels="True">
                                         <ItemsPresenter/>
                                     </ScrollViewer>
@@ -248,15 +261,16 @@
         <Style TargetType="Button">
             <Setter Property="Background" Value="{DynamicResource Brush.Control}"/>
             <Setter Property="Foreground" Value="{DynamicResource Brush.Text}"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource Brush.Border}"/>
-            <Setter Property="Height" Value="28"/>
-            <Setter Property="Padding" Value="12,4"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource Brush.CheckBorder}"/>
+            <Setter Property="Height" Value="32"/>
+            <Setter Property="Padding" Value="14,4"/>
             <Setter Property="Margin" Value="4"/>
             <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="Bd" Background="{TemplateBinding Background}"
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="9"
                                 BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}"
                                 Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
@@ -354,7 +368,7 @@
             </Grid.RowDefinitions>
 
             <!-- The pages of the settings proper as a tab strip along the top (as in the prototype). -->
-            <Border x:Name="NavBar" Grid.Row="0" Background="#11202b" BorderBrush="#294557" BorderThickness="0,0,0,1">
+            <Border x:Name="NavBar" Grid.Row="0" Background="{DynamicResource Brush.TitleBar}" BorderBrush="{DynamicResource Brush.Border}" BorderThickness="0,0,0,1">
                 <StackPanel Margin="6,6,6,4" Orientation="Horizontal">
                     <RadioButton x:Name="NavGeneral" IsChecked="True" GroupName="SettingsNav" Style="{StaticResource SettingsNavItem}">
                         <StackPanel Orientation="Horizontal">
