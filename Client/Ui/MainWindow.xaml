@@ -685,8 +685,8 @@
                         <Button x:Name="ClearButton" Style="{StaticResource ToolbarIconButton}" Click="OnClearClicked" Padding="6,5" Margin="1,0"
                             ToolTip="Clear the damage list and start fresh.">
                         <Grid Width="18" Height="16">
-                            <Path Data="M4,3 L14,13 M14,3 L4,13" Stroke="{DynamicResource Brush.TextSubtle}" StrokeThickness="1.6"
-                                  StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                            <Path Data="M3.5,9 A5.5,5.5 0 1 0 5.2,5 M3.5,1.8 L3.5,5.5 L7.2,5.5" Stroke="{DynamicResource Brush.TextSubtle}" StrokeThickness="1.6"
+                                  StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
                         </Grid>
                     </Button>
                         <Button x:Name="HideUiButton" Style="{StaticResource ToolbarIconButton}" Click="OnHideUiClicked" Padding="6,5" Margin="1,0"
