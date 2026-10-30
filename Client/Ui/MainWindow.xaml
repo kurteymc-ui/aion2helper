@@ -47,14 +47,15 @@
         <Style TargetType="Button">
             <Setter Property="Background" Value="{DynamicResource Brush.Control}"/>
             <Setter Property="Foreground" Value="{DynamicResource Brush.Text}"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource Brush.Border}"/>
-            <Setter Property="Padding" Value="8,4"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource Brush.CheckBorder}"/>
+            <Setter Property="Padding" Value="12,6"/>
             <Setter Property="Margin" Value="2"/>
             <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="Bd" Background="{TemplateBinding Background}"
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="9"
                                 BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}"
                                 Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
@@ -64,10 +65,64 @@
                                 <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Brush.ControlHover}"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Brush.Window}"/>
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Brush.Panel}"/>
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
                                 <Setter TargetName="Bd" Property="Opacity" Value="0.4"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <!-- The site's primary button: gold, dark text. -->
+        <Style x:Key="GoldButton" TargetType="Button">
+            <Setter Property="Padding" Value="12,6"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" CornerRadius="9" BorderBrush="#E6C88F" BorderThickness="1" Padding="{TemplateBinding Padding}">
+                            <Border.Background>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                    <GradientStop Color="#E6C88F" Offset="0"/>
+                                    <GradientStop Color="#D2AD66" Offset="1"/>
+                                </LinearGradientBrush>
+                            </Border.Background>
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.9"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.8"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.4"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <!-- A display mode as a tab of the segmented switch (Damage, Healing, Taken, All, All+); ApplyModeButtons marks the chosen one. -->
+        <Style x:Key="ModeTab" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{DynamicResource Brush.TextMuted}"/>
+            <Setter Property="Padding" Value="11,4"/>
+            <Setter Property="Margin" Value="0"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="7" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Foreground" Value="{DynamicResource Brush.Text}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -92,17 +147,17 @@
         <Style x:Key="ToolbarIconButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Width" Value="32"/>
+            <Setter Property="Height" Value="30"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="4"
-                                BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}"
-                                Padding="{TemplateBinding Padding}">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="8" Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Brush.ControlHoverStrong}"/>
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Brush.ControlHover}"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Brush.Panel}"/>
@@ -123,30 +178,30 @@
              RadioButton's own default chrome). The checked segment gets the same green (#69e15e)
              already used for this app's other accent/link text, dark text on top of it for contrast
              (mirrors a filled button on a light background, not this app's usual light-on-dark). -->
+        <!-- PvE / PvP: one pill of a two-way switch (the container is drawn around both in the toolbar); gold when chosen. -->
         <Style x:Key="PvpModeToggleLeft" TargetType="ToggleButton">
             <Setter Property="Padding" Value="10,3"/>
-            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontSize" Value="12.5"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Foreground" Value="{DynamicResource Brush.Text}"/>
+            <Setter Property="Foreground" Value="{DynamicResource Brush.TextMuted}"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ToggleButton">
-                        <Border x:Name="Bd" Background="{DynamicResource Brush.ControlHover}" BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1,1,0,1"
-                                CornerRadius="4,0,0,4" Padding="{TemplateBinding Padding}">
+                        <Border x:Name="Bd" Background="Transparent" CornerRadius="999" Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsChecked" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Brush.Toggle}"/>
-                                <Setter Property="Foreground" Value="{DynamicResource Brush.Window}"/>
-                                <Setter Property="FontWeight" Value="Bold"/>
+                                <Setter TargetName="Bd" Property="Background" Value="#2BDCB877"/>
+                                <Setter Property="Foreground" Value="#E6C88F"/>
                             </Trigger>
                             <MultiTrigger>
                                 <MultiTrigger.Conditions>
                                     <Condition Property="IsMouseOver" Value="True"/>
                                     <Condition Property="IsChecked" Value="False"/>
                                 </MultiTrigger.Conditions>
-                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Brush.ControlHoverStrong}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource Brush.Text}"/>
                             </MultiTrigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -154,30 +209,6 @@
             </Setter>
         </Style>
         <Style x:Key="PvpModeToggleRight" TargetType="ToggleButton" BasedOn="{StaticResource PvpModeToggleLeft}">
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="ToggleButton">
-                        <Border x:Name="Bd" Background="{DynamicResource Brush.ControlHover}" BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1"
-                                CornerRadius="0,4,4,0" Padding="{TemplateBinding Padding}">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsChecked" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Brush.Toggle}"/>
-                                <Setter Property="Foreground" Value="{DynamicResource Brush.Window}"/>
-                                <Setter Property="FontWeight" Value="Bold"/>
-                            </Trigger>
-                            <MultiTrigger>
-                                <MultiTrigger.Conditions>
-                                    <Condition Property="IsMouseOver" Value="True"/>
-                                    <Condition Property="IsChecked" Value="False"/>
-                                </MultiTrigger.Conditions>
-                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Brush.ControlHoverStrong}"/>
-                            </MultiTrigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
         </Style>
         <!-- Same root cause, different control: an implicit ComboBox style only setting
              Margin/MinWidth does nothing to the default WPF chrome, which is light-themed
@@ -187,17 +218,28 @@
              default ComboBox ControlTemplate does not consistently use those properties for its
              chrome; only a full template replacement reliably does. -->
         <Style TargetType="ComboBoxItem">
-            <Setter Property="Background" Value="{DynamicResource Brush.Panel}"/>
+            <Setter Property="Background" Value="Transparent"/>
             <Setter Property="Foreground" Value="{DynamicResource Brush.Text}"/>
-            <Setter Property="Padding" Value="6,3"/>
-            <Style.Triggers>
-                <Trigger Property="IsHighlighted" Value="True">
-                    <Setter Property="Background" Value="{DynamicResource Brush.Border}"/>
-                </Trigger>
-                <Trigger Property="IsSelected" Value="True">
-                    <Setter Property="Background" Value="{DynamicResource Brush.Border}"/>
-                </Trigger>
-            </Style.Triggers>
+            <Setter Property="Padding" Value="10,6"/>
+            <Setter Property="Margin" Value="4,1"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ComboBoxItem">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="7" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsHighlighted" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Brush.ControlHover}"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter Property="Foreground" Value="#E6C88F"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
         <!-- Found by the user from a screenshot after the ComboBox/NavButton fix: the DataGrid's
              column header row was still bright white - unlike ComboBox, DataGridColumnHeader's
@@ -207,19 +249,22 @@
             <Setter Property="Background" Value="{DynamicResource Brush.Panel}"/>
             <Setter Property="Foreground" Value="{DynamicResource Brush.Text}"/>
             <Setter Property="BorderBrush" Value="{DynamicResource Brush.Border}"/>
-            <Setter Property="BorderThickness" Value="0,0,1,1"/>
-            <Setter Property="Padding" Value="6,4"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="8,4"/>
         </Style>
                 <Style TargetType="ComboBox">
             <Setter Property="Margin" Value="4,2"/>
             <Setter Property="MinWidth" Value="110"/>
+            <Setter Property="MinHeight" Value="32"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
             <!-- Per the user: the closed box previously matched the surrounding toolbar/window
                  background (#26262e) almost exactly, so the three filter dropdowns barely read as
                  controls. A distinct, still-dark shade here - the dropdown POPUP below keeps
                  #26262e on purpose, so the open list still matches the rest of the app's flyouts. -->
-            <Setter Property="Background" Value="{DynamicResource Brush.ControlRaised}"/>
+            <Setter Property="Background" Value="{DynamicResource Brush.Control}"/>
             <Setter Property="Foreground" Value="{DynamicResource Brush.Text}"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource Brush.Border}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource Brush.CheckBorder}"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ComboBox">
@@ -231,9 +276,10 @@
                                           ClickMode="Press">
                                 <ToggleButton.Template>
                                     <ControlTemplate TargetType="ToggleButton">
-                                        <Border Background="{TemplateBinding Background}" CornerRadius="4"
+                                        <Border x:Name="Box" Background="{TemplateBinding Background}" CornerRadius="9"
                                                 BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1">
-                                            <Path Data="M0,0 L4,4 L8,0 Z" Fill="{DynamicResource Brush.TextSubtle}" Margin="0,0,8,0"
+                                            <Path Data="M0.5,0.5 L4,4 L7.5,0.5" Stroke="{DynamicResource Brush.TextMuted}" StrokeThickness="1.6"
+                                                  StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" Margin="0,1,12,0"
                                                   HorizontalAlignment="Right" VerticalAlignment="Center"/>
                                         </Border>
                                     </ControlTemplate>
@@ -242,11 +288,11 @@
                             <ContentPresenter IsHitTestVisible="False"
                                               Content="{TemplateBinding SelectionBoxItem}"
                                               ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
-                                              Margin="6,3,20,3" VerticalAlignment="Center" HorizontalAlignment="Left"/>
+                                              Margin="12,6,30,6" VerticalAlignment="Center" HorizontalAlignment="Left"/>
                             <Popup IsOpen="{TemplateBinding IsDropDownOpen}" AllowsTransparency="True"
                                    Focusable="False" PopupAnimation="Slide">
-                                <Border Background="{DynamicResource Brush.Panel}" BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1" CornerRadius="4"
-                                        MinWidth="{Binding ActualWidth, RelativeSource={RelativeSource TemplatedParent}}">
+                                <Border Background="{DynamicResource Brush.Panel}" BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1" CornerRadius="10"
+                                        Padding="0,4" Margin="0,4,0,0" MinWidth="{Binding ActualWidth, RelativeSource={RelativeSource TemplatedParent}}">
                                     <ScrollViewer SnapsToDevicePixels="True">
                                         <ItemsPresenter/>
                                     </ScrollViewer>
@@ -278,9 +324,10 @@
                                           ClickMode="Press">
                                 <ToggleButton.Template>
                                     <ControlTemplate TargetType="ToggleButton">
-                                        <Border Background="{TemplateBinding Background}" CornerRadius="4"
+                                        <Border x:Name="Box" Background="{TemplateBinding Background}" CornerRadius="9"
                                                 BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1">
-                                            <Path Data="M0,0 L4,4 L8,0 Z" Fill="{DynamicResource Brush.TextSubtle}" Margin="0,0,8,0"
+                                            <Path Data="M0.5,0.5 L4,4 L7.5,0.5" Stroke="{DynamicResource Brush.TextMuted}" StrokeThickness="1.6"
+                                                  StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" Margin="0,1,12,0"
                                                   HorizontalAlignment="Right" VerticalAlignment="Center"/>
                                         </Border>
                                     </ControlTemplate>
@@ -289,17 +336,17 @@
                             <ContentPresenter IsHitTestVisible="False"
                                               Content="{TemplateBinding SelectionBoxItem}"
                                               ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
-                                              Margin="6,3,20,3" VerticalAlignment="Center" HorizontalAlignment="Left"/>
+                                              Margin="12,6,30,6" VerticalAlignment="Center" HorizontalAlignment="Left"/>
                             <Popup IsOpen="{TemplateBinding IsDropDownOpen}" AllowsTransparency="True"
                                    Focusable="False" PopupAnimation="Slide">
                                 <!-- The list is wider than the closed box (which stays narrow next to the other dropdowns), so a whole boss name can be read. -->
-                                <Border Background="{DynamicResource Brush.Panel}" BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1"
-                                        MinWidth="300">
+                                <Border Background="{DynamicResource Brush.Panel}" BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1" CornerRadius="10"
+                                        Padding="0,0,0,4" Margin="0,4,0,0" MinWidth="300">
                                     <DockPanel>
                                         <TextBox x:Name="PART_SearchBox" DockPanel.Dock="Top"
                                                  Background="{DynamicResource Brush.Window}" Foreground="{DynamicResource Brush.Text}"
-                                                 BorderBrush="{DynamicResource Brush.Border}" BorderThickness="0,0,0,1"
-                                                 Padding="5,4" Margin="0"/>
+                                                 BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1"
+                                                 Padding="8,5" Margin="6,6,6,4"/>
                                         <ScrollViewer SnapsToDevicePixels="True" MaxHeight="240">
                                             <ItemsPresenter/>
                                         </ScrollViewer>
@@ -331,14 +378,16 @@
              submenu entries - WPF's MenuItem is the same class for all three, distinguished only
              by its Role property, which the Popup.Placement trigger below accounts for. -->
         <Style TargetType="MenuItem">
-            <Setter Property="Background" Value="{DynamicResource Brush.Panel}"/>
+            <Setter Property="Background" Value="Transparent"/>
             <Setter Property="Foreground" Value="{DynamicResource Brush.Text}"/>
-            <Setter Property="Padding" Value="8,4"/>
+            <Setter Property="Padding" Value="10,6"/>
+            <Setter Property="Margin" Value="4,1"/>
+            <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="MenuItem">
                         <Grid>
-                            <Border x:Name="Bd" Background="{TemplateBinding Background}">
+                            <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="7">
                                 <Grid Margin="{TemplateBinding Padding}">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="Auto"/>
@@ -352,7 +401,8 @@
                             </Border>
                             <Popup x:Name="Popup" Placement="Bottom" IsOpen="{TemplateBinding IsSubmenuOpen}"
                                    AllowsTransparency="True" Focusable="False" PopupAnimation="Fade">
-                                <Border Background="{DynamicResource Brush.Panel}" BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1">
+                                <Border Background="{DynamicResource Brush.Panel}" BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1"
+                                        CornerRadius="10" Padding="0,4" Margin="0,4,0,0" MinWidth="190">
                                     <ItemsPresenter/>
                                 </Border>
                             </Popup>
@@ -362,10 +412,21 @@
                                 <Setter TargetName="Check" Property="Visibility" Value="Visible"/>
                             </Trigger>
                             <Trigger Property="IsHighlighted" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Brush.Border}"/>
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Brush.ControlHover}"/>
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
                                 <Setter Property="Foreground" Value="{DynamicResource Brush.TextDisabled}"/>
+                            </Trigger>
+                            <!-- the menu bar's own entries (App, Session, Tools, Settings): quiet words like the site's top menu -->
+                            <Trigger Property="Role" Value="TopLevelHeader">
+                                <Setter Property="Foreground" Value="{DynamicResource Brush.TextMuted}"/>
+                                <Setter Property="FontWeight" Value="SemiBold"/>
+                                <Setter Property="Margin" Value="0,0,2,0"/>
+                                <Setter Property="Padding" Value="10,5"/>
+                            </Trigger>
+                            <Trigger Property="IsSubmenuOpen" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Brush.ControlHover}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource Brush.Text}"/>
                             </Trigger>
                             <Trigger Property="Role" Value="SubmenuItem">
                                 <Setter TargetName="Popup" Property="Placement" Value="Right"/>
@@ -392,7 +453,7 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="#1f3141"/>
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Brush.ControlHover}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -409,18 +470,22 @@
              version/close header like the standalone design prototype had: this window already
              draws both in its own titlebar just above, a second copy here would be redundant. -->
         <Style x:Key="AppMenuFlyoutStyle" TargetType="MenuItem" BasedOn="{StaticResource {x:Type MenuItem}}">
+            <Setter Property="Foreground" Value="{DynamicResource Brush.TextMuted}"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Padding" Value="10,5"/>
+            <Setter Property="Margin" Value="0,0,2,0"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="MenuItem">
                         <Grid>
-                            <Border x:Name="Bd" Background="{TemplateBinding Background}">
+                            <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="7">
                                 <Grid Margin="{TemplateBinding Padding}">
                                     <ContentPresenter ContentSource="Header" RecognizesAccessKey="True" VerticalAlignment="Center"/>
                                 </Grid>
                             </Border>
                             <Popup x:Name="Popup" Placement="Bottom" IsOpen="{TemplateBinding IsSubmenuOpen}"
                                    AllowsTransparency="True" Focusable="False" PopupAnimation="Fade">
-                                <Border Background="#152532" BorderBrush="#294557" BorderThickness="1" CornerRadius="10" Width="260">
+                                <Border Background="{DynamicResource Brush.Panel}" BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1" CornerRadius="10" Width="260" Margin="0,4,0,0">
                                     <StackPanel Margin="6">
                                         <!-- Uploads: at the very top (moved here from the Session menu). Shown by the same rules as
                                              before (RefreshUploadAvailability); the flags live in AppMenu.Tag, since a template part
@@ -429,25 +494,25 @@
                                                 Visibility="{Binding Tag.ShowBoss, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource BoolToVis}}"
                                                 ToolTip="Uploads the fight currently selected in the Mob/Boss filter to aion2helper.com.">
                                             <StackPanel Orientation="Horizontal">
-                                                <Path Data="M6,11 L6,3 M3,6 L6,3 L9,6 M1,13 L11,13" Stroke="#FFBA42" StrokeThickness="1.4" Width="14" Height="13" Margin="0,0,8,0"/>
-                                                <TextBlock Text="{local:Loc Main.MenuSession.UploadBoss}" Foreground="#f2f5f7" VerticalAlignment="Center"/>
+                                                <Path Data="M6,11 L6,3 M3,6 L6,3 L9,6 M1,13 L11,13" Stroke="{DynamicResource Brush.Accent}" StrokeThickness="1.4" Width="14" Height="13" Margin="0,0,8,0"/>
+                                                <TextBlock Text="{local:Loc Main.MenuSession.UploadBoss}" Foreground="{DynamicResource Brush.Text}" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </Button>
                                         <Button Style="{StaticResource AppMenuRow}" Click="OnUploadLastRunClicked"
                                                 Visibility="{Binding Tag.ShowRun, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource BoolToVis}}"
                                                 ToolTip="Uploads every boss fight recorded since the last Clear, one by one, to aion2helper.com.">
                                             <StackPanel Orientation="Horizontal">
-                                                <Path Data="M6,11 L6,3 M3,6 L6,3 L9,6 M1,13 L11,13" Stroke="#FFBA42" StrokeThickness="1.4" Width="14" Height="13" Margin="0,0,8,0"/>
-                                                <TextBlock Text="{local:Loc Main.MenuSession.UploadRun}" Foreground="#f2f5f7" VerticalAlignment="Center"/>
+                                                <Path Data="M6,11 L6,3 M3,6 L6,3 L9,6 M1,13 L11,13" Stroke="{DynamicResource Brush.Accent}" StrokeThickness="1.4" Width="14" Height="13" Margin="0,0,8,0"/>
+                                                <TextBlock Text="{local:Loc Main.MenuSession.UploadRun}" Foreground="{DynamicResource Brush.Text}" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </Button>
-                                        <Border Height="1" Background="#21374a" Margin="4,6"
+                                        <Border Height="1" Background="{DynamicResource Brush.Border}" Margin="4,6"
                                                 Visibility="{Binding Tag.ShowAny, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource BoolToVis}}"/>
 
                                         <!-- Verbindung zurücksetzen: still IsEnabled=False today. -->
                                         <StackPanel Orientation="Horizontal" Margin="8,5">
-                                            <Path Data="M2,2 L5,5 M9,9 L12,12 M2,12 L5,9 M9,5 L12,2" Stroke="#5c6b74" StrokeThickness="1.3" Width="14" Height="14" Margin="0,0,8,0"/>
-                                            <TextBlock Text="{local:Loc Main.MenuApp.ResetConnection}" Foreground="#5c6b74" VerticalAlignment="Center" FontSize="11.5"/>
+                                            <Path Data="M2,2 L5,5 M9,9 L12,12 M2,12 L5,9 M9,5 L12,2" Stroke="{DynamicResource Brush.TextDisabled}" StrokeThickness="1.3" Width="14" Height="14" Margin="0,0,8,0"/>
+                                            <TextBlock Text="{local:Loc Main.MenuApp.ResetConnection}" Foreground="{DynamicResource Brush.TextDisabled}" VerticalAlignment="Center" FontSize="11.5"/>
                                         </StackPanel>
 
                                         <!-- Ansicht leeren: real action - same red-X path the toolbar's
@@ -456,23 +521,23 @@
                                         <Button Style="{StaticResource AppMenuRow}" Click="OnClearClicked">
                                             <StackPanel Orientation="Horizontal">
                                                 <Path Data="M4,3 L14,13 M14,3 L4,13" Stroke="#ff5a4f" StrokeThickness="1.8" Width="14" Height="10" Margin="0,0,8,0"/>
-                                                <TextBlock Text="{local:Loc Main.MenuApp.ClearCurrentView}" Foreground="#f2f5f7" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{local:Loc Main.MenuApp.ClearCurrentView}" Foreground="{DynamicResource Brush.Text}" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </Button>
-                                        <Border Height="1" Background="#21374a" Margin="4,6"/>
+                                        <Border Height="1" Background="{DynamicResource Brush.Border}" Margin="4,6"/>
 
                                         <!-- AION 2 Helper: sign in with Discord, so fights can be uploaded (AccountWindow). -->
                                         <Button Style="{StaticResource AppMenuRow}" Click="OnAccountClicked">
                                             <StackPanel Orientation="Horizontal">
-                                                <Path Data="M7,1 A3,3 0 1 1 6.99,1 Z M1,13 C1,9 13,9 13,13" Stroke="#9db3c2" StrokeThickness="1.3" Width="14" Height="14" Margin="0,0,8,0"/>
-                                                <TextBlock Text="AION 2 Helper account" Foreground="#f2f5f7" VerticalAlignment="Center"/>
+                                                <Path Data="M7,1 A3,3 0 1 1 6.99,1 Z M1,13 C1,9 13,9 13,13" Stroke="{DynamicResource Brush.TextMuted}" StrokeThickness="1.3" Width="14" Height="14" Margin="0,0,8,0"/>
+                                                <TextBlock Text="AION 2 Helper account" Foreground="{DynamicResource Brush.Text}" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </Button>
                                         <!-- Nach Updates suchen: real action (OnCheckForUpdatesClicked). -->
                                         <Button Style="{StaticResource AppMenuRow}" Click="OnCheckForUpdatesClicked">
                                             <StackPanel Orientation="Horizontal">
-                                                <Path Data="M7,1 L7,8 M3,6 L7,10 L11,6 M2,12 L12,12" Stroke="#9db3c2" StrokeThickness="1.3" Width="14" Height="13" Margin="0,0,8,0"/>
-                                                <TextBlock Text="{local:Loc Main.MenuApp.CheckForUpdates}" Foreground="#f2f5f7" VerticalAlignment="Center"/>
+                                                <Path Data="M7,1 L7,8 M3,6 L7,10 L11,6 M2,12 L12,12" Stroke="{DynamicResource Brush.TextMuted}" StrokeThickness="1.3" Width="14" Height="13" Margin="0,0,8,0"/>
+                                                <TextBlock Text="{local:Loc Main.MenuApp.CheckForUpdates}" Foreground="{DynamicResource Brush.Text}" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </Button>
                                         <!-- In den Infobereich minimieren: real action (OnMinimizeToTrayClicked,
@@ -481,8 +546,8 @@
                                              other real actions rather than another checkmark row. -->
                                         <Button Style="{StaticResource AppMenuRow}" Click="OnMinimizeToTrayClicked">
                                             <StackPanel Orientation="Horizontal">
-                                                <Path Data="M2,3 L12,3 L12,10 L2,10 Z M2,8 L12,8" Stroke="#9db3c2" StrokeThickness="1.3" Width="14" Height="10" Margin="0,0,8,0"/>
-                                                <TextBlock Text="{local:Loc Main.MenuApp.MinimizeToTray}" Foreground="#f2f5f7" VerticalAlignment="Center"/>
+                                                <Path Data="M2,3 L12,3 L12,10 L2,10 Z M2,8 L12,8" Stroke="{DynamicResource Brush.TextMuted}" StrokeThickness="1.3" Width="14" Height="10" Margin="0,0,8,0"/>
+                                                <TextBlock Text="{local:Loc Main.MenuApp.MinimizeToTray}" Foreground="{DynamicResource Brush.Text}" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </Button>
 
@@ -490,12 +555,12 @@
                                         <Button Style="{StaticResource AppMenuRow}" Click="OnRestartClientClicked"
                                                 ToolTip="Restarts the meter and keeps the current session: it is written to a temp file and read back on start.">
                                             <StackPanel Orientation="Horizontal">
-                                                <Path Data="M12,7 A5,5 0 1 1 9.5,2.7 M9,1 L10,3.2 L7.8,4" Stroke="#9db3c2" StrokeThickness="1.3" Width="14" Height="14" Margin="0,0,8,0"/>
-                                                <TextBlock Text="{local:Loc Main.MenuApp.RestartClient}" Foreground="#f2f5f7" VerticalAlignment="Center"/>
+                                                <Path Data="M12,7 A5,5 0 1 1 9.5,2.7 M9,1 L10,3.2 L7.8,4" Stroke="{DynamicResource Brush.TextMuted}" StrokeThickness="1.3" Width="14" Height="14" Margin="0,0,8,0"/>
+                                                <TextBlock Text="{local:Loc Main.MenuApp.RestartClient}" Foreground="{DynamicResource Brush.Text}" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </Button>
 
-                                        <Border Height="1" Background="#21374a" Margin="4,6"/>
+                                        <Border Height="1" Background="{DynamicResource Brush.Border}" Margin="4,6"/>
 
                                         <!-- Beenden: real action (OnCloseClicked, the same one the
                                              titlebar's own ✕ button already calls) - danger-colored, its
@@ -514,7 +579,10 @@
                         </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsHighlighted" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Brush.Border}"/>
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Brush.ControlHover}"/>
+                            </Trigger>
+                            <Trigger Property="IsSubmenuOpen" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Brush.ControlHover}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -539,7 +607,21 @@
             <Setter Property="Background" Value="{DynamicResource Brush.Panel}"/>
             <Setter Property="Foreground" Value="{DynamicResource Brush.Text}"/>
             <Setter Property="BorderBrush" Value="{DynamicResource Brush.Border}"/>
-            <Setter Property="Padding" Value="6,4"/>
+            <Setter Property="Padding" Value="10,6"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToolTip">
+                        <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1"
+                                CornerRadius="8" Padding="{TemplateBinding Padding}" MaxWidth="380">
+                            <ContentPresenter>
+                                <ContentPresenter.Resources>
+                                    <Style TargetType="TextBlock"><Setter Property="TextWrapping" Value="Wrap"/></Style>
+                                </ContentPresenter.Resources>
+                            </ContentPresenter>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
         <!-- Found by terminal_windows measuring pixels again: a CheckBox's own box (the now-removed
              PlayersOnlyFilter toggle, back when it still existed) drew pure white - the same family
@@ -552,8 +634,8 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="CheckBox">
                         <StackPanel Orientation="Horizontal">
-                            <Border x:Name="Box" Width="14" Height="14" Background="{DynamicResource Brush.Panel}"
-                                    BorderBrush="{DynamicResource Brush.CheckBorder}" BorderThickness="1" Margin="0,0,6,0">
+                            <Border x:Name="Box" Width="16" Height="16" Background="{DynamicResource Brush.Control}" CornerRadius="4"
+                                    BorderBrush="{DynamicResource Brush.CheckBorder}" BorderThickness="1" Margin="0,0,8,0">
                                 <Path x:Name="Check" Data="M 2,7 L 6,11 L 12,3" Stroke="{DynamicResource Brush.Text}"
                                       StrokeThickness="1.6" Visibility="Collapsed"/>
                             </Border>
@@ -583,85 +665,67 @@
             <Grid>
             <DockPanel LastChildFill="True">
 
-                <Grid DockPanel.Dock="Top" Background="{DynamicResource Brush.TitleBar}" Height="30" MouseLeftButtonDown="OnTitleBarMouseDown">
-                    <!-- The real app icon (assets/app/aiondps.ico, also ApplicationIcon in the
-                         .csproj - see its remarks) - per the user, who noticed this corner still
-                         showed the placeholder navy/orange accent chip from before the icon
-                         existed, not the actual logo shown everywhere else (taskbar, installer,
-                         Settings' OS titlebar). Purely decorative here too (no click target), same
-                         as the chip it replaces. Source set in code-behind (OnWindowLoaded), not
-                         here - a plain pack://siteoforigin Source on this Image silently rendered
-                         nothing at all for this specific .ico, unlike the PNG icons elsewhere in
-                         this app; System.Drawing.Icon + CreateBitmapSourceFromHIcon is the same
-                         battle-tested decode path Explorer itself uses for any .ico. -->
-                    <Image x:Name="AppIconImage" Width="16" Height="16"
+                <!-- The title bar (the window has no Windows frame): the wordmark, the controls used in a fight, minimise and close.
+                     Dragging its free part moves the window. -->
+                <Border DockPanel.Dock="Top" Background="{DynamicResource Brush.TitleBar}" BorderBrush="{DynamicResource Brush.Border}" BorderThickness="0,0,0,1">
+                <DockPanel Height="46" Background="Transparent" MouseLeftButtonDown="OnTitleBarMouseDown">
+                    <Image x:Name="AppIconImage" Visibility="Collapsed" Width="16" Height="16"
                            Margin="8,0,0,0" HorizontalAlignment="Left" RenderOptions.BitmapScalingMode="HighQuality"/>
-                    <!-- Per the user: the version belongs where it's actually seen. Window.Title
-                         already carries it (set in the constructor from AppVersion.Text, see its
-                         remarks on why a screenshot needs to identify its build), but WindowStyle=
-                         "None" means the OS never draws that text anywhere; this hand-drawn bar is
-                         the only titlebar a user ever sees, so it has to show the same string
-                         rather than a second, separately-hardcoded one that could drift from it. -->
-                    <TextBlock Text="{Binding Title, RelativeSource={RelativeSource AncestorType=Window}}"
-                               Foreground="{DynamicResource Brush.TextMuted}" VerticalAlignment="Center" Margin="30,0,0,0"/>
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                        <!-- Missing until now: with WindowStyle="None" there was no way at all to
-                             minimize from the UI (no OS chrome draws one either). Per the reference
-                             layout's window-action row. -->
-                        <Button Click="OnMinimizeClicked" Width="28" Height="30" Padding="0"
-                                Background="Transparent" BorderThickness="0" Foreground="{DynamicResource Brush.TextMuted}" Margin="0">
-                            <Path Data="M1,6 L11,6" Width="12" Height="12" Stretch="None" StrokeThickness="1.4" SnapsToDevicePixels="False" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Stroke="{DynamicResource Brush.TextMuted}"/>
+                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,6,0">
+                        <Button x:Name="PauseButton" Style="{StaticResource ToolbarIconButton}" Click="OnPauseClicked" Padding="6,5" Margin="1,0"
+                            ToolTip="Pause recording.">
+                        <Grid Width="18" Height="16">
+                            <StackPanel x:Name="PauseIcon" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <Rectangle Width="4" Height="14" Fill="{DynamicResource Brush.Text}" Margin="0,0,3,0"/>
+                                <Rectangle Width="4" Height="14" Fill="{DynamicResource Brush.Text}"/>
+                            </StackPanel>
+                            <Path x:Name="PlayIcon" Data="M3,1 L3,15 L15,8 Z" Fill="{DynamicResource Brush.Text}" Visibility="Collapsed"/>
+                        </Grid>
+                    </Button>
+                        <Button x:Name="ClearButton" Style="{StaticResource ToolbarIconButton}" Click="OnClearClicked" Padding="6,5" Margin="1,0"
+                            ToolTip="Clear the damage list and start fresh.">
+                        <Grid Width="18" Height="16">
+                            <Path Data="M4,3 L14,13 M14,3 L4,13" Stroke="{DynamicResource Brush.TextSubtle}" StrokeThickness="1.6"
+                                  StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                        </Grid>
+                    </Button>
+                        <Button x:Name="HideUiButton" Style="{StaticResource ToolbarIconButton}" Click="OnHideUiClicked" Padding="6,5" Margin="1,0"
+                                ToolTip="Overlay mode: transparent, click-through, shows a small DPS chip per player. Ctrl+Alt+H brings the UI back.">
+                            <Path Data="M1,12 C1,12 4.5,5 12,5 19.5,5 23,12 23,12 23,12 19.5,19 12,19 4.5,19 1,12 1,12 Z
+                                        M12,15 A3,3 0 1 0 12,9 3,3 0 1 0 12,15 Z"
+                                  Fill="{DynamicResource Brush.Text}" Width="18" Height="14" Stretch="Uniform"/>
                         </Button>
-                        <Button Click="OnCloseClicked" Width="28" Height="30" Padding="0"
-                                Background="Transparent" BorderThickness="0" Foreground="{DynamicResource Brush.TextMuted}" Margin="0">
-                            <Path Data="M1.5,1.5 L10.5,10.5 M10.5,1.5 L1.5,10.5" Width="12" Height="12" Stretch="None" StrokeThickness="1.4" SnapsToDevicePixels="False" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Stroke="{DynamicResource Brush.TextMuted}"/>
+                        <Border Width="1" Height="18" Background="{DynamicResource Brush.Border}" Margin="6,0"/>
+                        <Button Click="OnMinimizeClicked" Style="{StaticResource ToolbarIconButton}" Padding="0" Margin="1,0" ToolTip="Minimise">
+                            <Path Data="M1,6 L11,6" Width="12" Height="12" Stretch="None" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Stroke="{DynamicResource Brush.TextMuted}"/>
+                        </Button>
+                        <Button Click="OnCloseClicked" Style="{StaticResource ToolbarIconButton}" Padding="0" Margin="1,0" ToolTip="Close">
+                            <Path Data="M1.5,1.5 L10.5,10.5 M10.5,1.5 L1.5,10.5" Width="12" Height="12" Stretch="None" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Stroke="{DynamicResource Brush.TextMuted}"/>
                         </Button>
                     </StackPanel>
-                </Grid>
-
-                <!-- Top menu bar: App / Session / Settings / Mode. The original
-                     App/Session/Mode set matched the myaion.eu reference; Settings was
-                     split out of App into its own dropdown per the user's request, since App had
-                     grown into one long grab-bag of session/dev/settings items with no fixed place
-                     to look for any one of them. Load/Save Session, both folder buttons, Start
-                     with Windows and Minimize to tray were placeholders for a while (explicit ask
-                     needed first for the Windows-Run-key/tray-icon ones specifically) - given by
-                     the user, and all four are real now (SessionFile.cs, StartupRegistration.cs,
-                     TrayIcon.cs). Reset Connection is still the one remaining placeholder row. -->
-                <!-- Menu bar: the menus on the left, the PVE/PVP switch at the far right. -->
-                <Grid DockPanel.Dock="Top" Background="{DynamicResource Brush.Panel}">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    <Menu Grid.Column="0" Background="Transparent" Foreground="{DynamicResource Brush.Text}">
-                    <!-- App-Menü A ("Flyout-Karte", vom User gebilligt): all 14 child MenuItems that
-                         used to live here (Load/SaveSession, Export/ValidateSession, both folder
-                         items, ResetConnection, ClearCurrentView,
-                         CheckForUpdates, MinimizeToTray, Close)
-                         moved into AppMenuFlyoutStyle's own hand-authored Popup content above -
-                         same Click targets, same {local:Loc} keys (muted rows instead of
-                         greyed-out MenuItems for whichever were still placeholders at the time -
-                         see that Popup content's own remarks for which still are). Nothing here
-                         needs children anymore since the Popup no longer renders via
-                         <ItemsPresenter/>. -->
-                    <MenuItem x:Name="AppMenu" Header="{local:Loc Main.MenuApp}" Foreground="{DynamicResource Brush.Text}"
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0,0,0">
+                        <Path Data="M9,0.8 L17.2,9 L9,17.2 L0.8,9 Z" Stroke="{DynamicResource Brush.Accent}" StrokeThickness="1.4" Width="18" Height="18" Stretch="None"/>
+                        <Path Data="M9,5 L13,9 L9,13 L5,9 Z" Fill="{DynamicResource Brush.Accent}" Width="18" Height="18" Stretch="None" Margin="-18,0,0,0"/>
+                        <TextBlock Text="A2H" FontFamily="{DynamicResource Font.Title}" FontSize="16" Foreground="{DynamicResource Brush.Text}" Margin="10,0,0,0" VerticalAlignment="Center"/>
+                        <TextBlock Text="Meter" FontFamily="{DynamicResource Font.Title}" FontSize="16" Foreground="{DynamicResource Brush.Accent}" Margin="7,0,0,0" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </DockPanel>
+                </Border>
+                <!-- The menus, quiet words like the site's top menu, and who is counted: PvE (monsters and bosses) or PvP (players). -->
+                <DockPanel DockPanel.Dock="Top" Margin="10,8,12,0" LastChildFill="False">
+                    <Menu Background="Transparent" Foreground="{DynamicResource Brush.Text}" VerticalAlignment="Center">
+                    
+                    <MenuItem x:Name="AppMenu" Header="{local:Loc Main.MenuApp}"
                               Style="{StaticResource AppMenuFlyoutStyle}" Click="OnAppMenuClicked"/>
-                    <!-- The session list is built in code each time the menu opens (SessionMenu_SubmenuOpened): "All", the stay the
-                         player is in now, and the last few finished ones. The uploads that used to sit here are at the top of the App menu. -->
-                    <MenuItem x:Name="SessionMenu" Header="{local:Loc Main.MenuSession}" Foreground="{DynamicResource Brush.Text}"
+                    
+                    <MenuItem x:Name="SessionMenu" Header="{local:Loc Main.MenuSession}"
                               SubmenuOpened="OnSessionMenuOpened">
-                        <!-- Placeholder: a MenuItem without children is a leaf and never raises SubmenuOpened; the handler replaces it. -->
+                        
                         <MenuItem Header="..." IsEnabled="False"/>
                     </MenuItem>
-                    <!-- Consolidated here from the App menu, per the user's request - App had
-                         become a long, mixed grab-bag of session/dev/settings items; splitting
-                         out everything settings-related into its own top-level dropdown (right of
-                         Session) makes it a fixed, predictable place to look, rather than one more
-                         entry buried among a dozen others. -->
-                    <!-- Tools: the combat analyzer (session manager), loading/saving/exporting sessions and the dummy test. The session part comes first,
-                         a line sets the dummy test apart. -->
-                                        <MenuItem x:Name="ToolsMenu" Header="{local:Loc Main.MenuTools}" Foreground="{DynamicResource Brush.Text}">
+                    
+                    
+                                        <MenuItem x:Name="ToolsMenu" Header="{local:Loc Main.MenuTools}">
                         <MenuItem Header="{local:Loc Main.MenuTools.Checklist}" Tag="checklist" Click="OnOpenModuleClicked"/>
                         <MenuItem Header="{local:Loc Main.MenuTools.Attributes}" Tag="attributes" Click="OnOpenModuleClicked"/>
                         <MenuItem Header="{local:Loc Main.MenuTools.StatCalc}" Tag="statcalc" Click="OnOpenModuleClicked"/>
@@ -683,104 +747,60 @@
                         <MenuItem Header="{local:Loc Main.MenuTools.Stream}" Tag="stream" Click="OnOpenModuleClicked"/>
                         <MenuItem Header="{local:Loc Settings.Nav.Network}" Tag="network" Click="OnOpenModuleClicked"/>
                     </MenuItem>
-                    <MenuItem Header="{local:Loc Main.MenuSettings}" Foreground="{DynamicResource Brush.Text}">
+                    <MenuItem Header="{local:Loc Main.MenuSettings}">
                         <MenuItem Header="{local:Loc Main.MenuSettings.AppSettings}" Click="OnSettingsClicked"/>
                         <MenuItem x:Name="AlwaysOnTopMenuItem" Header="{local:Loc Main.MenuSettings.AlwaysOnTop}" IsCheckable="True" Click="OnAlwaysOnTopClicked"/>
                         <MenuItem Header="{local:Loc Main.MenuSettings.Feedback}" Click="OnFeedbackClicked"/>
                     </MenuItem>
                 </Menu>
-                    <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="10,2,6,2" VerticalAlignment="Center"
-                                ToolTip="PVE: damage against mobs/bosses (default). PVP: damage against other players only - Arena/Abyss/GvG.">
-                        <ToggleButton x:Name="PveModeButton" Style="{StaticResource PvpModeToggleLeft}"
+                    <Border DockPanel.Dock="Right" Background="#0AFFFFFF" BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1" CornerRadius="999" Padding="2"
+                            VerticalAlignment="Center" ToolTip="PvE: damage against monsters and bosses (default). PvP: damage against other players only - Arena, Abyss, legion fights.">
+                        <StackPanel Orientation="Horizontal">
+                            <ToggleButton x:Name="PveModeButton" Style="{StaticResource PvpModeToggleLeft}"
                                       Content="{local:Loc Main.ModePve}" IsChecked="True" Click="OnPvpModeToggleClicked"/>
-                        <ToggleButton x:Name="PvpModeButton" Style="{StaticResource PvpModeToggleRight}"
+                            <ToggleButton x:Name="PvpModeButton" Style="{StaticResource PvpModeToggleRight}"
                                       Content="{local:Loc Main.ModePvp}" Click="OnPvpModeToggleClicked"/>
-                    </StackPanel>
-                </Grid>
-
-                <!-- Top toolbar: matches MyAion's Copy / Copy All / Pause / Clear row. All are
-                     icon-only per the user's request ("... alle mit Tooltip bitte") - each ToolTip
-                     is the only remaining explanation of what a button does. Copy/CopyAll use an
-                     overlapping-rectangles glyph (2 rects for Copy, 3 for CopyAll, to visually hint
-                     "more"); the back rect(s) are given the toolbar's own Background as Fill so the
-                     front rect's edge reads as an overlap rather than a plus-sign of crossing
-                     lines. A Grid, not a plain StackPanel, so the PVE/PVP toggle can sit flush
-                     right (Grid.Column="2") instead of just trailing whatever the icons' own widths
-                     leave - per the user. Hide UI (the eye icon) moved out of this row entirely,
-                     down to the nav row below, next to Upload. -->
-                <Grid DockPanel.Dock="Top" Background="{DynamicResource Brush.Panel}">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    <StackPanel Grid.Column="0" Orientation="Horizontal">
-                    <!-- Icon vs text label toggled per view (see OnShowDamageView/OnShowLootView)
-                         - per the user: while the Loot view is active, Copy and CopyAll produce
-                         genuinely different payloads (chat string vs Discord table, see
-                         OnCopyClicked/OnCopyAllClicked) and a generic icon no longer says which is
-                         which. The Damage view still shows the plain icon, though its two buttons
-                         now differ as well (chat string vs tab-separated table). Left as-is
-                         because the user asked only for the missing payload, not a toolbar
-                         change; showing the labels there too would apply the same reasoning. -->
-                    <!-- Same two buttons in both views, per the user: an "A" for the chat string
-                         and Discord's own mark for the table. They used to swap between an icon and
-                         a text label depending on the active view, which meant the same button
-                         looked like two different controls. -->
-                    <Button x:Name="CopyButton" Style="{StaticResource ToolbarIconButton}" Click="OnCopyClicked" Padding="5"
+                        </StackPanel>
+                    </Border>
+                </DockPanel>
+                <!-- What the list shows (a segmented switch), the extras, and Upload. Wraps when the window is narrow. -->
+                <WrapPanel DockPanel.Dock="Top" Margin="12,10,12,0" Orientation="Horizontal">
+                    <Border Background="#0AFFFFFF" BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1" CornerRadius="10" Padding="3" Margin="0,0,10,6">
+                        <StackPanel Orientation="Horizontal">
+                            <Button x:Name="ModeDamageButton" Style="{StaticResource ModeTab}" Tag="Damage" ToolTip="{local:Loc Main.ModeDamage}" Click="OnModeButtonClicked">
+                            <Grid><Image x:Name="ModeDamageImage" Width="0" Height="0" Visibility="Collapsed"/><TextBlock Text="Damage" FontSize="13"/></Grid>
+                        </Button>
+                            <Button x:Name="ModeHealButton" Style="{StaticResource ModeTab}" Tag="Heal" ToolTip="{local:Loc Main.ModeHeal}" Click="OnModeButtonClicked">
+                            <Grid><Image x:Name="ModeHealImage" Width="0" Height="0" Visibility="Collapsed"/><TextBlock Text="Healing" FontSize="13"/></Grid>
+                        </Button>
+                            <Button x:Name="ModeTakenButton" Style="{StaticResource ModeTab}" Tag="Taken" ToolTip="{local:Loc Main.ModeTaken}" Click="OnModeButtonClicked">
+                            <Grid><Image x:Name="ModeTakenImage" Width="0" Height="0" Visibility="Collapsed"/><TextBlock Text="Taken" FontSize="13"/></Grid>
+                        </Button>
+                            <Button x:Name="ModeAllButton" Style="{StaticResource ModeTab}" Tag="All" ToolTip="{local:Loc Main.ModeAll}" Click="OnModeButtonClicked">
+                            <Grid><Image x:Name="ModeAllImage" Width="0" Height="0" Visibility="Collapsed"/><TextBlock Text="All" FontSize="13"/></Grid>
+                        </Button>
+                            <Button x:Name="ModeAllPlusButton" Style="{StaticResource ModeTab}" Tag="AllCompact" ToolTip="{local:Loc Main.ModeAllCompact}" Click="OnModeButtonClicked">
+                            <Grid><Image x:Name="ModeAllPlusImage" Width="0" Height="0" Visibility="Collapsed"/><TextBlock Text="All+" FontSize="13"/></Grid>
+                        </Button>
+                        </StackPanel>
+                    </Border>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,6" VerticalAlignment="Center">
+                        <Button x:Name="CopyButton" Style="{StaticResource ToolbarIconButton}" Click="OnCopyClicked" Padding="6,5" Margin="1,0"
                             ToolTip="Copy a one-line chat string - the damage ranking, or an Aion-chat loot summary if the Loot view is active.">
                         <Grid Width="18" Height="16">
                             <TextBlock Text="A" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource Brush.Text}"
                                        VerticalAlignment="Center" HorizontalAlignment="Center"/>
                         </Grid>
                     </Button>
-                    <!-- The pair differs by FORMAT, not by row selection: both cover the rows the
-                         grid is showing (no per-source filter exists yet for "all" to differ from
-                         "visible"), but Copy yields the one-line chat string and CopyAll the
-                         tab-separated table, which is what the String/Table labels say. -->
-                    <Button x:Name="CopyAllButton" Style="{StaticResource ToolbarIconButton}" Click="OnCopyAllClicked" Padding="5"
+                        <Button x:Name="CopyAllButton" Style="{StaticResource ToolbarIconButton}" Click="OnCopyAllClicked" Padding="6,5" Margin="1,0"
                             ToolTip="Copy an ASCII table in a code block, ready to paste into Discord - damage, or loot if the Loot view is active.">
                         <Grid Width="18" Height="16">
-                            <!-- Discord's own mark, from the simple-icons 24x24 viewBox. The SVG
-                                 packs arc flags ("0 0 0-4.88"), which WPF's geometry parser rejects,
-                                 so the flags are spaced out and bare ".5" numbers are written "0.5".
-                                 SelfCheck parses this string, because a malformed Data attribute
-                                 throws while the window is being built - the app would not start. -->
+                            
                             <Path Data="M 20.317 4.3698a 19.7913 19.7913 0 0 0 -4.8851 -1.5152 0.0741 0.0741 0 0 0 -0.0785 0.0371c -0.211 0.3753 -0.4447 0.8648 -0.6083 1.2495 -1.8447 -0.2762 -3.68 -0.2762 -5.4868 0 -0.1636 -0.3933 -0.4058 -0.8742 -0.6177 -1.2495a 0.077 0.077 0 0 0 -0.0785 -0.037 19.7363 19.7363 0 0 0 -4.8852 1.515 0.0699 0.0699 0 0 0 -0.0321 0.0277C 0.5334 9.0458 -0.319 13.5799 0.0992 18.0578a 0.0824 0.0824 0 0 0 0.0312 0.0561c 2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a 0.0777 0.0777 0 0 0 0.0842 -0.0276c 0.4616 -0.6304 0.8731 -1.2952 1.226 -1.9942a 0.076 0.076 0 0 0 -0.0416 -0.1057c -0.6528 -0.2476 -1.2743 -0.5495 -1.8722 -0.8923a 0.077 0.077 0 0 1 -0.0076 -0.1277c 0.1258 -0.0943 0.2517 -0.1923 0.3718 -0.2914a 0.0743 0.0743 0 0 1 0.0776 -0.0105c 3.9278 1.7933 8.18 1.7933 12.0614 0a 0.0739 0.0739 0 0 1 0.0785 0.0095c 0.1202 0.099 0.246 0.1981 0.3728 0.2924a 0.077 0.077 0 0 1 -0.0066 0.1276 12.2986 12.2986 0 0 1 -1.873 0.8914 0.0766 0.0766 0 0 0 -0.0407 0.1067c 0.3604 0.698 0.7719 1.3628 1.225 1.9932a 0.076 0.076 0 0 0 0.0842 0.0286c 1.961 -0.6067 3.9495 -1.5219 6.0023 -3.0294a 0.077 0.077 0 0 0 0.0313 -0.0552c 0.5004 -5.177 -0.8382 -9.6739 -3.5485 -13.6604a 0.061 0.061 0 0 0 -0.0312 -0.0286zM 8.02 15.3312c -1.1825 0 -2.1569 -1.0857 -2.1569 -2.419 0 -1.3332 0.9555 -2.4189 2.157 -2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332 -0.9555 2.4189 -2.1569 2.4189zm 7.9748 0c -1.1825 0 -2.1569 -1.0857 -2.1569 -2.419 0 -1.3332 0.9554 -2.4189 2.1569 -2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332 -0.946 2.4189 -2.1568 2.4189Z"
                                   Fill="{DynamicResource Brush.Text}" Stretch="Uniform" Width="16" Height="16"/>
                         </Grid>
                     </Button>
-                    <!-- Pause/Resume: one button, two overlaid glyphs (pause bars / play triangle)
-                         with only one Visible at a time - toggled in OnPauseClicked alongside the
-                         ToolTip text, since the icon alone no longer carries the word "Resume".
-                         Paused combat data is discarded, never replayed on Resume. -->
-                    <Button x:Name="PauseButton" Style="{StaticResource ToolbarIconButton}" Click="OnPauseClicked" Padding="5"
-                            ToolTip="Pause recording.">
-                        <Grid Width="18" Height="16">
-                            <StackPanel x:Name="PauseIcon" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                <Rectangle Width="4" Height="14" Fill="{DynamicResource Brush.Text}" Margin="0,0,3,0"/>
-                                <Rectangle Width="4" Height="14" Fill="{DynamicResource Brush.Text}"/>
-                            </StackPanel>
-                            <Path x:Name="PlayIcon" Data="M3,1 L3,15 L15,8 Z" Fill="{DynamicResource Brush.Text}" Visibility="Collapsed"/>
-                        </Grid>
-                    </Button>
-                    <Button x:Name="ClearButton" Style="{StaticResource ToolbarIconButton}" Click="OnClearClicked" Padding="5"
-                            ToolTip="Clear the damage list and start fresh.">
-                        <Grid Width="18" Height="16">
-                            <Path Data="M4,3 L14,13 M14,3 L4,13" Stroke="{DynamicResource Brush.Danger}" StrokeThickness="2"
-                                  StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
-                        </Grid>
-                    </Button>
-                    </StackPanel>
-                    <!-- PVE/PVP mode switch, per the user: one row up from the filter dropdowns, a
-                         segmented toggle (exactly one side active) rather than an independent
-                         checkbox. PVP restricts the whole grid to damage against other players,
-                         mobs/bosses excluded entirely, and overrides the Mob/Boss filter rather than
-                         combining with it - see OnPvpModeToggleClicked/RefreshRows. Right-aligned
-                         (Grid.Column="2"), per the user. -->
-                    <!-- Profile (character window), Twitch Drops and announcements: in the top row, left of the PVE/PVP switch. -->
-                    <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                        <Button x:Name="CharacterNavButton" Style="{StaticResource NavButton}" ToolTip="Open the character window (Aion 2): gear, skills, Daevanion" Click="OnShowCharacterView">
+                        <Button x:Name="CharacterNavButton" Style="{StaticResource ToolbarIconButton}" Padding="6,5" Margin="1,0" ToolTip="Open the character window (Aion 2): gear, skills, Daevanion" Click="OnShowCharacterView">
                             <Grid Width="16" Height="16">
                                 <Ellipse Width="5.6" Height="5.6" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
                                          StrokeThickness="1.5" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,1.2,0,0"/>
@@ -789,18 +809,7 @@
                                       StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
                             </Grid>
                         </Button>
-                        <Button x:Name="TwitchDropsButton" Style="{StaticResource ToolbarIconButton}" Click="OnTwitchDropsClicked" Padding="5" Margin="4"
-                                Visibility="Collapsed" ToolTip="{local:Loc Main.TwitchDrops.Tooltip}">
-                            <StackPanel Orientation="Horizontal">
-                                <Path Data="F1 M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z"
-                                      Fill="#A970FF" Width="15" Height="15" Stretch="Uniform"/>
-                                <Border x:Name="TwitchDropsNewBadge" Visibility="Collapsed" Margin="5,0,0,0" Padding="6,1" CornerRadius="8"
-                                        Background="#FFD24A" VerticalAlignment="Center">
-                                    <TextBlock Text="{local:Loc Main.TwitchDrops.New}" FontSize="11" FontWeight="ExtraBold" Foreground="#1A1200"/>
-                                </Border>
-                            </StackPanel>
-                        </Button>
-                        <Button x:Name="AnnouncementsButton" Style="{StaticResource ToolbarIconButton}" Click="OnAnnouncementsClicked" Padding="5" Margin="4"
+                        <Button x:Name="AnnouncementsButton" Style="{StaticResource ToolbarIconButton}" Click="OnAnnouncementsClicked" Padding="6,5" Margin="1,0"
                                 ToolTip="{local:Loc Main.Announcements.Tooltip}">
                             <StackPanel Orientation="Horizontal">
                                 <Path Data="M3,9 L3,15 L7,15 L14,20 L14,4 L7,9 Z M17,8 C18.5,9.5 18.5,14.5 17,16 M19.5,5.5 C22.5,8.5 22.5,15.5 19.5,18.5"
@@ -812,102 +821,18 @@
                                 </Border>
                             </StackPanel>
                         </Button>
-                    </StackPanel>
-                    
-                </Grid>
-
-                <!-- View nav (Damage/Loot/Character Profile) plus Upload, in one row above the
-                     filter dropdowns - per the user: used to be a full-height rail down the left
-                     edge of the grid, eating horizontal space the grid itself could use, and Upload
-                     sat up in the icon toolbar instead. NavButton shrunk from 40x40 to 30x30 for
-                     this row (still bigger than the plain toolbar icon buttons above, per the same
-                     request, just no longer tall enough to justify its own column). Grid with an
-                     Auto/*/Auto column split, not a single StackPanel, so Upload sits flush right
-                     without needing to know how wide the nav icons end up. -->
-                <Grid DockPanel.Dock="Top" Background="{DynamicResource Brush.Panel}">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    <!-- Icons instead of text per the reference layout - NavButton's Background is
-                         already TemplateBinding'd (see its Button base style above), so the active/
-                         inactive swap in OnShowDamageView/OnShowLootView is a plain property set, no
-                         new style needed. Each Path's Stroke binds to its own Button's Foreground
-                         (which that same code toggles alongside Background) rather than a fixed color,
-                         since Path.Stroke isn't inherited the way TextBlock.Foreground is. Minus Skill
-                         Rotation and Instance Scores from MyAion's own icon set - per the user,
-                         removed rather than kept as disabled placeholders (neither has a packet
-                         source to ever back it: skill-cast order, resp. cross-encounter instance
-                         aggregation + boss detection). Character Profile stays as a disabled
-                         placeholder since it wasn't asked to go too. See README's UI-placeholders
-                         section. -->
-                    <StackPanel Grid.Column="0" Orientation="Horizontal">
-                        <!-- The five display modes as buttons (they were the "Mode" menu): damage, heal, damage taken, All in One,
-                             All in One +. The icon pictures and the active look are set in ApplyModeButtons (assets/modes). -->
-                        <Button x:Name="ModeDamageButton" Style="{StaticResource NavButton}" Padding="2" Tag="Damage" ToolTip="{local:Loc Main.ModeDamage}" Click="OnModeButtonClicked">
-                            <Image x:Name="ModeDamageImage" Width="24" Height="24" Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality"/>
+                        <Button x:Name="TwitchDropsButton" Style="{StaticResource ToolbarIconButton}" Click="OnTwitchDropsClicked" Padding="6,5" Margin="1,0"
+                                Visibility="Collapsed" ToolTip="{local:Loc Main.TwitchDrops.Tooltip}">
+                            <StackPanel Orientation="Horizontal">
+                                <Path Data="F1 M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z"
+                                      Fill="#A970FF" Width="15" Height="15" Stretch="Uniform"/>
+                                <Border x:Name="TwitchDropsNewBadge" Visibility="Collapsed" Margin="5,0,0,0" Padding="6,1" CornerRadius="8"
+                                        Background="#FFD24A" VerticalAlignment="Center">
+                                    <TextBlock Text="{local:Loc Main.TwitchDrops.New}" FontSize="11" FontWeight="ExtraBold" Foreground="#1A1200"/>
+                                </Border>
+                            </StackPanel>
                         </Button>
-                        <Button x:Name="ModeHealButton" Style="{StaticResource NavButton}" Padding="2" Tag="Heal" ToolTip="{local:Loc Main.ModeHeal}" Click="OnModeButtonClicked">
-                            <Image x:Name="ModeHealImage" Width="24" Height="24" Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality"/>
-                        </Button>
-                        <Button x:Name="ModeTakenButton" Style="{StaticResource NavButton}" Padding="2" Tag="Taken" ToolTip="{local:Loc Main.ModeTaken}" Click="OnModeButtonClicked">
-                            <Image x:Name="ModeTakenImage" Width="24" Height="24" Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality"/>
-                        </Button>
-                        <Button x:Name="ModeAllButton" Style="{StaticResource NavButton}" Padding="2" Tag="All" ToolTip="{local:Loc Main.ModeAll}" Click="OnModeButtonClicked">
-                            <Image x:Name="ModeAllImage" Width="24" Height="24" Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality"/>
-                        </Button>
-                        <Button x:Name="ModeAllPlusButton" Style="{StaticResource NavButton}" Padding="2" Tag="AllCompact" ToolTip="{local:Loc Main.ModeAllCompact}" Click="OnModeButtonClicked">
-                            <Image x:Name="ModeAllPlusImage" Width="24" Height="24" Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality"/>
-                        </Button>
-                        <!-- Rebuilt per the user (the old single lopsided arc from (1,15) to
-                             (15,12.5) via one control point at (8,8) read as pinched/asymmetric,
-                             not like shoulders) - now a centered head circle plus a symmetric
-                             rounded-top body outline (open at the bottom, the same "person" shape
-                             family as Feather/Bootstrap's own user icon), both halves mirroring
-                             each other around x=8. -->
-                        
-                    </StackPanel>
-                    <!-- Hide UI (eye icon) and Upload, both moved here from the icon toolbar above,
-                         per the user - Hide UI now sits immediately left of Upload rather than up
-                         in that row. -->
-                    <StackPanel Grid.Column="2" Orientation="Horizontal">
-                        <!-- Icon instead of text, per the user's request - a simple vector eye glyph
-                             (no bitmap asset exists for this, unlike the class icons, so drawn inline)
-                             rather than the word "Hide UI". ToolTip is kept, per the same request, as
-                             the only remaining explanation of what it does - trimmed to one line after
-                             terminal_windows flagged the original ~500-char version as unreadable hover
-                             text over a 32px icon. Full behavior, for reference: forces Always-on-Top
-                             and hides the taskbar entry while active (restoring both on exit, since a
-                             click-through overlay sitting behind the game or cluttering the taskbar
-                             would defeat the point); the button itself becomes unreachable once the
-                             window is click-through, which is why Ctrl+Alt+H exists to bring it back. -->
-                        <!-- Twitch Drops: shown only while a campaign runs (RefreshTwitchDropsBadge), left of the announcements icon; "New" while the newest
-                             campaign is one not seen at the last click. Opens the page on aiondps.com. -->
-                        
-                        <!-- AION 2 announcements: only a link to the page on aiondps.com; "New" shows beside the icon while there is
-                             an announcement newer than the one seen at the last click (OnAnnouncementsClicked / RefreshAnnouncementsBadge). -->
-                        
-                        <Button x:Name="HideUiButton" Style="{StaticResource ToolbarIconButton}" Click="OnHideUiClicked" Padding="5" Margin="4"
-                                ToolTip="Overlay mode: transparent, click-through, shows a small DPS chip per player. Ctrl+Alt+H brings the UI back.">
-                            <Path Data="M1,12 C1,12 4.5,5 12,5 19.5,5 23,12 23,12 23,12 19.5,19 12,19 4.5,19 1,12 1,12 Z
-                                        M12,15 A3,3 0 1 0 12,9 3,3 0 1 0 12,15 Z"
-                                  Fill="{DynamicResource Brush.Text}" Width="18" Height="14" Stretch="Uniform"/>
-                        </Button>
-                        <!-- Uploads exactly the boss the Mob/Boss filter is currently showing -
-                             hidden in the Loot view and whenever there's nothing recorded yet, both
-                             still handled the same way by RefreshUploadAvailability regardless of
-                             where the button physically sits. -->
-                        <Button x:Name="UploadBossButton" Style="{StaticResource ToolbarIconButton}" Click="OnUploadCurrentBossClicked" Padding="5"
-                                Margin="4" Visibility="Collapsed"
-                                ToolTip="Uploads this boss fight to aion2helper.com.">
-                            <Path Data="M9,2 L9,10 M4,7 L9,2 L14,7 M3,13 L15,13"
-                                  Stroke="{DynamicResource Brush.Text}" StrokeThickness="1.6" StrokeLineJoin="Round"
-                                  StrokeStartLineCap="Round" StrokeEndLineCap="Round"
-                                  Width="18" Height="15" Stretch="Uniform"/>
-                        </Button>
-                        <!-- The paths of this boss fight for the replay (the fight itself goes up with it): a play triangle in an almost closed circle with an arrowhead. -->
-                        <Button x:Name="UploadReplayButton" Style="{StaticResource ToolbarIconButton}" Click="OnUploadReplayClicked" Padding="5"
+                        <Button x:Name="UploadReplayButton" Style="{StaticResource ToolbarIconButton}" Click="OnUploadReplayClicked" Padding="6,5" Margin="1,0"
                                 Margin="4" Visibility="Collapsed"
                                 ToolTip="{local:Loc Main.UploadReplay.Tooltip}">
                             <Canvas Width="20" Height="20">
@@ -916,54 +841,24 @@
                                 <Path Data="M8,7 L13.2,10 L8,13 Z" Fill="{DynamicResource Brush.Text}"/>
                             </Canvas>
                         </Button>
+                        <Button x:Name="UploadBossButton" Style="{StaticResource GoldButton}" Click="OnUploadCurrentBossClicked" Margin="8,0,0,0" Visibility="Collapsed"
+                                ToolTip="Uploads this boss fight to aion2helper.com.">
+                            <StackPanel Orientation="Horizontal">
+                                <Path Data="M9,2 L9,10 M4,7 L9,2 L14,7 M3,13 L15,13" Stroke="#1A140B" StrokeThickness="1.8" StrokeLineJoin="Round"
+                                      StrokeStartLineCap="Round" StrokeEndLineCap="Round" Width="14" Height="12" Stretch="Uniform" Margin="0,0,7,0"/>
+                                <TextBlock Text="Upload" FontWeight="SemiBold" FontSize="13" Foreground="#1A140B" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
                     </StackPanel>
-                </Grid>
-
-                <!-- Filter row: three dropdowns, matching the myaion.eu reference exactly (class
-                     list uses its internal names Bard/Gunner/Painter, not the "modern"
-                     Songweaver/Gunslinger - Painter itself is a post-4.6 class per the user, kept
-                     here only for parity with the reference, marked in its tooltip). ClassFilter
-                     was decorative-only until classes started being detected for players besides
-                     "You" (see MainWindow.ResolveClassName) - now real, per the user: an empty
-                     grid when nobody of the picked class is present is correct, not a bug. The
-                     Mob/Boss filter below was already real before that. -->
-                <!-- Labels removed per the user ("Die Worte VOR den Dropdowns können weg") - each
-                     dropdown's own ToolTip plus, for ClassFilter now, the visible class name inside
-                     it, carries enough meaning without a preceding "Class:"/"Source:"/"Mob/Boss:"
-                     text label. -->
-                <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Background="{DynamicResource Brush.Window}">
-                    <!-- Icon + class name, per the user ("das Dropdown darf die Namen enthalten") -
-                         previously icon-only; ClassIconConverter/pack://siteoforigin remarks that
-                         used to sit here now live on NewCharacterClassBox in SettingsWindow.xaml,
-                         which needed the identical icon-visibility fix and still explains it. -->
-                    <!-- AutomationProperties.Name on every entry below: found by terminal_windows
-                         trying to drive this dropdown by name for testing - a ComboBoxItem whose
-                         Content is a visual tree (icon + TextBlock, not a plain string) doesn't
-                         automatically expose that TextBlock's text as its automation name, so
-                         every entry but "All" (plain string Content) read back empty or as the
-                         raw type name. Same gap would affect a screen reader, not just test
-                         tooling - explicit Name fixes both with the same one-liner. -->
-                    <ComboBox x:Name="ClassFilter" SelectedIndex="0" Margin="0" MinWidth="0" SelectionChanged="OnClassFilterChanged">
-                        <ComboBoxItem Content="{local:Loc Main.FilterAllClasses}"/>
-                        <ComboBoxItem Tag="Aethertech" AutomationProperties.Name="Aethertech"><StackPanel Orientation="Horizontal"><Image Source="pack://siteoforigin:,,,/assets/classes/icons/Aethertech.png" Height="18" Margin="0,0,4,0"/><TextBlock Text="Aethertech" VerticalAlignment="Center"/></StackPanel></ComboBoxItem>
-                        <ComboBoxItem Tag="Assassin" AutomationProperties.Name="Assassin"><StackPanel Orientation="Horizontal"><Image Source="pack://siteoforigin:,,,/assets/classes/icons/Assassin.png" Height="18" Margin="0,0,4,0"/><TextBlock Text="Assassin" VerticalAlignment="Center"/></StackPanel></ComboBoxItem>
-                        <ComboBoxItem Tag="Bard" AutomationProperties.Name="Bard"><StackPanel Orientation="Horizontal"><Image Source="pack://siteoforigin:,,,/assets/classes/icons/Bard.png" Height="18" Margin="0,0,4,0"/><TextBlock Text="Bard" VerticalAlignment="Center"/></StackPanel></ComboBoxItem>
-                        <ComboBoxItem Tag="Chanter" AutomationProperties.Name="Chanter"><StackPanel Orientation="Horizontal"><Image Source="pack://siteoforigin:,,,/assets/classes/icons/Chanter.png" Height="18" Margin="0,0,4,0"/><TextBlock Text="Chanter" VerticalAlignment="Center"/></StackPanel></ComboBoxItem>
-                        <ComboBoxItem Tag="Cleric" AutomationProperties.Name="Cleric"><StackPanel Orientation="Horizontal"><Image Source="pack://siteoforigin:,,,/assets/classes/icons/Cleric.png" Height="18" Margin="0,0,4,0"/><TextBlock Text="Cleric" VerticalAlignment="Center"/></StackPanel></ComboBoxItem>
-                        <ComboBoxItem Tag="Gladiator" AutomationProperties.Name="Gladiator"><StackPanel Orientation="Horizontal"><Image Source="pack://siteoforigin:,,,/assets/classes/icons/Gladiator.png" Height="18" Margin="0,0,4,0"/><TextBlock Text="Gladiator" VerticalAlignment="Center"/></StackPanel></ComboBoxItem>
-                        <ComboBoxItem Tag="Gunner" AutomationProperties.Name="Gunner"><StackPanel Orientation="Horizontal"><Image Source="pack://siteoforigin:,,,/assets/classes/icons/Gunner.png" Height="18" Margin="0,0,4,0"/><TextBlock Text="Gunner" VerticalAlignment="Center"/></StackPanel></ComboBoxItem>
-                        <!-- Painter is a post-4.6 class, kept only for parity with the myaion.eu
-                             reference - not expected to actually occur on a 4.6 server. -->
-                        <ComboBoxItem Tag="Painter" AutomationProperties.Name="Painter"><StackPanel Orientation="Horizontal"><Image Source="pack://siteoforigin:,,,/assets/classes/icons/Painter.png" Height="18" Margin="0,0,4,0"/><TextBlock Text="Painter" VerticalAlignment="Center"/></StackPanel></ComboBoxItem>
-                        <ComboBoxItem Tag="Ranger" AutomationProperties.Name="Ranger"><StackPanel Orientation="Horizontal"><Image Source="pack://siteoforigin:,,,/assets/classes/icons/Ranger.png" Height="18" Margin="0,0,4,0"/><TextBlock Text="Ranger" VerticalAlignment="Center"/></StackPanel></ComboBoxItem>
-                        <ComboBoxItem Tag="Sorcerer" AutomationProperties.Name="Sorcerer"><StackPanel Orientation="Horizontal"><Image Source="pack://siteoforigin:,,,/assets/classes/icons/Sorcerer.png" Height="18" Margin="0,0,4,0"/><TextBlock Text="Sorcerer" VerticalAlignment="Center"/></StackPanel></ComboBoxItem>
-                        <ComboBoxItem Tag="Spiritmaster" AutomationProperties.Name="Spiritmaster"><StackPanel Orientation="Horizontal"><Image Source="pack://siteoforigin:,,,/assets/classes/icons/Spiritmaster.png" Height="18" Margin="0,0,4,0"/><TextBlock Text="Spiritmaster" VerticalAlignment="Center"/></StackPanel></ComboBoxItem>
-                        <ComboBoxItem Tag="Templar" AutomationProperties.Name="Templar"><StackPanel Orientation="Horizontal"><Image Source="pack://siteoforigin:,,,/assets/classes/icons/Templar.png" Height="18" Margin="0,0,4,0"/><TextBlock Text="Templar" VerticalAlignment="Center"/></StackPanel></ComboBoxItem>
+                </WrapPanel>
+                <!-- The fight shown (a search box in its list), whose damage (groups) and which classes. -->
+                <WrapPanel DockPanel.Dock="Top" Margin="12,2,12,8" Orientation="Horizontal">
+                    <ComboBox x:Name="MobBossFilter" Style="{StaticResource SearchableComboBox}"
+                              SelectedIndex="0" SelectionChanged="OnMobBossFilterChanged" Margin="0,0,8,0" MinWidth="0" MaxWidth="180"
+                              ToolTip="Filter by target. 'All' sums damage across every target seen. Type in the dropdown to search.">
+                        <ComboBoxItem Content="{local:Loc Main.FilterAllTargets}"/>
                     </ComboBox>
-                    <!-- Placeholder: a DISPLAY filter only, collection always keeps everyone's
-                         damage regardless of this setting. Needs group/legion/race data we don't
-                         decode yet. -->
-                    <ComboBox x:Name="SourceFilter" SelectedIndex="0" Margin="8,0,0,0" MinWidth="0"
+                    <ComboBox x:Name="SourceFilter" SelectedIndex="0" Margin="0,0,8,0" MinWidth="0"
                               ToolTip="Not wired up yet (display filter only).">
                         <ComboBoxItem Content="{local:Loc Main.FilterAllGroups}"/>
                         <ComboBoxItem Content="{local:Loc Main.FilterSelf}"/>
@@ -973,18 +868,23 @@
                         <ComboBoxItem Content="{local:Loc Main.FilterElyos}"/>
                         <ComboBoxItem Content="{local:Loc Main.FilterAsmodian}"/>
                     </ComboBox>
-                    <!-- Lists targets actually seen this session. "All" sums each source's damage
-                         across every target (the ambiguous wall-clock view - see DpsCalculator
-                         remarks); picking one target switches DPS to true per-target iDPS. -->
-                    <ComboBox x:Name="MobBossFilter" Style="{StaticResource SearchableComboBox}"
-                              SelectedIndex="0" SelectionChanged="OnMobBossFilterChanged" Margin="8,0,0,0" MinWidth="0" MaxWidth="180"
-                              ToolTip="Filter by target. 'All' sums damage across every target seen. Type in the dropdown to search.">
-                        <ComboBoxItem Content="{local:Loc Main.FilterAllTargets}"/>
+                    <ComboBox x:Name="ClassFilter" SelectedIndex="0" Margin="0,0,8,0" MinWidth="0" SelectionChanged="OnClassFilterChanged">
+                        <ComboBoxItem Content="{local:Loc Main.FilterAllClasses}"/>
+                        <ComboBoxItem Tag="Aethertech" AutomationProperties.Name="Aethertech"><StackPanel Orientation="Horizontal"><Image Source="pack://siteoforigin:,,,/assets/classes/icons/Aethertech.png" Height="18" Margin="0,0,4,0"/><TextBlock Text="Aethertech" VerticalAlignment="Center"/></StackPanel></ComboBoxItem>
+                        <ComboBoxItem Tag="Assassin" AutomationProperties.Name="Assassin"><StackPanel Orientation="Horizontal"><Image Source="pack://siteoforigin:,,,/assets/classes/icons/Assassin.png" Height="18" Margin="0,0,4,0"/><TextBlock Text="Assassin" VerticalAlignment="Center"/></StackPanel></ComboBoxItem>
+                        <ComboBoxItem Tag="Bard" AutomationProperties.Name="Bard"><StackPanel Orientation="Horizontal"><Image Source="pack://siteoforigin:,,,/assets/classes/icons/Bard.png" Height="18" Margin="0,0,4,0"/><TextBlock Text="Bard" VerticalAlignment="Center"/></StackPanel></ComboBoxItem>
+                        <ComboBoxItem Tag="Chanter" AutomationProperties.Name="Chanter"><StackPanel Orientation="Horizontal"><Image Source="pack://siteoforigin:,,,/assets/classes/icons/Chanter.png" Height="18" Margin="0,0,4,0"/><TextBlock Text="Chanter" VerticalAlignment="Center"/></StackPanel></ComboBoxItem>
+                        <ComboBoxItem Tag="Cleric" AutomationProperties.Name="Cleric"><StackPanel Orientation="Horizontal"><Image Source="pack://siteoforigin:,,,/assets/classes/icons/Cleric.png" Height="18" Margin="0,0,4,0"/><TextBlock Text="Cleric" VerticalAlignment="Center"/></StackPanel></ComboBoxItem>
+                        <ComboBoxItem Tag="Gladiator" AutomationProperties.Name="Gladiator"><StackPanel Orientation="Horizontal"><Image Source="pack://siteoforigin:,,,/assets/classes/icons/Gladiator.png" Height="18" Margin="0,0,4,0"/><TextBlock Text="Gladiator" VerticalAlignment="Center"/></StackPanel></ComboBoxItem>
+                        <ComboBoxItem Tag="Gunner" AutomationProperties.Name="Gunner"><StackPanel Orientation="Horizontal"><Image Source="pack://siteoforigin:,,,/assets/classes/icons/Gunner.png" Height="18" Margin="0,0,4,0"/><TextBlock Text="Gunner" VerticalAlignment="Center"/></StackPanel></ComboBoxItem>
+                        
+                        <ComboBoxItem Tag="Painter" AutomationProperties.Name="Painter"><StackPanel Orientation="Horizontal"><Image Source="pack://siteoforigin:,,,/assets/classes/icons/Painter.png" Height="18" Margin="0,0,4,0"/><TextBlock Text="Painter" VerticalAlignment="Center"/></StackPanel></ComboBoxItem>
+                        <ComboBoxItem Tag="Ranger" AutomationProperties.Name="Ranger"><StackPanel Orientation="Horizontal"><Image Source="pack://siteoforigin:,,,/assets/classes/icons/Ranger.png" Height="18" Margin="0,0,4,0"/><TextBlock Text="Ranger" VerticalAlignment="Center"/></StackPanel></ComboBoxItem>
+                        <ComboBoxItem Tag="Sorcerer" AutomationProperties.Name="Sorcerer"><StackPanel Orientation="Horizontal"><Image Source="pack://siteoforigin:,,,/assets/classes/icons/Sorcerer.png" Height="18" Margin="0,0,4,0"/><TextBlock Text="Sorcerer" VerticalAlignment="Center"/></StackPanel></ComboBoxItem>
+                        <ComboBoxItem Tag="Spiritmaster" AutomationProperties.Name="Spiritmaster"><StackPanel Orientation="Horizontal"><Image Source="pack://siteoforigin:,,,/assets/classes/icons/Spiritmaster.png" Height="18" Margin="0,0,4,0"/><TextBlock Text="Spiritmaster" VerticalAlignment="Center"/></StackPanel></ComboBoxItem>
+                        <ComboBoxItem Tag="Templar" AutomationProperties.Name="Templar"><StackPanel Orientation="Horizontal"><Image Source="pack://siteoforigin:,,,/assets/classes/icons/Templar.png" Height="18" Margin="0,0,4,0"/><TextBlock Text="Templar" VerticalAlignment="Center"/></StackPanel></ComboBoxItem>
                     </ComboBox>
-                </StackPanel>
-
-                <!-- Bottom notice row: update available, upload results and the capture status; each
-                     element is collapsed until there is something to say. -->
+                </WrapPanel>
                 <StackPanel DockPanel.Dock="Bottom" Background="{DynamicResource Brush.Panel}">
                     <StackPanel Orientation="Horizontal" Height="22">
 
@@ -1029,7 +929,7 @@
                      alternating RowBackground/AlternatingRowBackground colors already separate one
                      player's row from the next without it. -->
                 <local:QuietDataGrid x:Name="PlayersGrid" AutoGenerateColumns="False" IsReadOnly="True" MouseDoubleClick="OnPlayersGridDoubleClick"
-                          Background="{DynamicResource Brush.Window}" Foreground="{DynamicResource Brush.Text}" RowBackground="{DynamicResource Brush.RowAlt}" AlternatingRowBackground="{DynamicResource Brush.Panel}"
+                          Background="{DynamicResource Brush.Window}" Foreground="{DynamicResource Brush.Text}" RowBackground="Transparent" AlternatingRowBackground="Transparent" Margin="10,0,10,4" BorderThickness="0"
                           BorderBrush="{DynamicResource Brush.Border}"
                           GridLinesVisibility="None" HeadersVisibility="None" CanUserAddRows="False" Grid.IsSharedSizeScope="True">
                     <!-- Enemy rows get a dark red ground. A trigger rather than a converter so it
@@ -1062,9 +962,9 @@
                          selection visuals without touching anything else that might reference the
                          same system keys (e.g. a MenuItem's own highlight). -->
                     <DataGrid.Resources>
-                        <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="{DynamicResource Color.Border}"/>
+                        <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="{DynamicResource Color.ControlHover}"/>
                         <SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}" Color="{DynamicResource Color.Text}"/>
-                        <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}" Color="{DynamicResource Color.Border}"/>
+                        <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}" Color="{DynamicResource Color.ControlHover}"/>
                         <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightTextBrushKey}" Color="{DynamicResource Color.Text}"/>
                     </DataGrid.Resources>
                     <DataGrid.Columns>
@@ -1118,12 +1018,13 @@
                                          everywhere (damage taken switched off) takes no room. The class
                                          colour bar fills the whole row height. Opt-in extras (relic AP,
                                          avoided attacks, PVP) get a second line only when there are any. -->
-                                    <Grid MinHeight="32">
-                                        <ProgressBar Style="{StaticResource RowFillBar}" Value="{Binding AbsorbedFillPercent, Mode=OneWay}"
+                                    <Grid MinHeight="38">
+                                        <Border Background="#08FFFFFF" CornerRadius="9" Margin="0,2"/>
+                                        <ProgressBar Style="{StaticResource RowFillBar}" Value="{Binding AbsorbedFillPercent, Mode=OneWay}" Margin="0,2"
                                                      Foreground="#993AA0FF"
                                                      Visibility="{Binding ShowShareBar, Converter={StaticResource BoolToVis}}"/>
-                                        <ProgressBar Style="{StaticResource RowFillBar}" Value="{Binding FillPercent, Mode=OneWay}"
-                                                     Foreground="{Binding ClassBrush}" BorderBrush="{Binding ClassEdgeBrush}" BorderThickness="1" Margin="2,2"
+                                        <ProgressBar Template="{StaticResource GlowBarTemplate}" Minimum="0" Maximum="100" IsHitTestVisible="False" Value="{Binding FillPercent, Mode=OneWay}"
+                                                     Foreground="{Binding ClassGlowBrush}" BorderBrush="{Binding ClassLineBrush}" Background="Transparent" Margin="0,2"
                                                      Visibility="{Binding ShowShareBar, Converter={StaticResource BoolToVis}}"/>
                                         <StackPanel VerticalAlignment="Center" Margin="8,3,8,3">
                                             <Grid>
@@ -1235,7 +1136,7 @@
         <!-- The in-game meter (A2HMeter look): a dark panel with a header (fight, time, what is shown, controls), the boss's health,
              one bar per player in the class's colour (name, total, rate, share) and a footer with the capture's state and the ping. -->
         <Border x:Name="CompactOverlayPanel" Visibility="Collapsed" Width="390" HorizontalAlignment="Left" VerticalAlignment="Top"
-                Background="{DynamicResource Brush.OverlayBg}" CornerRadius="10" Padding="0" BorderBrush="#1FFFFFFF" BorderThickness="1"
+                Background="{DynamicResource Brush.OverlayBg}" CornerRadius="14" Padding="0" BorderBrush="#29DCB877" BorderThickness="1"
                 TextOptions.TextFormattingMode="Display">
             <Border.LayoutTransform>
                 <ScaleTransform x:Name="CompactOverlayScale" ScaleX="1" ScaleY="1"/>
@@ -1264,7 +1165,7 @@
             <StackPanel>
                 <!-- Header: the fight shown and its time; then the controls a player reaches for in a fight. Glyphs from Windows'
                      own icon font (Segoe Fluent Icons / MDL2 Assets). Dragging the free part of the header moves the panel. -->
-                <Border Padding="12,8,8,8" BorderBrush="#14FFFFFF" BorderThickness="0,0,0,1">
+                <Border Padding="12,9,8,2">
                 <DockPanel Background="Transparent" Cursor="SizeAll" MouseLeftButtonDown="OnCompactOverlayDrag">
                     <DockPanel.Resources>
                         <Style x:Key="OverlayIconButton" TargetType="Border">
@@ -1301,44 +1202,42 @@
                     <Border DockPanel.Dock="Right" Style="{StaticResource OverlayIconButton}" MouseLeftButtonDown="OnOverlayResetClicked" ToolTip="{local:Loc Main.Overlay.Reset}">
                         <TextBlock Text="&#xE72C;" Style="{StaticResource OverlayIconGlyph}"/>
                     </Border>
-                    <!-- Damage / healing / damage taken switch (also Settings' shortcut and the Mode menu). -->
-                    <Border x:Name="OverlayModeSwitch" DockPanel.Dock="Right" Background="#14FFFFFF" BorderBrush="#29FFFFFF" BorderThickness="1"
-                            CornerRadius="5" Padding="7,2" Margin="8,0,4,0" Cursor="Hand" MouseLeftButtonDown="OnOverlayModeClicked">
-                        <TextBlock x:Name="OverlayModeText" Foreground="{DynamicResource Brush.OverlayText}" FontSize="10.5"
-                                   FontWeight="SemiBold" VerticalAlignment="Center"/>
-                    </Border>
                     <!-- An update is on its way / waiting, or this version may no longer upload (see SetUpdateStatus); a click does what the status row's notice does. -->
                     <Border x:Name="CompactUpdateBadge" DockPanel.Dock="Right" Visibility="Collapsed" CornerRadius="5" Padding="6,1" Margin="6,0,0,0"
                             Cursor="Hand" MouseLeftButtonDown="OnUpdateNoticeClicked">
                         <TextBlock x:Name="CompactUpdateBadgeText" FontSize="10" FontWeight="Bold" VerticalAlignment="Center" Foreground="#FF101820"/>
                     </Border>
-                    <TextBlock x:Name="OverlayTimeText" DockPanel.Dock="Right" Foreground="{DynamicResource Brush.TextSubtle}"
-                               FontFamily="Cascadia Mono, Consolas" FontSize="12" VerticalAlignment="Center" Margin="8,0,0,0"/>
-                    <TextBlock DockPanel.Dock="Left" Text="A2H" Foreground="{DynamicResource Brush.Accent}" FontWeight="Bold" FontSize="11.5"
-                               VerticalAlignment="Center" Margin="0,0,4,0"/>
+                    <TextBlock x:Name="OverlayTimeText" DockPanel.Dock="Right" Foreground="{DynamicResource Brush.TextSubtle}" FontWeight="SemiBold"
+                               Typography.NumeralAlignment="Tabular" FontSize="13" VerticalAlignment="Center" Margin="8,0,6,0"/>
+                    <Grid DockPanel.Dock="Left" Width="18" Height="18" VerticalAlignment="Center" Margin="0,0,8,0" ToolTip="A2HMeter">
+                        <Path Data="M9,0.8 L17.2,9 L9,17.2 L0.8,9 Z" Stroke="{DynamicResource Brush.Accent}" StrokeThickness="1.4"/>
+                        <Path Data="M9,5 L13,9 L9,13 L5,9 Z" Fill="{DynamicResource Brush.Accent}"/>
+                    </Grid>
                     <!-- What the rows show: everybody / my group / my corps (two parties together). -->
-                    <StackPanel x:Name="OverlayScopeSwitch" Orientation="Horizontal" Margin="8,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left">
-                        <Border x:Name="OverlayScopeAll" Tag="All" Padding="6,1" CornerRadius="5,0,0,5" Cursor="Hand" MouseLeftButtonDown="OnOverlayScopeClicked">
-                            <TextBlock FontSize="9.5" FontWeight="SemiBold" Text="{local:Loc Main.Scope.All}"/>
+                    <Border Background="#0AFFFFFF" BorderBrush="#1FFFFFFF" BorderThickness="1" CornerRadius="999" Padding="2" VerticalAlignment="Center" HorizontalAlignment="Left">
+                    <StackPanel x:Name="OverlayScopeSwitch" Orientation="Horizontal">
+                        <Border x:Name="OverlayScopeAll" Tag="All" Padding="9,1" CornerRadius="999" Cursor="Hand" MouseLeftButtonDown="OnOverlayScopeClicked">
+                            <TextBlock FontSize="11.5" FontWeight="SemiBold" Text="{local:Loc Main.Scope.All}"/>
                         </Border>
-                        <Border x:Name="OverlayScopeGroup" Tag="Group" Padding="6,1" Margin="1,0,0,0" Cursor="Hand" MouseLeftButtonDown="OnOverlayScopeClicked">
-                            <TextBlock FontSize="9.5" FontWeight="SemiBold" Text="{local:Loc Main.Scope.Group}"/>
+                        <Border x:Name="OverlayScopeGroup" Tag="Group" Padding="9,1" CornerRadius="999" Cursor="Hand" MouseLeftButtonDown="OnOverlayScopeClicked">
+                            <TextBlock FontSize="11.5" FontWeight="SemiBold" Text="{local:Loc Main.Scope.Group}"/>
                         </Border>
-                        <Border x:Name="OverlayScopeCorps" Tag="Corps" Padding="6,1" Margin="1,0,0,0" CornerRadius="0,5,5,0" Cursor="Hand" MouseLeftButtonDown="OnOverlayScopeClicked">
-                            <TextBlock FontSize="9.5" FontWeight="SemiBold" Text="{local:Loc Main.Scope.Corps}"/>
+                        <Border x:Name="OverlayScopeCorps" Tag="Corps" Padding="9,1" CornerRadius="999" Cursor="Hand" MouseLeftButtonDown="OnOverlayScopeClicked">
+                            <TextBlock FontSize="11.5" FontWeight="SemiBold" Text="{local:Loc Main.Scope.Corps}"/>
                         </Border>
                     </StackPanel>
+                    </Border>
                 </DockPanel>
                 </Border>
                 <!-- The fight: the boss shown (or all targets); with Settings' "show the boss's health", its health, the HP check's
                      verdict and a thin red bar. -->
-                <Grid Margin="12,8,12,0">
+                <Grid Margin="14,6,14,0">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
-                    <TextBlock x:Name="OverlayTargetText" MaxWidth="210" HorizontalAlignment="Left" Foreground="{DynamicResource Brush.OverlayText}" FontWeight="SemiBold"
-                               FontSize="12" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                    <TextBlock x:Name="OverlayTargetText" MaxWidth="250" HorizontalAlignment="Left" Foreground="{DynamicResource Brush.OverlayText}"
+                               FontFamily="{DynamicResource Font.Title}" FontSize="15" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
                     <Grid x:Name="OverlayHpBlock" Grid.RowSpan="2" Visibility="Collapsed">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
@@ -1346,10 +1245,10 @@
                         </Grid.RowDefinitions>
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                             <TextBlock x:Name="OverlayHpCheckText" FontSize="10.5" Foreground="{DynamicResource Brush.TextSubtle}" Margin="0,0,8,0" VerticalAlignment="Center"/>
-                            <TextBlock x:Name="OverlayHpText" FontSize="10.5" Foreground="{DynamicResource Brush.OverlayText}" FontFamily="Cascadia Mono, Consolas" VerticalAlignment="Center"/>
+                            <TextBlock x:Name="OverlayHpText" FontSize="13" FontWeight="Bold" Foreground="#E6C88F" Typography.NumeralAlignment="Tabular" VerticalAlignment="Center"/>
                         </StackPanel>
-                        <ProgressBar x:Name="OverlayHpBar" Grid.Row="1" Height="4" Margin="0,6,0,0" Template="{StaticResource FlatBar}" Minimum="0" Maximum="100"
-                                     Background="#1FFFFFFF" Foreground="#E5484D"/>
+                        <ProgressBar x:Name="OverlayHpBar" Grid.Row="1" Height="3" Margin="0,7,0,0" Template="{StaticResource FlatBar}" Minimum="0" Maximum="100"
+                                     Background="#12FFFFFF" Foreground="#CF5A4E"/>
                     </Grid>
                 </Grid>
                 <!-- Column legend: kept for the code that names the columns per mode; the numbers read on their own (bold = the rate). -->
@@ -1366,17 +1265,17 @@
                     <TextBlock x:Name="OverlayShareHeader" Grid.Column="3" Text="%" FontSize="9"/>
                     <TextBlock x:Name="OverlayTotalHeader" Grid.Column="4" Text="{local:Loc Main.Overlay.ColTotal}" FontSize="9"/>
                 </Grid>
-                <local:QuietItemsControl x:Name="CompactOverlayRows" Grid.IsSharedSizeScope="True" Margin="6,6,6,2">
+                <local:QuietItemsControl x:Name="CompactOverlayRows" Grid.IsSharedSizeScope="True" Margin="8,10,8,2">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
-                            <Grid MinHeight="28" Margin="0,0,0,4" Background="Transparent" Cursor="Hand"
+                            <Grid MinHeight="32" Margin="0,0,0,4" Background="Transparent" Cursor="Hand"
                                   MouseLeftButtonUp="OnCompactOverlayRowClicked">
-                                <ProgressBar Template="{StaticResource ClassBar}" Minimum="0" Maximum="100"
-                                             Value="{Binding FillPercent, Mode=OneWay}" Background="#0AFFFFFF">
+                                <ProgressBar Template="{StaticResource GlowBarTemplate}" Minimum="0" Maximum="100" IsHitTestVisible="False"
+                                             Value="{Binding FillPercent, Mode=OneWay}" Background="#07FFFFFF">
                                     <ProgressBar.Style>
                                         <Style TargetType="ProgressBar">
-                                            <Setter Property="Foreground" Value="{Binding ClassBrush}"/>
-                                            <Setter Property="BorderBrush" Value="{Binding ClassEdgeBrush}"/>
+                                            <Setter Property="Foreground" Value="{Binding ClassGlowBrush}"/>
+                                            <Setter Property="BorderBrush" Value="{Binding ClassLineBrush}"/>
                                             <Style.Triggers>
                                                 <DataTrigger Binding="{Binding IsEnemy}" Value="True">
                                                     <Setter Property="Foreground" Value="{DynamicResource Brush.OverlayEnemy}"/>
@@ -1390,22 +1289,22 @@
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="Auto"/>
                                         <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="56"/>
+                                        <ColumnDefinition Width="58"/>
                                         <ColumnDefinition Width="Auto" SharedSizeGroup="Rate"/>
-                                        <ColumnDefinition Width="44"/>
+                                        <ColumnDefinition Width="50"/>
                                     </Grid.ColumnDefinitions>
                                     <Image Grid.Column="0" Source="{Binding ClassName, Converter={StaticResource ClassIconConverter}}"
-                                           Height="18" Width="18" Margin="0,0,7,0" VerticalAlignment="Center"/>
+                                           Height="22" Width="22" Margin="0,0,8,0" VerticalAlignment="Center"/>
                                     <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                        <TextBlock Text="{Binding NameDisplay}" Foreground="{Binding ClassTextBrush}" FontWeight="SemiBold"
-                                                   FontSize="12" TextTrimming="CharacterEllipsis"/>
+                                        <TextBlock Text="{Binding NameDisplay}" Foreground="{DynamicResource Brush.OverlayText}" FontWeight="SemiBold"
+                                                   FontSize="13.5" TextTrimming="CharacterEllipsis"/>
                                         <local:AllLine FontSize="9.5" TextElement.Foreground="{DynamicResource Brush.OverlayText}"/>
                                     </StackPanel>
-                                    <TextBlock Grid.Column="2" Text="{Binding TotalOrTakenCompact}" Style="{StaticResource AllTakenSubtle}" FontSize="10.5"
+                                    <TextBlock Grid.Column="2" Text="{Binding TotalOrTakenCompact}" Style="{StaticResource AllTakenSubtle}" FontSize="12.5"
                                                Typography.NumeralAlignment="Tabular" VerticalAlignment="Center" HorizontalAlignment="Right"/>
                                     <TextBlock Grid.Column="3" Text="{Binding RateOrDamageCompact}" Foreground="{DynamicResource Brush.OverlayText}" FontWeight="Bold"
-                                               FontSize="13" Style="{StaticResource OverlayNumber}" Margin="12,0,0,0"/>
-                                    <TextBlock Grid.Column="4" Text="{Binding ShareOrHealCompact}" Style="{StaticResource AllHealSubtle}" FontSize="10.5"
+                                               FontSize="15" Style="{StaticResource OverlayNumber}" Margin="12,0,0,0"/>
+                                    <TextBlock Grid.Column="4" Text="{Binding ShareOrHealCompact}" Style="{StaticResource AllHealSubtle}" FontSize="12.5"
                                                Typography.NumeralAlignment="Tabular" VerticalAlignment="Center" HorizontalAlignment="Right"/>
                                 </Grid>
                             </Grid>
@@ -1414,7 +1313,7 @@
                 </local:QuietItemsControl>
                 <!-- Footer: is the game being read (green: yes; orange: paused; grey: waiting), the ping, and the corner grip that
                      scales the whole panel, text included (OnCompactOverlayResize). -->
-                <Border Padding="12,6,6,6" BorderBrush="#14FFFFFF" BorderThickness="0,1,0,0">
+                <Border Padding="14,7,6,8" BorderBrush="#0DFFFFFF" BorderThickness="0,1,0,0">
                     <DockPanel>
                         <Thumb DockPanel.Dock="Right" Width="12" Height="12" Cursor="SizeNWSE" Margin="8,0,0,0" VerticalAlignment="Bottom"
                                DragDelta="OnCompactOverlayResize" DragCompleted="OnCompactOverlayResized">
@@ -1426,10 +1325,15 @@
                                 </ControlTemplate>
                             </Thumb.Template>
                         </Thumb>
-                        <TextBlock x:Name="OverlayPingText" DockPanel.Dock="Right" FontSize="10.5" FontFamily="Cascadia Mono, Consolas"
-                                   Foreground="{DynamicResource Brush.Warning}" VerticalAlignment="Center"/>
+                        <TextBlock x:Name="OverlayPingText" DockPanel.Dock="Right" FontSize="12" Typography.NumeralAlignment="Tabular"
+                                   Foreground="{DynamicResource Brush.TextSubtle}" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                        <!-- What the bars measure: damage, healing, damage taken, all in one (also Settings' shortcut). -->
+                        <Border x:Name="OverlayModeSwitch" DockPanel.Dock="Right" BorderBrush="#59DCB877" BorderThickness="1"
+                                CornerRadius="999" Padding="9,1" Cursor="Hand" MouseLeftButtonDown="OnOverlayModeClicked" VerticalAlignment="Center">
+                            <TextBlock x:Name="OverlayModeText" Foreground="#E6C88F" FontSize="11.5" FontWeight="Bold" VerticalAlignment="Center"/>
+                        </Border>
                         <Ellipse x:Name="OverlayStateDot" Width="7" Height="7" Fill="Gray" VerticalAlignment="Center" Margin="0,0,7,0"/>
-                        <TextBlock x:Name="OverlayStateText" FontSize="10.5" Foreground="{DynamicResource Brush.TextMuted}" VerticalAlignment="Center"
+                        <TextBlock x:Name="OverlayStateText" FontSize="12.5" Foreground="{DynamicResource Brush.TextMuted}" VerticalAlignment="Center"
                                    TextTrimming="CharacterEllipsis"/>
                     </DockPanel>
                 </Border>
@@ -1457,8 +1361,8 @@
                         <ProgressBar Style="{StaticResource RowFillBar}" Value="{Binding AbsorbedFillPercent, Mode=OneWay}"
                                      Foreground="#993AA0FF"
                                      Visibility="{Binding ShowShareBar, Converter={StaticResource BoolToVis}}"/>
-                        <ProgressBar Style="{StaticResource RowFillBar}" Value="{Binding FillPercent, Mode=OneWay}"
-                                     Foreground="{Binding ClassBrush}" BorderBrush="{Binding ClassEdgeBrush}" BorderThickness="1" Margin="2,2"
+                        <ProgressBar Template="{StaticResource GlowBarTemplate}" Minimum="0" Maximum="100" IsHitTestVisible="False" Value="{Binding FillPercent, Mode=OneWay}"
+                                     Foreground="{Binding ClassGlowBrush}" BorderBrush="{Binding ClassLineBrush}" Background="Transparent" Margin="0,1"
                                      Visibility="{Binding ShowShareBar, Converter={StaticResource BoolToVis}}"/>
                         <StackPanel VerticalAlignment="Center">
                             <!-- Same fixed columns as the window's row: rank, class icon, name, then DPS and

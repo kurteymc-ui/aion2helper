@@ -10,15 +10,15 @@ internal static class ClassBrushes
 
     private static readonly Dictionary<string, string> Colors = new(StringComparer.Ordinal)
     {
-        ["Cleric"] = "#ffe27a",
-        ["Chanter"] = "#e0a020",
-        ["Templar"] = "#2f5fd0",
-        ["Gladiator"] = "#5aa9ff",
-        ["Brawler"] = "#e07a5f",
-        ["Assassin"] = "#7ee08f",
-        ["Ranger"] = "#2f9e57",
-        ["Sorcerer"] = "#b98af5",
-        ["Spiritmaster"] = "#8a4fd8",
+        ["Cleric"] = "#e8c560",
+        ["Chanter"] = "#e39b4c",
+        ["Templar"] = "#9db8e8",
+        ["Gladiator"] = "#6b9fe8",
+        ["Brawler"] = "#e2735c",
+        ["Assassin"] = "#58c58e",
+        ["Ranger"] = "#a2d373",
+        ["Sorcerer"] = "#ad80f2",
+        ["Spiritmaster"] = "#d48ce8",
     };
 
     private const string Unknown = "#9fb3c8";
@@ -51,6 +51,8 @@ internal static class ClassBrushes
             SolidCache.Clear();
             EdgeCache.Clear();
             TextCache.Clear();
+            GlowCache.Clear();
+            LineCache.Clear();
         }
     }
 
@@ -68,6 +70,8 @@ internal static class ClassBrushes
             SolidCache.Clear();
             EdgeCache.Clear();
             TextCache.Clear();
+            GlowCache.Clear();
+            LineCache.Clear();
         }
     }
 
@@ -90,6 +94,33 @@ internal static class ClassBrushes
             return brush;
         }
     }
+
+    private static readonly Dictionary<string, Brush> GlowCache = new();
+    private static readonly Dictionary<string, Brush> LineCache = new();
+
+    private static Brush CachedGradient(Dictionary<string, Brush> cache, string? className, Func<Color, Brush> make)
+    {
+        string key = className is not null && Colors.ContainsKey(className) ? className : "";
+        lock (cache)
+        {
+            if (!cache.TryGetValue(key, out Brush? brush))
+            {
+                brush = make(Effective(key));
+                brush.Freeze();
+                cache[key] = brush;
+            }
+
+            return brush;
+        }
+    }
+
+    /// <summary>A player's bar: the class colour as a soft glow, stronger at the start (30 %) and fading along the bar (9 %).</summary>
+    public static Brush Glow(string? className) => CachedGradient(GlowCache, className, c =>
+        new LinearGradientBrush(Color.FromArgb(0x4D, c.R, c.G, c.B), Color.FromArgb(0x17, c.R, c.G, c.B), 0));
+
+    /// <summary>The bright line along the bottom of a player's bar: from nothing to the full class colour at its end.</summary>
+    public static Brush Line(string? className) => CachedGradient(LineCache, className, c =>
+        new LinearGradientBrush(Color.FromArgb(0x00, c.R, c.G, c.B), Color.FromArgb(0xF0, c.R, c.G, c.B), 0));
 
     /// <summary>The thin edge of a player's bar in the in-game meter: the class colour, nearly solid.</summary>
     public static Brush Edge(string? className) => Cached(EdgeCache, className, c => Color.FromArgb(0xC8, c.R, c.G, c.B));

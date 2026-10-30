@@ -71,6 +71,17 @@
 
     <!-- Coloured meter bar behind a player's row (PlayerRow.FillPercent / ClassBrush): as long as the
          row's damage is of the biggest row shown, in the class colour - the website's meter bars. -->
+    <!-- A player's bar in both views (the A2HMeter look): Foreground is the glow (ClassBrushes.Glow), BorderBrush the bright line
+         along its bottom (ClassBrushes.Line). -->
+    <ControlTemplate x:Key="GlowBarTemplate" TargetType="ProgressBar">
+        <Grid>
+            <Border x:Name="PART_Track" Background="{TemplateBinding Background}" CornerRadius="9"/>
+            <Grid x:Name="PART_Indicator" HorizontalAlignment="Left">
+                <Border Background="{TemplateBinding Foreground}" CornerRadius="9"/>
+                <Border Height="2" VerticalAlignment="Bottom" Margin="8,0,3,0" CornerRadius="1" Background="{TemplateBinding BorderBrush}"/>
+            </Grid>
+        </Grid>
+    </ControlTemplate>
     <Style x:Key="RowFillBar" TargetType="ProgressBar">
         <Setter Property="Minimum" Value="0"/>
         <Setter Property="Maximum" Value="100"/>

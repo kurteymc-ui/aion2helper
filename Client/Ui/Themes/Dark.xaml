@@ -10,32 +10,32 @@
          matching Brush.* per token, consumed via {DynamicResource Brush.X} across Ui/*.xaml,
          swapped at runtime by Ui/ThemeManager.cs. Keep every theme defining the same token set
          (SelfCheck enforces it). -->
-    <Color x:Key="Color.Window">#0B0D14</Color>
-    <Color x:Key="Color.TitleBar">#08090F</Color>
-    <Color x:Key="Color.Panel">#12151F</Color>
-    <Color x:Key="Color.RowAlt">#0F121A</Color>
-    <Color x:Key="Color.Control">#171B26</Color>
-    <Color x:Key="Color.ControlRaised">#1C2130</Color>
-    <Color x:Key="Color.ControlHover">#1F2534</Color>
-    <Color x:Key="Color.ControlHoverStrong">#283044</Color>
-    <Color x:Key="Color.Border">#262C3B</Color>
-    <Color x:Key="Color.ScrollThumb">#353D52</Color>
-    <Color x:Key="Color.CheckBorder">#2E3548</Color>
-    <Color x:Key="Color.CheckBorderHover">#4B5572</Color>
-    <Color x:Key="Color.TextDisabled">#596173</Color>
-    <Color x:Key="Color.TextMuted">#7D8699</Color>
-    <Color x:Key="Color.TextSubtle">#A6AFC0</Color>
-    <Color x:Key="Color.Text">#ECEFF4</Color>
-    <Color x:Key="Color.Accent">#E2B66E</Color>
-    <Color x:Key="Color.RowEnemy">#2B161B</Color>
-    <Color x:Key="Color.OverlayBg">#E00B0D14</Color>
-    <Color x:Key="Color.OverlayEnemy">#992B161B</Color>
-    <Color x:Key="Color.OverlayText">#F3F5F8</Color>
-    <Color x:Key="Color.Warning">#F2C14E</Color>
-    <Color x:Key="Color.WarningSoft">#FFD97A</Color>
-    <Color x:Key="Color.Danger">#F0506E</Color>
-    <Color x:Key="Color.DangerSoft">#FF8A9A</Color>
-    <Color x:Key="Color.Heal">#5BD69A</Color>
+    <Color x:Key="Color.Window">#121016</Color>
+    <Color x:Key="Color.TitleBar">#17141B</Color>
+    <Color x:Key="Color.Panel">#1B1820</Color>
+    <Color x:Key="Color.RowAlt">#18151D</Color>
+    <Color x:Key="Color.Control">#211E27</Color>
+    <Color x:Key="Color.ControlRaised">#26222D</Color>
+    <Color x:Key="Color.ControlHover">#2A2631</Color>
+    <Color x:Key="Color.ControlHoverStrong">#342F3C</Color>
+    <Color x:Key="Color.Border">#3A3441</Color>
+    <Color x:Key="Color.ScrollThumb">#4B4352</Color>
+    <Color x:Key="Color.CheckBorder">#4B4352</Color>
+    <Color x:Key="Color.CheckBorderHover">#6A6072</Color>
+    <Color x:Key="Color.TextDisabled">#6E6676</Color>
+    <Color x:Key="Color.TextMuted">#A59C8E</Color>
+    <Color x:Key="Color.TextSubtle">#CFC6B6</Color>
+    <Color x:Key="Color.Text">#EFE8DC</Color>
+    <Color x:Key="Color.Accent">#DCB877</Color>
+    <Color x:Key="Color.RowEnemy">#2E1719</Color>
+    <Color x:Key="Color.OverlayBg">#EB121016</Color>
+    <Color x:Key="Color.OverlayEnemy">#992E1719</Color>
+    <Color x:Key="Color.OverlayText">#F4EEE4</Color>
+    <Color x:Key="Color.Warning">#E8C35A</Color>
+    <Color x:Key="Color.WarningSoft">#F0D68A</Color>
+    <Color x:Key="Color.Danger">#E06A5E</Color>
+    <Color x:Key="Color.DangerSoft">#F09A8E</Color>
+    <Color x:Key="Color.Heal">#8FD19A</Color>
     <SolidColorBrush x:Key="Brush.Window" Color="{StaticResource Color.Window}"/>
     <SolidColorBrush x:Key="Brush.TitleBar" Color="{StaticResource Color.TitleBar}"/>
     <SolidColorBrush x:Key="Brush.Panel" Color="{StaticResource Color.Panel}"/>

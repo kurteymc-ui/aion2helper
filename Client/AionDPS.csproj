@@ -81,6 +81,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- The faces of aion2helper.com (see Fonts/OFL.txt), compiled in: A2H Sans for all text, Cinzel for titles (ThemeManager.SetFonts). -->
+    <Resource Include="Fonts\*.ttf" />
+    <None Include="Fonts\OFL.txt" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <!-- captures/ holds standalone diagnostic probe scripts with their own top-level-statement
          Main (see captures/probe-source-Program.cs), gitignored real traffic captures, and
          analysis logs; none of it belongs to this project's build. Without this exclusion, the

@@ -1723,10 +1723,18 @@ public partial class MainWindow : Window
         foreach (Border segment in OverlayScopeSwitch.Children.OfType<Border>())
         {
             bool selected = segment.Tag as string == _scope.ToString();
-            segment.Background = selected ? new SolidColorBrush(Color.FromArgb(0x55, 0xFF, 0xFF, 0xFF)) : new SolidColorBrush(Color.FromArgb(0x1A, 0xFF, 0xFF, 0xFF));
+            // the chosen one: a gold-tinted pill with gold text; the others quiet words (the site's switches)
+            segment.Background = selected ? ScopeOnBrush : Brushes.Transparent;
             if (segment.Child is TextBlock text)
             {
-                text.SetResourceReference(TextBlock.ForegroundProperty, selected ? "Brush.OverlayText" : "Brush.TextSubtle");
+                if (selected)
+                {
+                    text.Foreground = ScopeOnText;
+                }
+                else
+                {
+                    text.SetResourceReference(TextBlock.ForegroundProperty, "Brush.TextMuted");
+                }
             }
         }
     }
@@ -6170,24 +6178,25 @@ public partial class MainWindow : Window
     private static readonly SolidColorBrush ModeRed = ModeBrush(0xFF, 0x6B, 0x5E);
     private static readonly SolidColorBrush ModeAllActive = ModeBrush(0x2C, 0x4A, 0x60);
 
-    /// <summary>The five mode buttons: the chosen one is filled (yellow for damage, green for heal, red for damage taken, blue-grey for the two
-    /// All in One modes, whose picture is multicoloured), the others show their picture on the plain button background.</summary>
+    /// <summary>The five display modes as tabs of one segmented switch: the chosen one is raised (the panel colour, light text), the
+    /// others are quiet words. The mode pictures are still set (assets/modes) for the places that show them.</summary>
     private void ApplyModeButtons()
     {
-        Brush plain = Brushes.Transparent; // flat until chosen
-        void Single(Button button, Image image, string key, bool active, Brush activeBackground)
+        Brush raised = (Brush)FindResource("Brush.ControlRaised");
+        Brush text = (Brush)FindResource("Brush.Text");
+        Brush muted = (Brush)FindResource("Brush.TextMuted");
+        void Tab(Button button, Image image, string icon, bool active)
         {
-            button.Background = active ? activeBackground : plain;
-            image.Source = ModeIcon("mode-" + key + (active ? "-on" : "-off"));
+            button.Background = active ? raised : Brushes.Transparent;
+            button.Foreground = active ? text : muted;
+            image.Source = ModeIcon(icon);
         }
 
-        Single(ModeDamageButton, ModeDamageImage, "damage", _mode == MeterMode.Damage, (Brush)FindResource("Brush.Accent"));
-        Single(ModeHealButton, ModeHealImage, "heal", _mode == MeterMode.Heal, ModeGreen);
-        Single(ModeTakenButton, ModeTakenImage, "taken", _mode == MeterMode.Taken, ModeRed);
-        ModeAllButton.Background = _mode == MeterMode.All ? ModeAllActive : plain;
-        ModeAllImage.Source = ModeIcon("mode-all");
-        ModeAllPlusButton.Background = _mode == MeterMode.AllCompact ? ModeAllActive : plain;
-        ModeAllPlusImage.Source = ModeIcon("mode-all-plus");
+        Tab(ModeDamageButton, ModeDamageImage, _mode == MeterMode.Damage ? "mode-damage-on" : "mode-damage-off", _mode == MeterMode.Damage);
+        Tab(ModeHealButton, ModeHealImage, _mode == MeterMode.Heal ? "mode-heal-on" : "mode-heal-off", _mode == MeterMode.Heal);
+        Tab(ModeTakenButton, ModeTakenImage, _mode == MeterMode.Taken ? "mode-taken-on" : "mode-taken-off", _mode == MeterMode.Taken);
+        Tab(ModeAllButton, ModeAllImage, "mode-all", _mode == MeterMode.All);
+        Tab(ModeAllPlusButton, ModeAllPlusImage, "mode-all-plus", _mode == MeterMode.AllCompact);
     }
 
     private void SetMode(MeterMode mode, bool save = true)
@@ -6907,7 +6916,9 @@ public partial class MainWindow : Window
         _gameTitleTimer.Start();
     }
 
-    private static readonly SolidColorBrush OverlayLiveBrush = MakeFrozen(Color.FromRgb(0x3D, 0xD6, 0x8C));
+    private static readonly SolidColorBrush ScopeOnBrush = MakeFrozen(Color.FromArgb(0x2B, 0xDC, 0xB8, 0x77));
+    private static readonly SolidColorBrush ScopeOnText = MakeFrozen(Color.FromRgb(0xE6, 0xC8, 0x8F));
+    private static readonly SolidColorBrush OverlayLiveBrush = MakeFrozen(Color.FromRgb(0x8F, 0xD1, 0x9A));
     private DateTime _overlayPingAt = DateTime.MinValue;
 
     private static SolidColorBrush MakeFrozen(Color c)
@@ -6942,7 +6953,7 @@ public partial class MainWindow : Window
         OverlayTotalHeader.Text = _allMode ? strings["Main.Overlay.ColTaken"] : strings["Main.Overlay.ColTotal"];
         bool capturing = (_source as Aion2.Aion2PacketCombatSource)?.ServerFingerprint is not null;
         OverlayStateDot.Fill = _paused ? Brushes.Orange : capturing ? OverlayLiveBrush : Brushes.Gray;
-        OverlayStateText.Text = _paused ? "Paused" : capturing ? (CompactOverlayOwnName() is { } own ? "Live · " + own : "Live") : "Waiting for the game";
+        OverlayStateText.Text = _paused ? "Paused" : capturing ? (CompactOverlayOwnName() is { } own ? "Live   " + own : "Live") : "Waiting for the game";
         if (DateTime.UtcNow - _overlayPingAt >= TimeSpan.FromSeconds(1))
         {
             _overlayPingAt = DateTime.UtcNow;

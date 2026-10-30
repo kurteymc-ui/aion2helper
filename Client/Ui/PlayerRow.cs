@@ -52,7 +52,7 @@ public sealed class PlayerRow : INotifyPropertyChanged
     public string ClassName
     {
         get => _className;
-        set { if (_className == value) { return; } _className = value; OnPropertyChanged(); OnPropertyChanged(nameof(ClassBrush)); OnPropertyChanged(nameof(ClassEdgeBrush)); OnPropertyChanged(nameof(ClassTextBrush)); }
+        set { if (_className == value) { return; } _className = value; OnPropertyChanged(); OnPropertyChanged(nameof(ClassBrush)); OnPropertyChanged(nameof(ClassEdgeBrush)); OnPropertyChanged(nameof(ClassTextBrush)); OnPropertyChanged(nameof(ClassGlowBrush)); OnPropertyChanged(nameof(ClassLineBrush)); }
     }
 
     public int Level
@@ -210,12 +210,19 @@ public sealed class PlayerRow : INotifyPropertyChanged
 
     public System.Windows.Media.Brush ClassTextBrush => ClassBrushes.Text(ClassName);
 
+    /// <summary>The bar's glow and the bright line along its bottom (the new look of both views).</summary>
+    public System.Windows.Media.Brush ClassGlowBrush => ClassBrushes.Glow(ClassName);
+
+    public System.Windows.Media.Brush ClassLineBrush => ClassBrushes.Line(ClassName);
+
     /// <summary>The bar colour setting changed: bind the bar to the new brush.</summary>
     public void RefreshClassBrush()
     {
         OnPropertyChanged(nameof(ClassBrush));
         OnPropertyChanged(nameof(ClassEdgeBrush));
         OnPropertyChanged(nameof(ClassTextBrush));
+        OnPropertyChanged(nameof(ClassGlowBrush));
+        OnPropertyChanged(nameof(ClassLineBrush));
     }
 
     public string RankDisplay => Rank > 0 ? Rank.ToString() : "";

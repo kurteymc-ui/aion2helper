@@ -47,8 +47,40 @@ public static class ThemeManager
         Apply(app, settings.Theme, settings.FontSize, look?.ToOverrides(), look?.Bar, look?.FontSize, look?.Classes);
     }
 
+    /// <summary>The site's text face (Source Sans 3, bundled as "A2H Sans") and its title face (Cinzel), compiled into the app (Fonts/).</summary>
+    public static readonly FontFamily UiFont = new(new Uri("pack://application:,,,/"), "./Fonts/#A2H Sans, Segoe UI");
+
+    public static readonly FontFamily TitleFont = new(new Uri("pack://application:,,,/"), "./Fonts/#Cinzel, Georgia");
+
+    private static bool _fontsSet;
+
+    /// <summary>Every window, menu and tool tip takes the site's face unless it names another; once, before the first window exists.</summary>
+    private static void SetFonts(Application app)
+    {
+        app.Resources["Font.Ui"] = UiFont;
+        app.Resources["Font.Title"] = TitleFont;
+        if (_fontsSet)
+        {
+            return;
+        }
+
+        _fontsSet = true;
+        foreach (Type type in new[] { typeof(Window), typeof(System.Windows.Controls.ContextMenu), typeof(System.Windows.Controls.ToolTip) })
+        {
+            try
+            {
+                System.Windows.Controls.Control.FontFamilyProperty.OverrideMetadata(type, new FrameworkPropertyMetadata(UiFont, FrameworkPropertyMetadataOptions.Inherits));
+            }
+            catch (ArgumentException)
+            {
+                // that type already has its own default: it keeps it
+            }
+        }
+    }
+
     public static void Apply(Application app, string? theme, string? fontSize, ThemeOverrides? overrides = null, string? bar = null, double? fontPoints = null, IReadOnlyDictionary<string, string>? classColors = null)
     {
+        SetFonts(app);
         ResourceDictionary dictionary = Build(theme, overrides);
         ClassBrushes.SetClassOverrides(classColors);
         ClassBrushes.SetBarOverride(TryParse(bar));
