@@ -26,9 +26,9 @@
          any of the three things above), but per the user that leftover had to go too - every
          `namespace AionSniffer.*`/`using AionSniffer.*` in the project was renamed to AionDPS to
          match. -->
-    <AssemblyName>AION 2 Helper Meter</AssemblyName>
-    <Product>AION 2 Helper Meter</Product>
-    <AssemblyTitle>AION 2 Helper Meter</AssemblyTitle>
+    <AssemblyName>A2HMeter</AssemblyName>
+    <Product>A2HMeter</Product>
+    <AssemblyTitle>A2HMeter</AssemblyTitle>
     <!-- asInvoker: the meter reads network traffic through the Npcap driver, which the user installs
          separately, so it needs no elevation itself. See app.manifest. -->
     <ApplicationManifest>app.manifest</ApplicationManifest>
@@ -44,7 +44,7 @@
          runtime (see MainWindow's constructor) and the installer takes it from the git tag the release
          workflow was triggered by, so a build can always be identified from a screenshot. Keep in
          step with the release tag. -->
-    <Version>1.18.2</Version>
+    <Version>1.18.3</Version>
   </PropertyGroup>
 
   <!-- UseWindowsForms's own implicit-usings set adds a PROJECT-WIDE global "using

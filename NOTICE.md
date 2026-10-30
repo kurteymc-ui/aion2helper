@@ -1,6 +1,6 @@
 # Notices
 
-**AION 2 Helper Meter** is AION 2 Helper's copy of **Aion DPS – Daevas Power Suite** by SkeeveTV
+**A2HMeter** (the AION 2 Helper meter) is AION 2 Helper's copy of **Aion DPS – Daevas Power Suite** by SkeeveTV
 (https://github.com/SkeeveAN/Aion-DPS-Meter), used under the MIT License. Its copyright notice and license are kept in
 [LICENSE](LICENSE); they apply to this copy as well. AION 2 Helper's own changes are released under the same MIT License.
 

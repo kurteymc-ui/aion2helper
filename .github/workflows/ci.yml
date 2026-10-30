@@ -1,7 +1,7 @@
 name: Tests
 
 # Runs on every push to main and on every pull request: the Windows app must build. (The upstream project's own upload server in
-# Backend/ is not used by AION 2 Helper Meter, whose fights go to aion2helper.com, so its tests are not run here.)
+# Backend/ is not used by A2HMeter, whose fights go to aion2helper.com, so its tests are not run here.)
 on:
   push:
     branches: [main]

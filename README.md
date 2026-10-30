@@ -1,4 +1,4 @@
-# AION 2 Helper Meter
+# A2HMeter
 
 A damage and healing meter for **AION 2**, made for [aion2helper.com](https://aion2helper.com) and its Discord.
 

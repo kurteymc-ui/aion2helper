@@ -27,7 +27,7 @@ public sealed class AccountWindow : Window
 
     public AccountWindow()
     {
-        Title = "AION 2 Helper";
+        Title = Brand.AppName + " account";
         Width = 460;
         SizeToContent = SizeToContent.Height;
         ResizeMode = ResizeMode.NoResize;

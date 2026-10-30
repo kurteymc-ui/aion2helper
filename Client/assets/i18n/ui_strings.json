@@ -2869,16 +2869,16 @@
     "zh-TW": "同時上傳我看到的其他玩家的資料（名稱、職業、等級、裝備、軍團、戰鬥中的位置）以及我自己軍團的成員"
   },
   "Wizard.Title": {
-    "en": "Welcome to Aion DPS",
-    "de": "Willkommen bei Aion DPS",
-    "fr": "Bienvenue dans Aion DPS",
-    "es": "Bienvenido a Aion DPS",
-    "ru": "Добро пожаловать в Aion DPS",
-    "zh": "欢迎使用 Aion DPS",
-    "zh-TW": "歡迎使用 Aion DPS",
-    "pt": "Bem-vindo ao Aion DPS",
-    "ja": "Aion DPS へようこそ",
-    "ko": "Aion DPS에 오신 것을 환영합니다"
+    "en": "Welcome to A2HMeter",
+    "de": "Willkommen bei A2HMeter",
+    "fr": "Bienvenue dans A2HMeter",
+    "es": "Bienvenido a A2HMeter",
+    "ru": "Добро пожаловать в A2HMeter",
+    "zh": "欢迎使用 A2HMeter",
+    "zh-TW": "歡迎使用 A2HMeter",
+    "pt": "Bem-vindo ao A2HMeter",
+    "ja": "A2HMeter へようこそ",
+    "ko": "A2HMeter에 오신 것을 환영합니다"
   },
   "Wizard.LanguageHeading": {
     "en": "Choose your language",

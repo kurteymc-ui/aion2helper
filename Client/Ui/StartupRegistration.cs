@@ -12,7 +12,7 @@ namespace AionDPS.Ui;
 internal static class StartupRegistration
 {
     private const string RunKeyPath = @"Software\Microsoft\Windows\CurrentVersion\Run";
-    private const string ValueName = "A2HelperMeter";
+    private const string ValueName = "A2HMeter";
 
     /// <summary>Whether SOME value is registered under this app's name - not an exact path match,
     /// so a Run-key entry written by an older/different install of this same app still reads as

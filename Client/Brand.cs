@@ -8,7 +8,7 @@ namespace AionDPS;
 /// </summary>
 public static class Brand
 {
-    public const string AppName = "AION 2 Helper Meter";
+    public const string AppName = "A2HMeter";
 
     /// <summary>The website: links the meter opens.</summary>
     public const string Site = "https://aion2helper.com";
@@ -18,7 +18,7 @@ public static class Brand
     public const string Api = Site + "/meter";
 
     /// <summary>The folder under %APPDATA% for settings, sessions and logs (its own, so it can sit next to the upstream meter).</summary>
-    public const string DataFolder = "AION 2 Helper Meter";
+    public const string DataFolder = "A2HMeter";
 
     /// <summary>Where updates come from: full releases of this repository only (never test versions).</summary>
     public const string RepositoryUrl = "https://github.com/kurteymc-ui/aion2helper";
