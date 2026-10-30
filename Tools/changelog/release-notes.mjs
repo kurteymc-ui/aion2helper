@@ -12,7 +12,7 @@
 import { readFileSync } from "node:fs";
 
 const MAX_ITEMS = 12;
-const CHANGELOG_URL = "https://aiondps.com/changelog";
+const CHANGELOG_URL = "https://github.com/kurteymc-ui/aion2helper/commits/main";
 
 const arg = (name) => { const i = process.argv.indexOf(`--${name}`); return i > 0 ? process.argv[i + 1] : undefined; };
 const version = arg("version");
