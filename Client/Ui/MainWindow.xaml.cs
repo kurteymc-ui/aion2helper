@@ -585,7 +585,9 @@ public partial class MainWindow : Window
         // Both overlay looks paint their dark backgrounds with this brush (DynamicResource); the
         // theme's own is the same colour at 60 %.
         double opacity = Math.Clamp(double.IsFinite(settings.OverlayOpacity) ? settings.OverlayOpacity : 0.6, 0.2, 1.0);
-        var overlayBrush = new SolidColorBrush(Color.FromArgb((byte)Math.Round(opacity * 255), 0, 0, 0));
+        // the theme's own overlay colour (a deep navy in the default theme), at the opacity chosen
+        Color baseColor = TryFindResource("Color.OverlayBg") is Color themed ? themed : Colors.Black;
+        var overlayBrush = new SolidColorBrush(Color.FromArgb((byte)Math.Round(opacity * 255), baseColor.R, baseColor.G, baseColor.B));
         overlayBrush.Freeze();
         Resources["Brush.OverlayBg"] = overlayBrush;
         if (_hideUiActive)
@@ -627,6 +629,7 @@ public partial class MainWindow : Window
         var source = new Aion2PacketCombatSource(Aion2Protocol.Load(), settings.CaptureAdapterId, null, Aion2CharacterStore.DefaultPath);
         ReplaceSource(source);
         _liveSource = source;
+        StartGameTitleWatch();
         // The upload entries appear once the own character is known (see RefreshUploadAvailability).
         if (source.Entities is Aion2EntityDirectory entities)
         {
@@ -6861,6 +6864,65 @@ public partial class MainWindow : Window
         e.Handled = true;
     }
 
+    private DispatcherTimer? _gameTitleTimer;
+    private string? _gameTitleName;
+    private bool _gameTitleBusy;
+
+    /// <summary>Every 3 s: the character named in the game window's title ("AION2 | Name", see GameWindow) names the local player at once,
+    /// mid-session too; the game's own character record still wins when it comes. Read off the UI thread; nothing when headless.</summary>
+    private void StartGameTitleWatch()
+    {
+        if (Headless || _gameTitleTimer is not null)
+        {
+            return;
+        }
+
+        _gameTitleTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(3) };
+        _gameTitleTimer.Tick += async (_, _) =>
+        {
+            if (_gameTitleBusy || _liveSource?.Entities is not Aion2.Aion2EntityDirectory entities)
+            {
+                return;
+            }
+
+            _gameTitleBusy = true;
+            try
+            {
+                string? name = await Task.Run(Aion2.GameWindow.CharacterName);
+                if (name is not null && name != _gameTitleName)
+                {
+                    _gameTitleName = name;
+                    entities.SetConfiguredLocalName(name);
+                }
+            }
+            catch (Exception)
+            {
+                // the window list could not be read this time
+            }
+            finally
+            {
+                _gameTitleBusy = false;
+            }
+        };
+        _gameTitleTimer.Start();
+    }
+
+    private static readonly SolidColorBrush OverlayLiveBrush = MakeFrozen(Color.FromRgb(0x3D, 0xD6, 0x8C));
+    private DateTime _overlayPingAt = DateTime.MinValue;
+
+    private static SolidColorBrush MakeFrozen(Color c)
+    {
+        var b = new SolidColorBrush(c);
+        b.Freeze();
+        return b;
+    }
+
+    /// <summary>The own character's name for the overlay's footer, once the meter knows it (or has recognised it by class).</summary>
+    private string? CompactOverlayOwnName() =>
+        _source?.Entities is not Aion2.Aion2EntityDirectory d ? null
+        : d.LocalPlayerId >= 0 && d.NameFor(d.LocalPlayerId) is { } n && !n.StartsWith("Player #", StringComparison.Ordinal) ? n
+        : d.LearnedLocalName ?? d.ConfiguredLocalName;
+
     /// <summary>The compact overlay's header: the target shown (or "All targets"), how long the
     /// fight has run, and whether the capture is running.</summary>
     private void UpdateCompactOverlay(IReadOnlyList<DamageEvent> shownHits, (int Count, DateTime First, DateTime Last)? summary = null)
@@ -6879,7 +6941,14 @@ public partial class MainWindow : Window
         OverlayShareHeader.Text = _allMode ? strings["Main.Overlay.ColHeal"] : "%";
         OverlayTotalHeader.Text = _allMode ? strings["Main.Overlay.ColTaken"] : strings["Main.Overlay.ColTotal"];
         bool capturing = (_source as Aion2.Aion2PacketCombatSource)?.ServerFingerprint is not null;
-        OverlayStateDot.Fill = _paused ? Brushes.Orange : capturing ? Brushes.LimeGreen : Brushes.Gray;
+        OverlayStateDot.Fill = _paused ? Brushes.Orange : capturing ? OverlayLiveBrush : Brushes.Gray;
+        OverlayStateText.Text = _paused ? "Paused" : capturing ? (CompactOverlayOwnName() is { } own ? "Live · " + own : "Live") : "Waiting for the game";
+        if (DateTime.UtcNow - _overlayPingAt >= TimeSpan.FromSeconds(1))
+        {
+            _overlayPingAt = DateTime.UtcNow;
+            double? ping = capturing && !Headless ? Aion2.Capture.NetworkStats.Snapshot().PingMs : null;
+            OverlayPingText.Text = ping is double ms ? $"{ms:0} ms" : "";
+        }
         OverlayTimeText.Text = summary is { Count: > 1 } sum ? (sum.Last - sum.First).ToString(@"m\:ss")
             : summary is null && shownHits.Count > 1 ? (shownHits.Max(h => h.Timestamp) - shownHits.Min(h => h.Timestamp)).ToString(@"m\:ss")
             : "";

@@ -3013,7 +3013,7 @@
     "ko": "Npcap 다운로드"
   },
   "Wizard.TeleportStep": {
-    "en": "Start the game, or keep playing. The meter recognises your character by itself: at once when you log in, change channel or enter a new area, and during your first fight with a character it has seen before. You never need to log out."
+    "en": "Start the game, or keep playing. The meter recognises your character by itself, from the game's window and its traffic. You never need to log out."
   },
   "Wizard.CharWaiting": {
     "en": "Waiting for your character … (you can finish anyway)"
@@ -3103,7 +3103,7 @@
     "ko": "Npcap 미설치"
   },
   "Wizard.SwitchHint": {
-    "en": "Not recognised yet? Change channel once, or just press Finish: the meter keeps watching."
+    "en": "Not recognised yet? Make sure the game is running, or just press Finish: the meter keeps watching."
   },
   "Wizard.TipNpcap": {
     "en": "Npcap is a small program that lets the meter see the network traffic of the game. Without it the meter shows nothing.",
@@ -3118,7 +3118,7 @@
     "ko": "Npcap은 미터가 게임의 네트워크 트래픽을 볼 수 있게 해 주는 작은 프로그램입니다. 없으면 미터에 아무것도 표시되지 않습니다."
   },
   "Wizard.TipCharacter": {
-    "en": "The game names your character when you log in, change channel or enter a new area. In between, the meter tells which player is you from data only you receive, and names you from your account's character list or your last session, matched by class."
+    "en": "The meter reads your character's name from the title of the game's window (\"AION2 | Name\"), and the game names it again whenever you log in, change channel or enter a new area. Which player in a fight is you, it tells from data only you receive."
   },
   "Wizard.CharsHeading": {
     "en": "Recognised characters",

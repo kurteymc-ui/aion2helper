@@ -83,9 +83,10 @@ public partial class WizardWindow : Window
             {
                 list.Add(new SeenCharacter(live.Name, live.ClassCode, live.ServerId / 1000 == 2 ? 2 : 1, live.Level, live.ServerId, true));
             }
-            else if (directory.LocalPlayerId >= 0 && directory.NameFor(directory.LocalPlayerId) is { } guess && !guess.StartsWith("Player #", StringComparison.Ordinal))
+            else if ((directory.LocalPlayerId >= 0 && directory.NameFor(directory.LocalPlayerId) is { } inferred && !inferred.StartsWith("Player #", StringComparison.Ordinal) ? inferred
+                         : directory.ConfiguredLocalName) is { } guess)
             {
-                // Not named by the game yet, but recognised: the player casting is one of the account's characters (by class).
+                // Not named by the game yet, but recognised: the game window's title names the character, or the player casting is one of the account's characters (by class).
                 var known = directory.AccountCharacters().FirstOrDefault(c => c.Name == guess);
                 var remembered = known is null ? Aion2RememberedCharacters.Load().FirstOrDefault(r => r.Name == guess) : null;
                 list.Add(new SeenCharacter(guess, known?.ClassCode ?? remembered?.ClassCode ?? 0, known?.Faction ?? remembered?.Faction ?? 0,

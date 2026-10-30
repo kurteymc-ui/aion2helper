@@ -52,7 +52,7 @@ public sealed class PlayerRow : INotifyPropertyChanged
     public string ClassName
     {
         get => _className;
-        set { if (_className == value) { return; } _className = value; OnPropertyChanged(); OnPropertyChanged(nameof(ClassBrush)); }
+        set { if (_className == value) { return; } _className = value; OnPropertyChanged(); OnPropertyChanged(nameof(ClassBrush)); OnPropertyChanged(nameof(ClassEdgeBrush)); OnPropertyChanged(nameof(ClassTextBrush)); }
     }
 
     public int Level
@@ -205,8 +205,18 @@ public sealed class PlayerRow : INotifyPropertyChanged
     /// <summary>The class colour, translucent, for that bar. Same colours as the website's meter.</summary>
     public System.Windows.Media.Brush ClassBrush => ClassBrushes.For(ClassName);
 
+    /// <summary>The edge of the bar and the name's colour in the in-game meter.</summary>
+    public System.Windows.Media.Brush ClassEdgeBrush => ClassBrushes.Edge(ClassName);
+
+    public System.Windows.Media.Brush ClassTextBrush => ClassBrushes.Text(ClassName);
+
     /// <summary>The bar colour setting changed: bind the bar to the new brush.</summary>
-    public void RefreshClassBrush() => OnPropertyChanged(nameof(ClassBrush));
+    public void RefreshClassBrush()
+    {
+        OnPropertyChanged(nameof(ClassBrush));
+        OnPropertyChanged(nameof(ClassEdgeBrush));
+        OnPropertyChanged(nameof(ClassTextBrush));
+    }
 
     public string RankDisplay => Rank > 0 ? Rank.ToString() : "";
 

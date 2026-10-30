@@ -177,7 +177,19 @@ public sealed class Aion2EntityDirectory : IEntityDirectory
         internal set => _explicitLocalId = value;
     }
 
-    /// <summary>The user's own Aion 2 character name from Settings (empty = none).</summary>
+    /// <summary>The own character's name given from outside the stream (the game window's title, see GameWindow), or null.</summary>
+    public string? ConfiguredLocalName
+    {
+        get
+        {
+            lock (_gate)
+            {
+                return _configuredLocalName;
+            }
+        }
+    }
+
+    /// <summary>The user's own Aion 2 character name from Settings or the game window's title (empty = none).</summary>
     public void SetConfiguredLocalName(string? name)
     {
         lock (_gate)

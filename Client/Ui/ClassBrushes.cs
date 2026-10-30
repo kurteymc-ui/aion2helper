@@ -49,6 +49,8 @@ internal static class ClassBrushes
             _classOverrides = parsed;
             Cache.Clear();
             SolidCache.Clear();
+            EdgeCache.Clear();
+            TextCache.Clear();
         }
     }
 
@@ -64,10 +66,38 @@ internal static class ClassBrushes
             _barOverride = color;
             Cache.Clear();
             SolidCache.Clear();
+            EdgeCache.Clear();
+            TextCache.Clear();
         }
     }
 
     private static readonly Dictionary<string, Brush> SolidCache = new();
+    private static readonly Dictionary<string, Brush> EdgeCache = new();
+    private static readonly Dictionary<string, Brush> TextCache = new();
+
+    private static Brush Cached(Dictionary<string, Brush> cache, string? className, Func<Color, Color> make)
+    {
+        string key = className is not null && Colors.ContainsKey(className) ? className : "";
+        lock (cache)
+        {
+            if (!cache.TryGetValue(key, out Brush? brush))
+            {
+                brush = new SolidColorBrush(make(Effective(key)));
+                brush.Freeze();
+                cache[key] = brush;
+            }
+
+            return brush;
+        }
+    }
+
+    /// <summary>The thin edge of a player's bar in the in-game meter: the class colour, nearly solid.</summary>
+    public static Brush Edge(string? className) => Cached(EdgeCache, className, c => Color.FromArgb(0xC8, c.R, c.G, c.B));
+
+    /// <summary>A player's name in the in-game meter: the class colour, lifted towards white so the deep shades read on the dark panel.</summary>
+    public static Brush Text(string? className) => Cached(TextCache, className, c => Color.FromRgb(Lift(c.R), Lift(c.G), Lift(c.B)));
+
+    private static byte Lift(byte v) => (byte)(v + (255 - v) * 0.35);
 
     /// <summary>The class's own colour, whatever bar colour the user set (the theme editor's preview shows both).</summary>
     public static Color ClassColor(string? className) =>
@@ -98,7 +128,7 @@ internal static class ClassBrushes
             if (!Cache.TryGetValue(key, out Brush? brush))
             {
                 var color = Effective(key);
-                brush = new SolidColorBrush(Color.FromArgb(0x6B, color.R, color.G, color.B)); // 42 %: the bar fills the whole row now
+                brush = new SolidColorBrush(Color.FromArgb(0x52, color.R, color.G, color.B)); // 32 %: the bar fills the whole row, with an edge in the full colour
                 brush.Freeze();
                 Cache[key] = brush;
             }
