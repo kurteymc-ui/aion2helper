@@ -2913,6 +2913,45 @@ public sealed class Aion2EntityDirectory : IEntityDirectory
         }
     }
 
+    // Characters this PC has seen in earlier logins' character lists (Aion2RememberedCharacters): name, class code, server.
+    private IReadOnlyList<(string Name, int ClassCode, int ServerId)> _knownCharacters = Array.Empty<(string, int, int)>();
+
+    /// <summary>The characters of the player's account(s) known from earlier logins on this PC, so the local player can be named
+    /// mid-session (see <see cref="GuessedLocalName"/>) without logging in again.</summary>
+    public void SetKnownCharacters(IEnumerable<(string Name, int ClassCode, int ServerId)> known)
+    {
+        lock (_gate)
+        {
+            _knownCharacters = known.Where(k => k.Name.Length > 0).ToList();
+        }
+    }
+
+    // Called under _gate. The local player's name before the game names it (that comes with a login, a channel change or a new
+    // area): the character saved from the last login when its class fits what the player is casting; else the one character of
+    // that class in this login's character list, else in the lists this PC remembers. Null when that isn't one clear name.
+    private string? GuessedLocalName(int id)
+    {
+        string? cls = ClassOf(id);
+        if (_character is { Restored: true } saved && saved.Name.Length > 0
+            && (cls is null || Protocol.Aion2SkillNames.ClassFromCode(saved.ClassCode) is not { } savedClass || savedClass == cls))
+        {
+            return saved.Name;
+        }
+
+        if (cls is null)
+        {
+            return null;
+        }
+
+        List<string> names = _accountCharacters.Values.Where(c => Protocol.Aion2SkillNames.ClassFromCode(c.ClassCode) == cls).Select(c => c.Name).Distinct().ToList();
+        if (names.Count == 0)
+        {
+            names = _knownCharacters.Where(c => Protocol.Aion2SkillNames.ClassFromCode(c.ClassCode) == cls).Select(c => c.Name).Distinct().ToList();
+        }
+
+        return names.Count == 1 && !_ids.ContainsKey(names[0]) ? names[0] : null;
+    }
+
     // The roster name nobody else claimed: the local player's, when exactly one is left over.
     private string? LocalRosterName()
     {
@@ -2954,7 +2993,7 @@ public sealed class Aion2EntityDirectory : IEntityDirectory
                 // The roster's leftover name is safe here: the local player is not named yet, so its
                 // own name is still among the leftovers, and a single leftover is it.
                 registered = _configuredLocalName
-                    ?? (_character is { Restored: true } saved && saved.Name.Length > 0 ? saved.Name : null)
+                    ?? GuessedLocalName(id)
                     ?? LocalRosterName();
             }
         }

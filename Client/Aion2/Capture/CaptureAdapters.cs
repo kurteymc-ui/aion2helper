@@ -16,7 +16,7 @@ public sealed record CaptureAdapter(string Id, string Name, string Description, 
 /// Lists the machine's usable adapters and guesses which one carries the game. The guess is the
 /// adapter Windows itself would route an internet address through; a gaming VPN (WTFast, ExitLag
 /// ...) only wins that when it is the default route, which is why the choice is user-overridable.
-/// Persisted as <see cref="MeterSettings.CaptureAdapterId"/>: empty = automatic, <see cref="AllAdapters"/>
+/// Persisted as <see cref="MeterSettings.CaptureAdapterId"/>: empty = automatic (every adapter, see <see cref="Select"/>), <see cref="AllAdapters"/>
 /// = every adapter, anything else = <see cref="NetworkInterface.Id"/>.
 /// </summary>
 public static class CaptureAdapters
@@ -84,11 +84,10 @@ public static class CaptureAdapters
         string? id = adapterId;
         if (string.IsNullOrEmpty(id))
         {
-            id = Recommended(List())?.Id;
-            if (id is null)
-            {
-                return devices;
-            }
+            // Automatic: every adapter, the loopback and virtual ones included. A ping booster or VPN (ExitLag, WTFast, a local
+            // proxy ...) moves the game's traffic onto one of those, and the filter keeps it to the game's ports, so watching
+            // them all costs next to nothing; the game process's own connections tell which ports (GameConnections).
+            return devices;
         }
 
         if (id == AllAdapters)

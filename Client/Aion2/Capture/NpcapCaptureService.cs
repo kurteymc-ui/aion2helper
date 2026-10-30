@@ -24,6 +24,10 @@ public sealed class NpcapCaptureService : IDisposable
     private DateTime _discoveryStarted;
     private volatile bool _discovering;
     private const int DiscoveryAfterSeconds = 30;
+    /// <summary>While no game traffic was seen: how often the game process's own connections are looked up (see <see cref="GameConnections"/>).</summary>
+    private const int ProcessCheckSeconds = 5;
+    private volatile int[] _processPorts = Array.Empty<int>();
+    private DateTime _lastDiscoveryEnd = DateTime.MinValue;
     private const int DiscoveryForSeconds = 120;
     private const int DiscoveryPauseSeconds = 300;
     private readonly Action<TcpSegment> _onSegment;
@@ -72,9 +76,9 @@ public sealed class NpcapCaptureService : IDisposable
 
     public string Filter => Network is { Length: > 0 }
         ? $"tcp and net {Network}"
-        : _serverPorts.Length == 0 || _discovering
+        : _serverPorts.Length == 0 || (_discovering && _processPorts.Length == 0)
             ? "tcp"
-            : "tcp and (" + string.Join(" or ", _serverPorts.Select(p => $"port {p}")) + ")";
+            : "tcp and (" + string.Join(" or ", (_discovering ? _serverPorts.Concat(_processPorts).Distinct() : _serverPorts).Select(p => $"port {p}")) + ")";
 
     public void Start()
     {
@@ -93,6 +97,7 @@ public sealed class NpcapCaptureService : IDisposable
             NetworkHistory.Start();
             NetworkStats.QueueProbe = () => (_queue.Count, Dropped);
             _worker ??= StartWorker();
+            _discoveryStarted = DateTime.UtcNow; // the first wide search comes DiscoveryAfterSeconds after the start
             foreach (ILiveDevice device in selected)
             {
                 // Loopback and disconnected adapters are harmless to include; a failing one is
@@ -118,7 +123,9 @@ public sealed class NpcapCaptureService : IDisposable
                 return;
             }
 
-            _discoveryTimer = new Timer(DiscoveryTick, null, TimeSpan.FromSeconds(DiscoveryAfterSeconds), TimeSpan.FromSeconds(DiscoveryAfterSeconds));
+            // Every few seconds until the game is found: the game process's own connections name its ports (a ping booster or VPN
+            // moves them); without them, a wider search by content every DiscoveryAfterSeconds.
+            _discoveryTimer = new Timer(DiscoveryTick, null, TimeSpan.FromSeconds(ProcessCheckSeconds), TimeSpan.FromSeconds(ProcessCheckSeconds));
             _onStatus(SourceState.Waiting, $"Capturing on {opened} adapter(s), filter \"{Filter}\" - waiting for game traffic." + (selectionNote is null ? "" : $" ({selectionNote})"));
         }
         catch (Exception ex) when (ex is DllNotFoundException or TypeInitializationException or PcapException)
@@ -227,35 +234,74 @@ public sealed class NpcapCaptureService : IDisposable
         }
     }
 
-    /// <summary>Every 30 s: no game traffic yet and no search running - widen the filter for a while; a search that ran out narrows it again.</summary>
+    /// <summary>Every few seconds while no game traffic was seen: the game process's connections (if the game runs) set the ports to
+    /// look at, matched by content; without the game process in view, every 30 s the filter widens to all TCP for two minutes.
+    /// Once the game is found nothing runs here any more.</summary>
     private void DiscoveryTick(object? state)
     {
-        if (Network is { Length: > 0 } || _serverPorts.Length == 0)
+        if (Network is { Length: > 0 } || _serverPorts.Length == 0 || Interlocked.Read(ref _packets) > 0)
         {
+            if (_discovering)
+            {
+                lock (_devices)
+                {
+                    _discovering = false;
+                    ApplyFilter();
+                }
+            }
+
+            if (Interlocked.Read(ref _packets) > 0)
+            {
+                _discoveryTimer?.Change(Timeout.Infinite, Timeout.Infinite);
+            }
+
             return;
+        }
+
+        IReadOnlyList<int> fromProcess = GameConnections.RemotePorts().Where(p => !_serverPorts.Contains(p)).ToList();
+        bool processChanged = !fromProcess.SequenceEqual(_processPorts);
+        if (processChanged)
+        {
+            _processPorts = fromProcess.ToArray();
         }
 
         lock (_devices)
         {
-            if (_discovering)
+            if (_processPorts.Length > 0)
             {
-                if (Interlocked.Read(ref _packets) > 0 || (DateTime.UtcNow - _discoveryStarted).TotalSeconds >= DiscoveryForSeconds)
+                // The game's own ports are known: watch exactly those (cheap), until one of them turns out to carry the game.
+                if (!_discovering || processChanged)
                 {
-                    _discovering = false;
+                    _flowDetector.Reset();
+                    _discoveryStarted = DateTime.UtcNow;
+                    _discovering = true;
                     ApplyFilter();
-                    _discoveryTimer?.Change(TimeSpan.FromSeconds(DiscoveryPauseSeconds), TimeSpan.FromSeconds(DiscoveryAfterSeconds));
+                    _onStatus(SourceState.Waiting, $"Watching the game's own connections (port {string.Join(", ", _processPorts)}).");
                 }
 
                 return;
             }
 
-            if (Interlocked.Read(ref _packets) > 0)
+            DateTime now = DateTime.UtcNow;
+            if (_discovering)
+            {
+                if ((now - _discoveryStarted).TotalSeconds >= DiscoveryForSeconds)
+                {
+                    _discovering = false;
+                    _lastDiscoveryEnd = now;
+                    ApplyFilter();
+                }
+
+                return;
+            }
+
+            if ((now - _discoveryStarted).TotalSeconds < DiscoveryAfterSeconds || (now - _lastDiscoveryEnd).TotalSeconds < DiscoveryPauseSeconds)
             {
                 return;
             }
 
             _flowDetector.Reset();
-            _discoveryStarted = DateTime.UtcNow;
+            _discoveryStarted = now;
             _discovering = true;
             ApplyFilter();
         }

@@ -42,6 +42,10 @@ jobs:
             $p = Start-Process -FilePath $exe -ArgumentList @($s[0], "`"$out`"", $s[2]) -WorkingDirectory (Resolve-Path out).Path -Wait -PassThru
             "$($s[0]) $($s[2]): exit $($p.ExitCode), $(if (Test-Path $out) { (Get-Item $out).Length } else { 'no picture' })"
           }
+          # The app's own checks (recorded game frames, no game or Npcap needed): the result goes up with the pictures.
+          $self = Start-Process -FilePath $exe -ArgumentList @('selftest') -WorkingDirectory (Resolve-Path out).Path -Wait -PassThru `
+            -RedirectStandardOutput screens/selftest.txt -RedirectStandardError screens/selftest-errors.txt
+          "selftest: exit $($self.ExitCode)"
           "Built from $env:GITHUB_SHA" | Set-Content screens/README.txt
       - name: Put the pictures on the screens branch
         shell: pwsh

@@ -3013,28 +3013,10 @@
     "ko": "Npcap 다운로드"
   },
   "Wizard.TeleportStep": {
-    "en": "Start the game and log in with your character - if you are already in, go back to the character select once and log in again - so the meter learns your character.",
-    "de": "Starte das Spiel und logge dich mit deinem Charakter ein - bist du schon drin, gehe einmal zurück zur Charakterauswahl und logge dich neu ein -, damit der Meter deinen Charakter erkennt.",
-    "fr": "Lancez le jeu et connectez-vous avec votre personnage - si vous y êtes déjà, retournez une fois à la sélection du personnage et reconnectez-vous - pour que le compteur reconnaisse votre personnage.",
-    "es": "Inicia el juego e inicia sesión con tu personaje - si ya estás dentro, vuelve una vez a la selección de personaje y entra de nuevo - para que el medidor reconozca a tu personaje.",
-    "ru": "Запустите игру и войдите персонажем - если вы уже в игре, вернитесь один раз к выбору персонажа и войдите снова, - чтобы метр узнал вашего персонажа.",
-    "zh": "启动游戏并登录你的角色——如果已经在游戏中，请先返回一次角色选择再重新登录——这样计量器才能识别你的角色。",
-    "zh-TW": "啟動遊戲並登入你的角色——如果已經在遊戲中，請先返回一次角色選擇再重新登入——這樣計量器才能辨識你的角色。",
-    "pt": "Inicie o jogo e entre com o seu personagem - se já estiver dentro, volte uma vez à seleção de personagem e entre de novo - para que o medidor reconheça o seu personagem.",
-    "ja": "ゲームを起動してキャラクターでログインしてください。すでにログイン中なら、一度キャラクター選択に戻ってログインし直すと、メーターがキャラクターを認識します。",
-    "ko": "게임을 실행하고 캐릭터로 로그인하세요. 이미 접속 중이라면 캐릭터 선택 화면으로 한 번 돌아가 다시 로그인해야 미터가 캐릭터를 인식합니다."
+    "en": "Start the game, or keep playing. The meter recognises your character by itself: at once when you log in, change channel or enter a new area, and during your first fight with a character it has seen before. You never need to log out."
   },
   "Wizard.CharWaiting": {
-    "en": "Waiting for your character …",
-    "de": "Warte auf deinen Charakter …",
-    "fr": "En attente de votre personnage …",
-    "es": "Esperando a tu personaje …",
-    "ru": "Ожидание вашего персонажа …",
-    "zh": "正在等待你的角色 …",
-    "zh-TW": "正在等待你的角色 …",
-    "pt": "À espera do seu personagem …",
-    "ja": "キャラクターを待っています …",
-    "ko": "캐릭터를 기다리는 중 …"
+    "en": "Waiting for your character … (you can finish anyway)"
   },
   "Wizard.CharFound": {
     "en": "✓ Character recognised",
@@ -3121,16 +3103,7 @@
     "ko": "Npcap 미설치"
   },
   "Wizard.SwitchHint": {
-    "en": "Switch your character, or go to the character selection screen and log in again.",
-    "de": "Wechsle den Charakter oder gehe zum Charakterauswahl-Bildschirm und logge dich neu ein.",
-    "fr": "Changez de personnage, ou allez à l'écran de sélection des personnages et reconnectez-vous.",
-    "es": "Cambia de personaje, o ve a la pantalla de selección de personaje y vuelve a iniciar sesión.",
-    "ru": "Смените персонажа или перейдите на экран выбора персонажа и войдите заново.",
-    "zh": "切换角色，或前往角色选择界面并重新登录。",
-    "zh-TW": "切換角色，或前往角色選擇畫面並重新登入。",
-    "pt": "Mude de personagem, ou vá ao ecrã de seleção de personagem e inicie sessão de novo.",
-    "ja": "キャラクターを切り替えるか、キャラクター選択画面へ移動して再ログインしてください。",
-    "ko": "캐릭터를 바꾸거나 캐릭터 선택 화면으로 이동해 다시 로그인하세요."
+    "en": "Not recognised yet? Change channel once, or just press Finish: the meter keeps watching."
   },
   "Wizard.TipNpcap": {
     "en": "Npcap is a small program that lets the meter see the network traffic of the game. Without it the meter shows nothing.",
@@ -3145,16 +3118,7 @@
     "ko": "Npcap은 미터가 게임의 네트워크 트래픽을 볼 수 있게 해 주는 작은 프로그램입니다. 없으면 미터에 아무것도 표시되지 않습니다."
   },
   "Wizard.TipCharacter": {
-    "en": "The meter recognises your character when the game reports it: at login, when you switch characters and on the character selection screen. Until then it cannot start.",
-    "de": "Der Meter erkennt deinen Charakter, wenn das Spiel ihn meldet: beim Einloggen, beim Charakterwechsel und auf der Charakterauswahl. Solange er nicht erkannt ist, kann der Meter nicht starten.",
-    "fr": "Le compteur reconnaît votre personnage quand le jeu le signale : à la connexion, au changement de personnage et à l'écran de sélection. Tant qu'il n'est pas reconnu, le compteur ne peut pas démarrer.",
-    "es": "El medidor reconoce tu personaje cuando el juego lo comunica: al iniciar sesión, al cambiar de personaje y en la selección de personaje. Hasta entonces no puede empezar.",
-    "ru": "Измеритель узнаёт вашего персонажа, когда игра сообщает о нём: при входе, смене персонажа и на экране выбора. Пока этого нет, он не может запуститься.",
-    "zh": "当游戏上报你的角色时，计量器就会识别它：登录时、切换角色时以及在角色选择界面。在此之前它无法启动。",
-    "zh-TW": "當遊戲回報你的角色時，計量器就會辨識它：登入時、切換角色時以及在角色選擇畫面。在此之前它無法啟動。",
-    "pt": "O medidor reconhece o seu personagem quando o jogo o comunica: ao iniciar sessão, ao mudar de personagem e no ecrã de seleção. Até lá não pode começar.",
-    "ja": "ゲームがキャラクターを通知したとき（ログイン時、キャラクター切り替え時、キャラクター選択画面）にメーターが認識します。それまで開始できません。",
-    "ko": "게임이 캐릭터를 알려 줄 때(로그인, 캐릭터 전환, 캐릭터 선택 화면) 미터가 인식합니다. 그 전에는 시작할 수 없습니다."
+    "en": "The game names your character when you log in, change channel or enter a new area. In between, the meter tells which player is you from data only you receive, and names you from your account's character list or your last session, matched by class."
   },
   "Wizard.CharsHeading": {
     "en": "Recognised characters",
@@ -3193,16 +3157,7 @@
     "ko": "이 캐릭터로도 전환해 데이터를 최신으로 만들 수 있고, 바로 완료하고 시작할 수도 있습니다."
   },
   "Wizard.FinishLocked": {
-    "en": "Finish is possible as soon as your character was recognised.",
-    "de": "„Fertig“ ist möglich, sobald dein Charakter erkannt wurde.",
-    "fr": "Terminer est possible dès que votre personnage est reconnu.",
-    "es": "Terminar es posible en cuanto se reconozca tu personaje.",
-    "ru": "Завершить можно, как только ваш персонаж будет распознан.",
-    "zh": "识别到你的角色后即可完成。",
-    "zh-TW": "辨識到你的角色後即可完成。",
-    "pt": "Concluir é possível assim que o seu personagem for reconhecido.",
-    "ja": "キャラクターが認識されると完了できます。",
-    "ko": "캐릭터가 인식되면 완료할 수 있습니다."
+    "en": "Finish is possible at any time."
   },
   "Wizard.Finish": {
     "en": "Finish",

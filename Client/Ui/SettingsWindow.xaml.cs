@@ -185,14 +185,12 @@ public partial class SettingsWindow : Window
         }
     }
 
-    /// <summary>Automatic (the adapter Windows routes internet traffic through), all adapters, then
-    /// every live adapter with the recommended one starred - a gaming VPN shows up as its own entry.</summary>
+    /// <summary>Automatic (every adapter, the game's own connections pick the ports; works with ExitLag and VPNs), all adapters,
+    /// then every live adapter with the one Windows routes the internet through starred - for when one adapter only is wanted.</summary>
     private void PopulateCaptureAdapters(string? saved)
     {
         var adapters = AionDPS.Aion2.Capture.CaptureAdapters.List();
-        string auto = MainWindow.Headless ? "Automatic (Ethernet, 192.168.1.20)" // the pictures of the render modes show a made-up address, not the PC's own
-            : AionDPS.Aion2.Capture.CaptureAdapters.Recommended(adapters) is { } rec ? $"Automatic ({rec.Name}, {rec.Ipv4})" : "Automatic";
-        CaptureAdapterBox.Items.Add(new ComboBoxItem { Content = auto, Tag = "" });
+        CaptureAdapterBox.Items.Add(new ComboBoxItem { Content = "Automatic (recommended, works with ExitLag and VPNs)", Tag = "" });
         CaptureAdapterBox.Items.Add(new ComboBoxItem { Content = "All adapters", Tag = AionDPS.Aion2.Capture.CaptureAdapters.AllAdapters });
         foreach (var adapter in adapters)
         {

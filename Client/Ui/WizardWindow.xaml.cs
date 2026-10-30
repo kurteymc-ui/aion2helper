@@ -83,6 +83,14 @@ public partial class WizardWindow : Window
             {
                 list.Add(new SeenCharacter(live.Name, live.ClassCode, live.ServerId / 1000 == 2 ? 2 : 1, live.Level, live.ServerId, true));
             }
+            else if (directory.LocalPlayerId >= 0 && directory.NameFor(directory.LocalPlayerId) is { } guess && !guess.StartsWith("Player #", StringComparison.Ordinal))
+            {
+                // Not named by the game yet, but recognised: the player casting is one of the account's characters (by class).
+                var known = directory.AccountCharacters().FirstOrDefault(c => c.Name == guess);
+                var remembered = known is null ? Aion2RememberedCharacters.Load().FirstOrDefault(r => r.Name == guess) : null;
+                list.Add(new SeenCharacter(guess, known?.ClassCode ?? remembered?.ClassCode ?? 0, known?.Faction ?? remembered?.Faction ?? 0,
+                    known?.Level ?? remembered?.Level ?? 0, known?.ServerId ?? remembered?.ServerId ?? 0, true));
+            }
 
             foreach (AccountCharacter other in directory.AccountCharacters())
             {
@@ -216,7 +224,7 @@ public partial class WizardWindow : Window
         return row;
     }
 
-    /// <summary>Next waits for an answer on the policy page, and Finish waits until the character logged in was recognised.</summary>
+    /// <summary>Next waits for an answer on the policy page; Finish is always possible.</summary>
     private void UpdateNextState()
     {
         if (_pages.Length == 0)
@@ -226,10 +234,11 @@ public partial class WizardWindow : Window
 
         List<int> sequence = Sequence();
         bool last = sequence.IndexOf(_page) == sequence.Count - 1;
+        // Finish never waits for the character: the meter recognises it by itself later (a login, a channel change, or the first
+        // fight with a character it knows), so nobody has to log out to get past the setup.
         bool enabled = _page switch
         {
             1 => PolicyAccept.IsChecked == true || PolicyDecline.IsChecked == true,
-            3 => _hasCurrent,
             _ => true,
         };
         NextButton.IsEnabled = enabled;
