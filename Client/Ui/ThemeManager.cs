@@ -48,9 +48,19 @@ public static class ThemeManager
     }
 
     /// <summary>The site's text face (Source Sans 3, bundled as "A2H Sans") and its title face (Cinzel), compiled into the app (Fonts/).</summary>
-    public static readonly FontFamily UiFont = new(new Uri("pack://application:,,,/"), "./Fonts/#A2H Sans, Segoe UI");
+    public static FontFamily UiFont => _uiFont ??= Bundled("./Fonts/#A2H Sans, Segoe UI");
 
-    public static readonly FontFamily TitleFont = new(new Uri("pack://application:,,,/"), "./Fonts/#Cinzel, Georgia");
+    public static FontFamily TitleFont => _titleFont ??= Bundled("./Fonts/#Cinzel, Georgia");
+
+    private static FontFamily? _uiFont;
+    private static FontFamily? _titleFont;
+
+    // "pack://" is only known once WPF's packaging has registered it; touching it first makes that so even before any window exists.
+    private static FontFamily Bundled(string family)
+    {
+        _ = System.IO.Packaging.PackUriHelper.UriSchemePack;
+        return new FontFamily(new Uri("pack://application:,,,/"), family);
+    }
 
     private static bool _fontsSet;
 
