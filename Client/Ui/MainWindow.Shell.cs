@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
@@ -65,6 +66,9 @@ public partial class MainWindow
     {
         _shellCollapsed = MeterSettings.Load().AppNavCollapsed;
         _shellButtons.Clear();
+        // the pages of the old windows took their text colour and face from their window: here they take the app's
+        AppPageHost.SetResourceReference(TextElement.ForegroundProperty, "Brush.Text");
+        AppPageHost.SetResourceReference(TextElement.FontFamilyProperty, "Font.Ui");
         var list = new StackPanel { Margin = new Thickness(0, 8, 0, 8) };
         foreach (var (group, items) in ShellSections())
         {

@@ -394,13 +394,13 @@ public sealed class ChecklistWindow : Window
         // the table: the same columns for every character
         TicketDef?[] defs = RosterTickets.Select(Aion2Tickets.Find).ToArray();
         var grid = new Grid();
-        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star), MinWidth = 150 }); // character
-        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(128) }); // Odyle
-        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(88) });  // full in
-        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(58) });  // daily tasks
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star), MinWidth = 140 }); // character
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(122) }); // Odyle
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(86) });  // full in
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(54) });  // daily tasks
         foreach (TicketDef? _ in defs)
         {
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(80) });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(74) });
         }
 
         var headers = new List<(string Text, string? Tip)>
@@ -534,9 +534,8 @@ public sealed class ChecklistWindow : Window
             row++;
         }
 
-        var table = new StackPanel();
-        table.Children.Add(grid);
-        _body.Children.Add(Card(table));
+        // a narrow window (the app's page next to its sections) scrolls the table sideways instead of cutting its last columns
+        _body.Children.Add(Card(new ScrollViewer { HorizontalScrollBarVisibility = ScrollBarVisibility.Auto, VerticalScrollBarVisibility = ScrollBarVisibility.Disabled, Content = grid }));
         var note = Label(loc["Checklist.RosterNote"], "Brush.TextSubtle", 11);
         note.TextWrapping = TextWrapping.Wrap;
         note.Margin = new Thickness(4, 4, 4, 0);
