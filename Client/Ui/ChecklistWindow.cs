@@ -377,7 +377,7 @@ public sealed class ChecklistWindow : Window
 
         if (Aion2Tickets.Find(DailyDungeonTicket) is { } weekly && Aion2Tickets.NextReset(weekly, now) is { } nextWeekly)
         {
-            resets.Children.Add(Pill(loc["Checklist.WeeklyReset"], InText(nextWeekly - now) + "  ·  " + nextWeekly.ToString("ddd t", CultureInfo.CurrentCulture)));
+            resets.Children.Add(Pill(loc["Checklist.WeeklyReset"], InText(nextWeekly - now) + "  ·  " + nextWeekly.ToString("ddd", CultureInfo.CurrentCulture) + " " + nextWeekly.ToString("t", CultureInfo.CurrentCulture)));
         }
 
         var known = odyle.Values.Where(o => o is not null).Select(o => o!).ToList();
