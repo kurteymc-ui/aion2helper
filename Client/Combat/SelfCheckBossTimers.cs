@@ -23,7 +23,7 @@ public static class SelfCheckBossTimers
         var at32 = BossTimers.Upcoming(casts, seen, 32, t0);
         bool casting = at32.Any(c => c is { Name: "Quake", Casting: true }) && at32.Any(c => c is { Name: "Slam", In: 0 });
         var at50 = BossTimers.Upcoming(casts, new Dictionary<int, DateTime>(), 50, t0);
-        bool passed = at50.Count == 0; // Slam and Quake were due long ago unseen (another phase), Roar is more than a minute away
+        bool passed = at50.Count == 1 && at50[0] is { Name: "Roar", In: 50 }; // Slam and Quake were due long ago unseen (another phase): left out
         var at45 = BossTimers.Upcoming(casts, new Dictionary<int, DateTime>(), 45, t0);
         bool ahead = at45.Count == 1 && at45[0] is { Name: "Roar", In: 55 };
         Console.WriteLine($"  -> next: a seen cast after its interval, an unseen one at its first time={next}; one being cast={casting}; passed unseen left out={passed}; a minute ahead={ahead}");

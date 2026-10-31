@@ -13378,8 +13378,8 @@
     "de": "voll, die Aufladung geht verloren"
   },
   "Checklist.RosterPlanIn": {
-    "en": "full in {0}",
-    "de": "voll in {0}"
+    "en": "full {0}",
+    "de": "voll {0}"
   },
   "Checklist.RosterPlanTip": {
     "en": "So no Odyle Energy is lost: the full characters first, then the one full soonest. A claim is a reward cube: 40 Odyle Energy in most level-45 content (20 to 80 elsewhere); clearing is free and charged energy pays for claims too.",
