@@ -21,7 +21,7 @@ public partial class MainWindow
     {
         LocalizationManager loc = LocalizationManager.Instance;
         DateTime now = DateTime.Now, utcNow = DateTime.UtcNow;
-        var page = new StackPanel { Margin = new Thickness(24, 20, 24, 24), MaxWidth = 1120, HorizontalAlignment = HorizontalAlignment.Left };
+        var page = new StackPanel { Margin = new Thickness(24, 20, 24, 24), MaxWidth = 1120, HorizontalAlignment = HorizontalAlignment.Stretch };
 
         // what needs doing first
         foreach (UIElement notice in HomeNotices())
