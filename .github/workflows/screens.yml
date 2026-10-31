@@ -37,6 +37,7 @@ jobs:
             @('render-overlay', 'menu-dummy.png', 'menu-dummy'),
             @('render-overlay', 'callout.png', 'callout'),
             @('render-overlay', 'look-wide.png', 'look-wide'),
+            @('render-gamemap', 'gamemap.png', 'synthetic'),
             @('render-overlay', 'look-thread.png', 'look-thread'),
             @('render-overlay', 'look-frame.png', 'look-frame'),
             @('render-checklist', 'roster.png', 'roster'),

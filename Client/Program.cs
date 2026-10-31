@@ -252,6 +252,12 @@ internal static class Program
             return;
         }
 
+        if (args.Length > 0 && args[0] == "render-gamemap")
+        {
+            RunRenderGameMapMode(args.Length > 1 ? args[1] : "gamemap.png");
+            return;
+        }
+
         if (args.Length > 0 && args[0] == "render-app")
         {
             RunRenderAppMode(args.Length > 1 ? args[1] : "app.png", args.Length > 2 ? args[2] : "home");
@@ -1087,6 +1093,75 @@ internal static class Program
     /// <summary>The sample fight moved in time (every event, effect and cast), for the history picture's other days.</summary>
     /// <summary>Draws the app window (its sections on the left, a section on the right: home, overlays, characters, history, meter) with made-up fights and
     /// characters into a picture; no window is ever shown.</summary>
+    /// <summary>
+    /// The pets on the game's map, as a picture: a made-up picture of the game's map open (the map tiles at a zoom, with a panel, icons and names
+    /// over them), found by the matcher, with the marks drawn where it says: a few pets' spawn points, one there now, the player and the line to the nearest.
+    /// </summary>
+    private static void RunRenderGameMapMode(string path)
+    {
+        var app = new System.Windows.Application();
+        Ui.ThemeManager.Apply(app, Ui.MeterSettings.Load());
+        var map = Aion2.Protocol.Aion2Maps.All.First(m => m.Key == "altgard");
+        const double scale = 0.42, cx = 4600, cy = 3150;
+        using OpenCvSharp.Mat colour = Combat.SelfCheckGameMap.Shot(map, scale, cx, cy, 1920, 1080, true, out _, out _);
+        using var grey = new OpenCvSharp.Mat();
+        OpenCvSharp.Cv2.CvtColor(colour, grey, OpenCvSharp.ColorConversionCodes.BGR2GRAY);
+        using var matcher = new Ui.GameMapMatcher();
+        Ui.GameMapView? view = matcher.Find(grey, map);
+        Console.WriteLine(view is null ? "render-gamemap: the map was not found" : $"render-gamemap: found at {view.Scale:0.0000} (made at {scale}), {view.Inliers} features agree");
+
+        // the pets with the most spawn points in view, as on the game's map
+        var (x0, y0) = (cx - 1056 / scale, cy - 540 / scale);
+        var (x1, y1) = (cx + 864 / scale, cy + 540 / scale);
+        var inView = Aion2.Protocol.Aion2Maps.PointsOf(map, Aion2.Protocol.Aion2Pets.AllPetIds.ToHashSet())
+            .Select(p => (p.PetId, Native: Aion2.Protocol.Aion2Maps.ToNative(map, p.X, p.Y)))
+            .Where(p => p.Native.X > x0 + 380 / scale && p.Native.X < x1 && p.Native.Y > y0 + 80 / scale && p.Native.Y < y1).ToList();
+        var pets = inView.GroupBy(p => p.PetId).OrderByDescending(g => g.Count()).Take(5).Select(g => g.Key).OrderBy(id => id).ToList();
+        var colors = pets.Select((id, i) => (id, i)).ToDictionary(t => t.id, t => Ui.PetMapPalette.Of(t.i));
+        string Name(int id) => Aion2.Protocol.Aion2Pets.PetName(id, "en") ?? $"#{id}";
+        var marks = inView.Where(p => colors.ContainsKey(p.PetId)).Select(p => new Ui.GameMapMark(p.Native.X, p.Native.Y, colors[p.PetId], Ui.GameMapMarkKind.Spawn, Name(p.PetId))).ToList();
+        (double X, double Y) me = (cx - 60 / scale, cy + 40 / scale);
+        Ui.GameMapMark? target = marks.MinBy(m => (m.X - me.X) * (m.X - me.X) + (m.Y - me.Y) * (m.Y - me.Y));
+        if (target is not null)
+        {
+            target = target with { Kind = Ui.GameMapMarkKind.Live };
+            marks.Add(target);
+        }
+
+        double metres = target is null ? 0 : Math.Sqrt((target.X - me.X) * (target.X - me.X) + (target.Y - me.Y) * (target.Y - me.Y)) / map.Scale / 100;
+        var scene = new Ui.GameMapScene(map.Key, marks, me, target, target is null ? null : $"{target.Name} · {Math.Round(metres)} m",
+            pets.Select(id => (colors[id], Name(id), id % 3 == 0 ? "Missing" : $"Level {1 + id % 2} · {id % 20}/25")).ToList());
+
+        OpenCvSharp.Cv2.ImEncode(".png", colour, out byte[] png);
+        var picture = new System.Windows.Media.Imaging.BitmapImage();
+        picture.BeginInit();
+        picture.StreamSource = new MemoryStream(png);
+        picture.CacheOption = System.Windows.Media.Imaging.BitmapCacheOption.OnLoad;
+        picture.EndInit();
+        var marksView = new Ui.GameMapMarksView();
+        if (view is not null)
+        {
+            marksView.Render(view, scene, 1920, 1080, guide: true, legend: true);
+        }
+
+        var root = new System.Windows.Controls.Grid { Width = 1920, Height = 1080 };
+        root.Children.Add(new System.Windows.Controls.Image { Source = picture, Width = 1920, Height = 1080 });
+        root.Children.Add(marksView);
+        root.Measure(new System.Windows.Size(1920, 1080));
+        root.Arrange(new System.Windows.Rect(0, 0, 1920, 1080));
+        root.UpdateLayout();
+        var bitmap = new System.Windows.Media.Imaging.RenderTargetBitmap(1920, 1080, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
+        bitmap.Render(root);
+        var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
+        encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bitmap));
+        using (var file = File.Create(path))
+        {
+            encoder.Save(file);
+        }
+
+        Console.WriteLine("render-gamemap: wrote " + path);
+    }
+
     private static void RunRenderAppMode(string path, string page)
     {
         Environment.SetEnvironmentVariable("AIONDPS_DATA_DIR", Path.Combine(Path.GetTempPath(), "aiondps-render-app"));
