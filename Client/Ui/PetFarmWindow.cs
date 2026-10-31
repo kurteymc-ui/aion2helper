@@ -14,7 +14,7 @@ namespace AionDPS.Ui;
 /// visible with an outline, takes clicks and can be dragged and scaled with the grip in its corner; place and size are remembered.
 /// The target comes from the screen (<see cref="PetFarmReader"/>), the level from the pet list of the login frame.
 /// </summary>
-public sealed class PetFarmWindow : Window
+public sealed class PetFarmWindow : Window, IOverlayPlace
 {
     private const double MinScale = 0.6, MaxScale = 3.0;
 
@@ -91,6 +91,49 @@ public sealed class PetFarmWindow : Window
             s.PetFarmTop = Top;
             s.Save();
         });
+    }
+
+    // ---- the layout editor (OverlayLayout.cs) ----
+    public bool PlaceIsView => false;
+
+    public Rect PlaceBounds
+    {
+        get
+        {
+            Size size = OverlayMeasure.SizeOf(this);
+            return new Rect(double.IsFinite(Left) ? Left : 0, double.IsFinite(Top) ? Top : 0, size.Width, size.Height);
+        }
+    }
+
+    public double PlaceScale => _scale.ScaleX;
+
+    public void PlaceAt(double left, double top, bool save)
+    {
+        Left = left;
+        Top = top;
+        _centerX = Left + ActualWidth / 2;
+        if (save)
+        {
+            SavePetFarmPlace();
+        }
+    }
+
+    public void PlaceScaleTo(double scale, bool save)
+    {
+        SetScale(scale);
+        if (save)
+        {
+            SavePetFarmPlace();
+        }
+    }
+
+    private void SavePetFarmPlace()
+    {
+        var s = MeterSettings.Load();
+        s.PetFarmScale = _scale.ScaleX;
+        s.PetFarmLeft = _centerX;
+        s.PetFarmTop = Top;
+        s.Save();
     }
 
     /// <summary>Place, size and scale from the settings again (after "reset size and position").</summary>

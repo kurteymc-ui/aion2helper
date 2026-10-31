@@ -1401,6 +1401,18 @@ public partial class MainWindow : Window
         host.Children.Remove(CompactOverlayPanel);
         _meterOverlay = new MeterOverlayWindow(CompactOverlayPanel, Resources);
         _meterOverlay.SetClickThrough(_compactClickThrough);
+        // the layout editor scales the meter like its own corner grip does
+        _meterOverlay.ScaleOf = () => CompactOverlayScale.ScaleX;
+        _meterOverlay.Rescale = (scale, save) =>
+        {
+            SetCompactOverlayScale(scale);
+            if (save)
+            {
+                var s = MeterSettings.Load();
+                s.OverlayScale = CompactOverlayScale.ScaleX;
+                s.Save();
+            }
+        };
         UpdateScopeControls();
         RefreshRows();
         RefreshUpdateBadge();

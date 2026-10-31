@@ -13,7 +13,7 @@ namespace AionDPS.Ui;
 /// look of the compact DPS overlay, independent of the meter window: drag its header to place it,
 /// the corner grip scales it, both are remembered. It takes clicks, so it is no click-through chip.
 /// </summary>
-public sealed class TimetableWindow : Window
+public sealed class TimetableWindow : Window, IOverlayPlace
 {
     private TimeSpan _lookahead = TimeSpan.FromMinutes(60);
     private const double PanelWidth = 260;
@@ -138,10 +138,46 @@ public sealed class TimetableWindow : Window
     /// <summary>Takes the content out of a window that is never shown, to put it into a tool's own window (a live view); <see cref="Refresh"/> keeps filling it.</summary>
     public UIElement DetachView()
     {
+        _isView = true;
         ApplyLocked(true);
         var content = (UIElement)Content;
         Content = null;
         return content;
+    }
+
+    // ---- the layout editor (OverlayLayout.cs) ----
+    private bool _isView;
+
+    public bool PlaceIsView => _isView;
+
+    public Rect PlaceBounds
+    {
+        get
+        {
+            Size size = OverlayMeasure.SizeOf(this);
+            return new Rect(double.IsFinite(Left) ? Left : 0, double.IsFinite(Top) ? Top : 0, size.Width, size.Height);
+        }
+    }
+
+    public double PlaceScale => _scale.ScaleX;
+
+    public void PlaceAt(double left, double top, bool save)
+    {
+        Left = left;
+        Top = top;
+        if (save)
+        {
+            SavePosition();
+        }
+    }
+
+    public void PlaceScaleTo(double scale, bool save)
+    {
+        SetScale(scale);
+        if (save)
+        {
+            SavePosition();
+        }
     }
 
     /// <summary>Applies the lock only when it changed (the main window passes the settings on every refresh).</summary>

@@ -54,6 +54,25 @@ public static class WindowPlacement
         return list;
     }
 
+    /// <summary>The monitors whole (the task bar included): what the overlay layout editor draws.</summary>
+    public static IReadOnlyList<Rect> Screens()
+    {
+        var list = new List<Rect>();
+        double ratio = Ratio();
+        foreach (System.Windows.Forms.Screen screen in System.Windows.Forms.Screen.AllScreens)
+        {
+            System.Drawing.Rectangle a = screen.Bounds;
+            list.Add(new Rect(a.X / ratio, a.Y / ratio, a.Width / ratio, a.Height / ratio));
+        }
+
+        if (list.Count == 0)
+        {
+            list.Add(new Rect(SystemParameters.VirtualScreenLeft, SystemParameters.VirtualScreenTop, SystemParameters.VirtualScreenWidth, SystemParameters.VirtualScreenHeight));
+        }
+
+        return list;
+    }
+
     /// <summary>The work area of the first (main) monitor.</summary>
     public static Rect Primary()
     {

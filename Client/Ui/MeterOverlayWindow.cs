@@ -12,7 +12,7 @@ namespace AionDPS.Ui;
 /// (UpdateMeterOverlay): in instances and while the player fights; not between fights in the open world, never while another program is in front.
 /// It fades in and out instead of popping.
 /// </summary>
-public sealed class MeterOverlayWindow : Window
+public sealed class MeterOverlayWindow : Window, IOverlayPlace
 {
     private static readonly Duration FadeIn = new(TimeSpan.FromMilliseconds(160));
     private static readonly Duration FadeOut = new(TimeSpan.FromMilliseconds(260));
@@ -121,6 +121,37 @@ public sealed class MeterOverlayWindow : Window
         settings.MeterOverlayTop = Top;
         settings.Save();
     }
+
+    // ---- the layout editor (OverlayLayout.cs): the scale is the compact panel's, which the main window keeps ----
+    /// <summary>The panel's scale now, and setting it (and keeping it when the flag says so).</summary>
+    public Func<double>? ScaleOf { get; set; }
+
+    public Action<double, bool>? Rescale { get; set; }
+
+    public bool PlaceIsView => false;
+
+    public Rect PlaceBounds
+    {
+        get
+        {
+            Size size = OverlayMeasure.SizeOf(this);
+            return new Rect(double.IsFinite(Left) ? Left : 0, double.IsFinite(Top) ? Top : 0, size.Width, size.Height);
+        }
+    }
+
+    public double PlaceScale => ScaleOf?.Invoke() ?? 1.0;
+
+    public void PlaceAt(double left, double top, bool save)
+    {
+        Left = left;
+        Top = top;
+        if (save)
+        {
+            SavePlace();
+        }
+    }
+
+    public void PlaceScaleTo(double scale, bool save) => Rescale?.Invoke(scale, save);
 
     /// <summary>Where it was put, if that is still on a monitor; else at the right of the main monitor, below its top.</summary>
     internal void PlaceFromSettings()

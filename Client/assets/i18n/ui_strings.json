@@ -13578,8 +13578,8 @@
     "de": "Öffnen →"
   },
   "Shell.OverlaysLede": {
-    "en": "Everything the meter can show over the game, each with its switch. Each overlay is moved by its header and can be locked in place on its own page.",
-    "de": "Alles, was der Meter über dem Spiel zeigen kann, jeweils mit Schalter. Jedes Overlay wird an seiner Kopfzeile verschoben und kann auf seiner Seite festgesetzt werden."
+    "en": "Everything the meter can show over the game. Place them on the layout, switch them on or off below; each one's settings are on its own page.",
+    "de": "Alles, was das Messgerät über dem Spiel zeigen kann. Ordne sie auf der Anordnung an und schalte sie unten ein oder aus; die Einstellungen jedes Overlays sind auf seiner eigenen Seite."
   },
   "Shell.OvSettings": {
     "en": "Its settings →",
@@ -13680,5 +13680,61 @@
   "Loot.WorthSignIn": {
     "en": "What the loot is worth needs the AION 2 Helper sign-in (App menu → AION 2 Helper account) and the privacy policy accepted.",
     "de": "Der Wert der Beute braucht die Anmeldung bei AION 2 Helper (App-Menü → AION 2 Helper-Konto) und die angenommene Datenschutzerklärung."
+  },
+  "Shell.Layout": {
+    "en": "Layout",
+    "de": "Anordnung"
+  },
+  "Shell.LayoutSnap": {
+    "en": "Snap to the grid",
+    "de": "Am Raster ausrichten"
+  },
+  "Shell.LayoutMovable": {
+    "en": "Move them over the game too",
+    "de": "Auch über dem Spiel verschieben"
+  },
+  "Shell.LayoutMovableTip": {
+    "en": "Unlocks every overlay: it stays on screen with an outline and can be dragged and scaled where it is. Switch it off again to lock them (clicks then go through them to the game).",
+    "de": "Entsperrt alle Overlays: Sie bleiben mit Umriss sichtbar und lassen sich dort ziehen und skalieren. Wieder aus, um sie zu sperren (Klicks gehen dann durch sie ins Spiel)."
+  },
+  "Shell.LayoutSmaller": {
+    "en": "All smaller",
+    "de": "Alle kleiner"
+  },
+  "Shell.LayoutBigger": {
+    "en": "All bigger",
+    "de": "Alle größer"
+  },
+  "Shell.LayoutScaleTip": {
+    "en": "Every overlay that is on, 10 % smaller or bigger",
+    "de": "Jedes eingeschaltete Overlay 10 % kleiner oder größer"
+  },
+  "Shell.LayoutReset": {
+    "en": "All back in place",
+    "de": "Alle zurücksetzen"
+  },
+  "Shell.LayoutResetTip": {
+    "en": "Every overlay back at the place and size it started with",
+    "de": "Jedes Overlay zurück an Platz und Größe vom Anfang"
+  },
+  "Shell.LayoutResetAsk": {
+    "en": "Put every overlay back at the place and size it started with?",
+    "de": "Jedes Overlay an Platz und Größe vom Anfang zurücksetzen?"
+  },
+  "Shell.LayoutHint": {
+    "en": "Your monitors, with every overlay that is switched on. Drag a box to move its overlay, pull its corner to make it bigger or smaller; the overlay moves along and keeps its place. Overlays that are off are switched on in the list below.",
+    "de": "Deine Monitore mit jedem eingeschalteten Overlay. Zieh ein Feld, um sein Overlay zu verschieben, zieh an seiner Ecke, um es größer oder kleiner zu machen; das Overlay bewegt sich mit und behält seinen Platz. Ausgeschaltete Overlays schaltest du in der Liste unten ein."
+  },
+  "Shell.LayoutBoxTip": {
+    "en": "Drag to move · the corner makes it bigger or smaller",
+    "de": "Ziehen zum Verschieben · die Ecke macht es größer oder kleiner"
+  },
+  "Shell.LayoutGripTip": {
+    "en": "Pull to make it bigger or smaller",
+    "de": "Ziehen für größer oder kleiner"
+  },
+  "Shell.LayoutPetList": {
+    "en": "Pet list",
+    "de": "Haustierliste"
   }
 }

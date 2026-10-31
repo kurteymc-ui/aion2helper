@@ -485,12 +485,52 @@ public partial class MainWindow
         };
     }
 
-    /// <summary>Overlays: every overlay over the game in one list, each with its switch, what it shows and a way to its settings; the meter can be put back in place.</summary>
+    /// <summary>
+    /// Overlays: the layout first (OverlayLayout.cs: the monitors with every overlay that is on, dragged to move, the corner to scale), with snapping, moving them
+    /// over the game too (every overlay unlocked), all of them smaller or bigger, and all back at their first places; then every overlay in one list, each with
+    /// its switch, what it shows and a way to its settings.
+    /// </summary>
     private UIElement BuildOverlaysPage()
     {
         LocalizationManager loc = LocalizationManager.Instance;
-        var page = new StackPanel { Margin = new Thickness(24, 18, 24, 24), MaxWidth = 900, HorizontalAlignment = HorizontalAlignment.Left };
+        var page = new StackPanel { Margin = new Thickness(24, 18, 24, 24), MaxWidth = 1100, HorizontalAlignment = HorizontalAlignment.Left };
         page.Children.Add(PageTitle(loc["Shell.Overlays"], loc["Shell.OverlaysLede"]));
+
+        var editor = Headless ? new OverlayLayoutEditor(SampleLayout, new[] { new Rect(0, 0, 1920, 1080) }) : new OverlayLayoutEditor(LayoutEntries);
+        var layout = new StackPanel();
+        layout.Children.Add(editor);
+        var bar = new WrapPanel { Margin = new Thickness(0, 10, 0, 0) };
+        var snap = new CheckBox { IsChecked = true, Content = ShellText(loc["Shell.LayoutSnap"], "Brush.Text", 12.5), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 18, 6) };
+        snap.Click += (_, _) => editor.Snap = snap.IsChecked == true;
+        bar.Children.Add(snap);
+        var movable = new CheckBox { IsChecked = OverlaysMovable(MeterSettings.Load()), Content = ShellText(loc["Shell.LayoutMovable"], "Brush.Text", 12.5), VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(0, 0, 18, 6), ToolTip = loc["Shell.LayoutMovableTip"] };
+        movable.Click += (_, _) => SetOverlaysMovable(movable.IsChecked == true);
+        bar.Children.Add(movable);
+        Button LayoutButton(string text, string tip, Action click)
+        {
+            var b = new Button { Content = text, ToolTip = tip, Padding = new Thickness(12, 4, 12, 4), Margin = new Thickness(0, 0, 8, 6) };
+            b.Click += (_, _) => click();
+            return b;
+        }
+
+        bar.Children.Add(LayoutButton(loc["Shell.LayoutSmaller"], loc["Shell.LayoutScaleTip"], () => { ScaleAllOverlays(0.9); editor.Rebuild(); }));
+        bar.Children.Add(LayoutButton(loc["Shell.LayoutBigger"], loc["Shell.LayoutScaleTip"], () => { ScaleAllOverlays(1.1); editor.Rebuild(); }));
+        bar.Children.Add(LayoutButton(loc["Shell.LayoutReset"], loc["Shell.LayoutResetTip"], () =>
+        {
+            if (ThemedMessageBox.Show(this, loc["Shell.LayoutResetAsk"], loc["Shell.Overlays"], MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
+            {
+                ResetAllOverlayPlaces();
+                editor.Rebuild();
+            }
+        }));
+        layout.Children.Add(bar);
+        TextBlock hint = Wrapped(loc["Shell.LayoutHint"], "Brush.TextMuted", 12);
+        hint.Margin = new Thickness(0, 2, 0, 0);
+        layout.Children.Add(hint);
+        page.Children.Add(HomeCard(loc["Shell.Layout"], layout, null, 0));
+        page.Children.Add(new Border { Height = 14 });
+
         var list = new StackPanel();
         foreach (OverlayDef def in OverlayDefs())
         {
@@ -557,6 +597,143 @@ public partial class MainWindow
         }
 
         return grid;
+    }
+
+    // ---- the layout editor's overlays ----
+
+    /// <summary>Every overlay window that is switched on, with its name (the copies that lend their content to a tool page left out).</summary>
+    private IReadOnlyList<OverlayEntry> LayoutEntries()
+    {
+        var s = MeterSettings.Load();
+        var list = new List<OverlayEntry>();
+        foreach (Window window in Application.Current.Windows)
+        {
+            if (window is IOverlayPlace place && !place.PlaceIsView && LayoutName(window, s) is { } name)
+            {
+                list.Add(new OverlayEntry(name, place));
+            }
+        }
+
+        return list.OrderBy(e => e.Name, StringComparer.CurrentCulture).ToList();
+    }
+
+    /// <summary>An overlay window's name on the layout, or null when it isn't switched on (or isn't one of the overlays).</summary>
+    private string? LayoutName(Window window, MeterSettings s)
+    {
+        LocalizationManager loc = LocalizationManager.Instance;
+        if (ReferenceEquals(window, _meterOverlay))
+        {
+            return s.MeterOverlayOn ? loc["Shell.OvMeter"] : null;
+        }
+
+        return window.Title switch
+        {
+            OverlayPlaces.BossCast => s.ShowCombatOverlay && s.CombatShowBossCast ? loc["Settings.Combat.CardBossCast"] : null,
+            OverlayPlaces.BossHp => s.ShowCombatOverlay && s.ShowBossHp ? loc["Settings.Combat.CardBossHp"] : null,
+            OverlayPlaces.TargetOfTarget => s.ShowCombatOverlay && s.CombatShowTargetOfTarget ? loc["Combat.Element.TargetOfTarget"] : null,
+            OverlayPlaces.Assist => s.ShowAssistOverlay ? loc["Main.MenuTools.Assist"] : null,
+            OverlayPlaces.Timetable => s.ShowTimetable ? loc["Settings.Nav.Timetable"] : null,
+            OverlayPlaces.WorldBoss => s.ShowBossOverlay ? loc["Settings.Nav.Boss"] : null,
+            OverlayPlaces.PetMap => s.ShowPetMap ? loc["Settings.Nav.PetMap"] : null,
+            OverlayPlaces.PetList => s.ShowPetMap ? loc["Shell.LayoutPetList"] : null,
+            OverlayPlaces.PetInfo => s.ShowPetFarm ? loc["Shell.OvPetFarm"] : null,
+            OverlayPlaces.Loot => s.ShowLootOverlay ? loc["Main.MenuTools.Loot"] : null,
+            OverlayPlaces.Craft => s.ShowCraftOverlay ? loc["Main.MenuTools.Craft"] : null,
+            OverlayPlaces.Network => s.ShowNetworkOverlay ? loc["Settings.Nav.Network"] : null,
+            OverlayPlaces.Hotkeys => s.ShowHotkeyOverlay ? loc["Shell.OvHotkeys"] : null,
+            OverlayPlaces.Dummy => s.ShowDummyOverlay ? loc["Shell.Dummy"] : null,
+            _ => null,
+        };
+    }
+
+    /// <summary>Every overlay's lock (locked: click-through, unlocked: it can be dragged and scaled over the game). The meter has its own lock in its header.</summary>
+    private static readonly (Func<MeterSettings, bool> Get, Action<MeterSettings, bool> Set)[] OverlayLocks =
+    {
+        (s => s.CombatOverlayLocked, (s, v) => s.CombatOverlayLocked = v), (s => s.CombatCastOverlayLocked ?? s.CombatOverlayLocked, (s, v) => s.CombatCastOverlayLocked = v),
+        (s => s.CombatHpOverlayLocked ?? s.CombatOverlayLocked, (s, v) => s.CombatHpOverlayLocked = v), (s => s.AssistOverlayLocked, (s, v) => s.AssistOverlayLocked = v),
+        (s => s.TimetableLocked, (s, v) => s.TimetableLocked = v), (s => s.BossOverlayLocked, (s, v) => s.BossOverlayLocked = v),
+        (s => s.PetFarmLocked, (s, v) => s.PetFarmLocked = v), (s => s.PetInfoLocked, (s, v) => s.PetInfoLocked = v), (s => s.PetListLocked ?? s.PetFarmLocked, (s, v) => s.PetListLocked = v),
+        (s => s.LootOverlayLocked, (s, v) => s.LootOverlayLocked = v), (s => s.CraftOverlayLocked, (s, v) => s.CraftOverlayLocked = v),
+        (s => s.NetworkOverlayLocked, (s, v) => s.NetworkOverlayLocked = v), (s => s.DummyOverlayLocked, (s, v) => s.DummyOverlayLocked = v),
+        (s => s.HotkeyOverlayLocked ?? s.PetFarmLocked, (s, v) => s.HotkeyOverlayLocked = v),
+    };
+
+    private static bool OverlaysMovable(MeterSettings s) => OverlayLocks.All(l => !l.Get(s));
+
+    /// <summary>Every overlay unlocked (shown over the game and the desktop, to be dragged and scaled where it is) or locked again (click-through).</summary>
+    private void SetOverlaysMovable(bool movable)
+    {
+        var s = MeterSettings.Load();
+        foreach (var (_, set) in OverlayLocks)
+        {
+            set(s, !movable);
+        }
+
+        s.Save();
+        ApplySettingsEverywhere(s);
+    }
+
+    /// <summary>Every overlay that is on a little smaller or bigger (each within its own limits).</summary>
+    private void ScaleAllOverlays(double factor)
+    {
+        foreach (OverlayEntry e in LayoutEntries())
+        {
+            e.Place.PlaceScaleTo(e.Place.PlaceScale * factor, true);
+        }
+    }
+
+    /// <summary>Every overlay back at the place, size and scale it started with.</summary>
+    private void ResetAllOverlayPlaces()
+    {
+        foreach (string title in new[] { OverlayPlaces.Assist, OverlayPlaces.Network, OverlayPlaces.Dummy, OverlayPlaces.WorldBoss, OverlayPlaces.Hotkeys, OverlayPlaces.Timetable,
+                     OverlayPlaces.PetMap, OverlayPlaces.PetList, OverlayPlaces.PetInfo, OverlayPlaces.Loot, OverlayPlaces.Craft, OverlayPlaces.BossCast, OverlayPlaces.BossHp, OverlayPlaces.TargetOfTarget })
+        {
+            OverlayPlaces.Reset(title);
+        }
+
+        var s = MeterSettings.Load();
+        s.OverlayScale = 1.0;
+        s.Save();
+        SetCompactOverlayScale(1.0);
+        ResetMeterOverlayPlace();
+    }
+
+    /// <summary>The layout of the pictures the build makes (no overlay windows there): a few overlays on one 1920 × 1080 monitor.</summary>
+    private IReadOnlyList<OverlayEntry> SampleLayout()
+    {
+        LocalizationManager loc = LocalizationManager.Instance;
+        _sampleLayout ??= new List<OverlayEntry>
+        {
+            new(loc["Shell.OvMeter"], new SamplePlace(new Rect(1480, 260, 380, 300))),
+            new(loc["Settings.Nav.Timetable"], new SamplePlace(new Rect(1560, 40, 300, 170))),
+            new(loc["Settings.Combat.CardBossCast"], new SamplePlace(new Rect(720, 170, 486, 152))),
+            new(loc["Settings.Combat.CardBossHp"], new SamplePlace(new Rect(820, 90, 286, 50))),
+            new(loc["Main.MenuTools.Assist"], new SamplePlace(new Rect(60, 640, 320, 140))),
+            new(loc["Shell.OvPetFarm"], new SamplePlace(new Rect(860, 860, 200, 60))),
+        };
+        return _sampleLayout;
+    }
+
+    private List<OverlayEntry>? _sampleLayout;
+
+    private sealed class SamplePlace(Rect bounds) : IOverlayPlace
+    {
+        private Rect _bounds = bounds;
+        private double _scale = 1;
+
+        public bool PlaceIsView => false;
+
+        public Rect PlaceBounds => _bounds;
+
+        public double PlaceScale => _scale;
+
+        public void PlaceAt(double left, double top, bool save) => _bounds = new Rect(left, top, _bounds.Width, _bounds.Height);
+
+        public void PlaceScaleTo(double scale, bool save)
+        {
+            _bounds = new Rect(_bounds.Left, _bounds.Top, _bounds.Width / _scale * scale, _bounds.Height / _scale * scale);
+            _scale = scale;
+        }
     }
 
     /// <summary>The meter overlay back at its first place (right of the middle of the main screen).</summary>

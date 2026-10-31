@@ -15,7 +15,7 @@ namespace AionDPS.Ui;
 /// A small transparent overlay that can be placed and scaled on its own: locked it is click-through, unlocked it takes clicks, can be dragged by
 /// its body and scaled with the handles at its corners and edges. Place and size are kept per overlay (the pet map and the pet list are two of them).
 /// </summary>
-public abstract class MovableOverlay : Window
+public abstract class MovableOverlay : Window, IOverlayPlace
 {
     private const double MinScale = 0.5, MaxScale = 3.0;
     private readonly ScaleTransform _scale = new(1, 1);
@@ -108,6 +108,41 @@ public abstract class MovableOverlay : Window
 
     public bool IsLocked => _locked;
 
+    // ---- the layout editor (OverlayLayout.cs) ----
+    private bool _isView;
+
+    public bool PlaceIsView => _isView;
+
+    public Rect PlaceBounds
+    {
+        get
+        {
+            Size size = OverlayMeasure.SizeOf(this);
+            return new Rect(double.IsFinite(Left) ? Left : 0, double.IsFinite(Top) ? Top : 0, size.Width, size.Height);
+        }
+    }
+
+    public double PlaceScale => _scale.ScaleX;
+
+    public void PlaceAt(double left, double top, bool save)
+    {
+        Left = left;
+        Top = top;
+        if (save)
+        {
+            SavePlace();
+        }
+    }
+
+    public void PlaceScaleTo(double scale, bool save)
+    {
+        SetScale(scale);
+        if (save)
+        {
+            SavePlace();
+        }
+    }
+
     /// <summary>The height the frame may take in its own units (the scaling excluded): the height it was pulled to; without one, the screen's.</summary>
     protected double HeightLimit
     {
@@ -126,6 +161,7 @@ public abstract class MovableOverlay : Window
     /// <summary>Takes the content out of a window that is never shown, to put it into a tool's own window (a live view): the window keeps rendering into it.</summary>
     public UIElement? DetachBody()
     {
+        _isView = true;
         UIElement? body = _shiftHost.Child;
         _shiftHost.Child = null;
         return body;
