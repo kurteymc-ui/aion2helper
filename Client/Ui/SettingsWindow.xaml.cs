@@ -52,6 +52,7 @@ public partial class SettingsWindow : Window
         AutoUploadBossBox.IsChecked = settings.AutoUploadBoss;
         DebugRecordingBox.IsChecked = settings.DebugRecording;
         UploadOtherProfilesBox.IsChecked = settings.UploadOtherPlayersProfiles;
+        UploadReplayBox.IsChecked = settings.UploadReplay;
         ShowPrivacyStatus();
         // switching an upload on needs the privacy policy to be accepted: it is asked again when it was declined (set after the values above, so loading does not ask)
         foreach (CheckBox uploadSwitch in new[] { AutoUploadProfileBox, AutoUploadBossBox, UploadOtherProfilesBox })
@@ -763,6 +764,7 @@ public partial class SettingsWindow : Window
         _settings.CheckForUpdates = CheckForUpdatesBox.IsChecked ?? true;
         _settings.AutoUploadProfile = AutoUploadProfileBox.IsChecked ?? false;
         _settings.UploadOtherPlayersProfiles = UploadOtherProfilesBox.IsChecked ?? false;
+        _settings.UploadReplay = UploadReplayBox.IsChecked ?? true;
         _settings.ShareLoginWithLegion = ShareLoginBox.IsChecked ?? false;
         _settings.LoginShareEligible = onDisk.LoginShareEligible;
         _settings.HotkeyHideUi = (string?)HotkeyHideUiBox.Tag ?? "";

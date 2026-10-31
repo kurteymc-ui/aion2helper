@@ -297,6 +297,10 @@ public sealed class MeterSettings
     /// knows it (Upload/BossTimers.cs). On until switched off (the overlay's menu).</summary>
     public bool OverlayBossTimers { get; set; } = true;
 
+    /// <summary>With each boss upload, the positions for the replay on the fight's page (the own character's, the boss's and the other monsters'; the other
+    /// players' only with <see cref="UploadOtherPlayersProfiles"/>). On until switched off (Settings, Upload).</summary>
+    public bool UploadReplay { get; set; } = true;
+
     /// <summary>The app's column of sections shows only its pictures (MainWindow.Shell.cs).</summary>
     public bool AppNavCollapsed { get; set; }
 

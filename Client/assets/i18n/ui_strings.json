@@ -1176,6 +1176,10 @@
     "ja": "ボスを倒した後、ボス戦を自動的にアップロードする",
     "ko": "보스 처치 후 보스 전투를 자동으로 업로드"
   },
+  "Settings.UploadReplay": {
+    "en": "Send the positions with each boss upload (the replay on the site)",
+    "de": "Mit jedem Boss-Upload die Positionen senden (die Wiederholung auf der Website)"
+  },
   "Settings.OverlayStyle": {
     "en": "DPS overlay view",
     "de": "DPS-Overlay-Ansicht",

@@ -3950,6 +3950,7 @@ public partial class MainWindow : Window
             UploadResult result = await UploadClient.SendAsync(payload);
             if (result.Success)
             {
+                await SendReplayAfterAsync(payload, result, fingerprint);
                 uploadedNames.Add(payload.BossNpcName);
                 _bossUploadedUntil[targetId] = _aggregator.Events
                     .Where(ev => !ev.IsHeal && ev.TargetObjectId == targetId)
@@ -4384,6 +4385,7 @@ public partial class MainWindow : Window
             AutoUploadLog.Write($"boss {targetId} '{payload.BossNpcName}': {(result.Success ? "uploaded" : "failed: " + result.Error)}");
             if (result.Success)
             {
+                await SendReplayAfterAsync(payload, result, fingerprint);
                 _sentBossPayloads.Add(payloadHash);
                 uploaded++;
             }
@@ -4859,6 +4861,42 @@ public partial class MainWindow : Window
         ShowUploadStatus(replay.Success ? string.Format(LocalizationManager.Instance["Main.UploadReplay.Done"], request.Tracks.Count) : $"Upload failed: {replay.Error}");
     }
 
+    /// <summary>
+    /// After a boss upload (Settings' <see cref="MeterSettings.UploadReplay"/>): the positions of that fight for the replay on its page, the same paths as "Upload for the
+    /// replay" sends (other players' only with "data of other players"). Taken over the fight's own time from the boss shown now (the upload loops show each in turn).
+    /// A replay that did not go only misses on the site: the fight is there either way.
+    /// </summary>
+    private async Task SendReplayAfterAsync(EncounterUploadRequest fight, UploadResult sent, string fingerprint)
+    {
+        var settings = MeterSettings.Load();
+        if (sent.EncounterId is null || !settings.UploadReplay)
+        {
+            return;
+        }
+
+        try
+        {
+            DateTime from = fight.StartedAt.ToLocalTime(), to = fight.EndedAt.ToLocalTime();
+            var events = _aggregator.Events.Where(ev => ev.Timestamp >= from && ev.Timestamp <= to).ToList();
+            FightExtras? extras = ReplayDirectory?.Combat.Slice(from, to, ResolveDisplayName, ReplayKeeps, ReplayHp);
+            ReplayData data = BuildReplayData(extras, from, to, events);
+            if (!data.HasData)
+            {
+                return;
+            }
+
+            var tracks = ReplayUploadBuilder.Tracks(data, settings.UploadOtherPlayersProfiles);
+            if (tracks.Count > 0)
+            {
+                await UploadClient.SendReplayAsync(new ReplayUploadRequest(AppVersion.Text, fingerprint, sent.EncounterId, fight.BossNpcId, fight.StartedAt.ToUniversalTime(), fight.EndedAt.ToUniversalTime(), tracks));
+            }
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or ArgumentException)
+        {
+            AutoUploadLog.Write("replay: " + ex.Message);
+        }
+    }
+
     private async void OnUploadLastRunClicked(object sender, RoutedEventArgs e)
     {
         if (!PrivacyConsent.EnsureForUploadSwitch(this))
@@ -4918,6 +4956,7 @@ public partial class MainWindow : Window
             UploadResult result = await UploadClient.SendAsync(payload);
             if (result.Success)
             {
+                await SendReplayAfterAsync(payload, result, fingerprint);
                 uploaded++;
             }
             else
