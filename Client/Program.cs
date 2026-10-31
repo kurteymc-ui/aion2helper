@@ -987,12 +987,26 @@ internal static class Program
         Ui.MainWindow.Headless = true;
         app.Resources.MergedDictionaries.Add(
             (System.Windows.ResourceDictionary)System.Windows.Application.LoadComponent(new Uri("/Ui/Styles/Shared.xaml", UriKind.Relative)));
+        try
+        {
+            RenderReport(path, tab);
+        }
+        catch (Exception ex)
+        {
+            File.WriteAllText(Path.ChangeExtension(path, ".error.txt"), ex.ToString());
+            Console.WriteLine("render-report: " + ex.Message);
+            Environment.Exit(1);
+        }
+
+        Environment.Exit(0);
+    }
+
+    private static void RenderReport(string path, string tab)
+    {
         var window = new Ui.FightReportWindow(Combat.FightReport.Build(Ui.FightReportSample.Input()));
         window.ShowTab(tab.Replace('-', ' '));
-        var scroller = (System.Windows.Controls.ScrollViewer)window.Content;
-        var page = (System.Windows.FrameworkElement)scroller.Content;
-        scroller.Content = null;
-        window.Content = null;
+        var page = window.PageContent;
+        ((System.Windows.Controls.ScrollViewer)page.Parent).Content = null;
         const double width = 1240;
         var content = new System.Windows.Controls.Border { Child = page };
         content.SetResourceReference(System.Windows.Controls.Border.BackgroundProperty, "Brush.Window");
@@ -1014,7 +1028,6 @@ internal static class Program
         }
 
         Console.WriteLine("render-report: wrote " + path);
-        Environment.Exit(0);
     }
 
     private static void RunRenderDetailsMode(string path, string tab)

@@ -62,8 +62,8 @@ public sealed class FightReportWindow : Window
         ShowTab(Tabs[0]);
     }
 
-    /// <summary>The page without the window (the picture mode draws it).</summary>
-    public FrameworkElement Page => (FrameworkElement)Content;
+    /// <summary>The page itself, inside the window's scroll viewer and chrome (the picture mode takes it out and draws it).</summary>
+    internal StackPanel PageContent => _page;
 
     public void ShowTab(string tab)
     {

@@ -3373,6 +3373,31 @@ public partial class MainWindow : Window
             return null;
         }
 
+        // the fight report of the same fight for the website's tabs (not for a crowded world boss: no effects were cut for it)
+        ReportUpload? report = null;
+        if (buffExtras is not null && aion2Directory is not null)
+        {
+            try
+            {
+                var names = participants.Select(p => p.Name).ToHashSet();
+                var reportPlayers = uploadRows.Where(r => names.Contains(r.Name)).GroupBy(r => r.Name).Select(g => g.First())
+                    .Select(r => new ReportPlayer(r.ObjectId, r.Name, r.ClassName, SeenInfoOf(r)?.CombatPower, participants.Any(p => p.IsSelf && p.Name == r.Name))).ToList();
+                var reportEvents = _aggregator.Events.Where(e => e.Timestamp >= windowStart && e.Timestamp <= windowEnd && (e.IsHeal || e.TargetObjectId != targetId))
+                    .Concat(targetHits.Where(e => !e.IsHeal)).OrderBy(e => e.Timestamp).ToList();
+                FightExtras reportExtras = aion2Directory.Combat.Slice(windowStart, windowEnd, ResolveDisplayName, ReplayKeeps, ReplayHp);
+                bool bossKilled = _kills.Any(k => k.VictimObjectId == targetId && k.Timestamp >= windowStart);
+                var reportInput = new ReportInput(bossName, windowStart, windowEnd, reportPlayers, reportEvents,
+                    _aggregator.Shields.Where(e => e.Timestamp >= windowStart && e.Timestamp <= windowEnd).ToList(),
+                    _avoids.Where(a => a.Timestamp >= windowStart && a.Timestamp <= windowEnd).ToList(),
+                    reportExtras, targetId, BossNpcIdOf(targetId), bossKilled, ResolveDisplayName, new HashSet<int> { targetId });
+                report = ReportUpload.From(FightReport.Build(reportInput));
+            }
+            catch (Exception ex) when (ex is InvalidOperationException or ArgumentException or KeyNotFoundException)
+            {
+                AutoUploadLog.Write("fight report for the upload failed: " + ex.Message);
+            }
+        }
+
         return new EncounterUploadRequest(
             AppVersion.Text, bossName, startedAt, endedAt, participants, serverFingerprint, serverName,
             Game: "aion2",
@@ -3383,7 +3408,8 @@ public partial class MainWindow : Window
             GameServer: Aion2GameServerAddress(),
             BossLevel: (_source?.Entities as Aion2EntityDirectory)?.NpcLevelOf(targetId),
             BossHp: bossHp,
-            BossDebuffs: bossDebuffs);
+            BossDebuffs: bossDebuffs,
+            Report: report);
     }
 
     /// <summary>Hides the Class dropdown's entries that are no Aion 2 class (the static XAML list is

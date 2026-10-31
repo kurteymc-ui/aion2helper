@@ -221,7 +221,9 @@ public sealed record EncounterUploadRequest(
     // The boss's health over the fight: (tenths of a second from the start, thousandths of its health) pairs, flattened. Null when not read.
     IReadOnlyList<int>? BossHp = null,
     // The effects the players put on the boss during the fight (uptime, who gave it, when), like a participant's effects. Null when none were seen.
-    IReadOnlyList<BuffUsageUpload>? BossDebuffs = null);
+    IReadOnlyList<BuffUsageUpload>? BossDebuffs = null,
+    // The fight report (see ReportUpload): the tabs of the client's report window for the website. Null for a crowded world boss.
+    ReportUpload? Report = null);
 
 /// <summary>Aion 2 players without a boss fight, as sent to POST /api/uploads/profiles: the
 /// character profiles the client read off the network, with no encounter and no damage attached.
