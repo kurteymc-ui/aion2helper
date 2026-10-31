@@ -488,12 +488,31 @@ public sealed class PetMapController : IDisposable
         var routeStops = settings.PetRouteOn && _plan is { } routePlan
             ? routePlan.Stops.Take(6).Select(st => (st.X * 100, st.Z * 100, st.Radius, st.Step)).ToList()
             : new List<(double, double, double, int)>();
+        IReadOnlySet<int>? arrowPets = settings.PetRouteOn && _plan?.Stops.FirstOrDefault() is { } arrowStop ? arrowStop.Pets.ToHashSet() : null;
+        // at the stop (within its reach): the line leads on to the nearest of its pets, a monster that is there first, else its nearest spawn point
+        (double X, double Y)? nextPet = null;
+        if (known && arrowPets is not null && _plan!.Stops[0] is { } atStop
+            && Math.Sqrt((atStop.X * 100 - tx) * (atStop.X * 100 - tx) + (atStop.Z * 100 - ty) * (atStop.Z * 100 - ty)) <= atStop.Radius * 100)
+        {
+            double Sq(float x, float y) => (x - tx) * (double)(x - tx) + (y - ty) * (double)(y - ty);
+            var liveHere = directory!.LiveMobs().SelectMany(m => Aion2Pets.PetsOfNpc(m.NpcId).Where(arrowPets.Contains).Select(_ => (m.X, m.Y))).ToList();
+            var spots = _pointsShown.Where(pt => arrowPets.Contains(pt.PetId)).Select(pt => (pt.X, pt.Y)).ToList();
+            var pool = liveHere.Count > 0 ? liveHere : spots;
+            if (pool.Count > 0)
+            {
+                var (bx, by) = pool.MinBy(pt => Sq(pt.Item1, pt.Item2));
+                nextPet = (bx, by);
+            }
+        }
+
         _map.Round = settings.PetMapRound;
-        _map.SetRoute(routeStops);
+        _map.ArrowPets = arrowPets;
+        _map.SetRoute(routeStops, nextPet);
         foreach (var view in _mapViews)
         {
             view.Round = settings.PetMapRound;
-            view.SetRoute(routeStops);
+            view.ArrowPets = arrowPets;
+            view.SetRoute(routeStops, nextPet);
         }
 
         // Glide to the reported position

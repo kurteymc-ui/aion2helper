@@ -377,14 +377,27 @@ public sealed class PetMapWindow : MovableOverlay
     /// <summary>Round instead of square (to lay over the game's minimap): the view is cut to a circle and the edge arrows sit on it.</summary>
     public bool Round { get; set; }
 
+    /// <summary>The pets that may get an arrow on the edge (null: any); on the route, those of the stop being farmed.</summary>
+    public IReadOnlySet<int>? ArrowPets { get; set; }
+
+    /// <summary>At most this many pet arrows, the nearest pets first.</summary>
+    public const int ArrowLimit = 8;
+
     private IReadOnlyList<(double X, double Y, double Radius, int Step)> _route = Array.Empty<(double, double, double, int)>();
     private readonly List<UIElement> _routeParts = new();
     private static readonly Brush RouteGold = PetMapPalette.BrushOf(Color.FromRgb(0xE8, 0xC3, 0x5A));
-    private static readonly Brush RouteGoldSoft = PetMapPalette.BrushOf(Color.FromArgb(0x26, 0xE8, 0xC3, 0x5A));
+    private static readonly Brush RouteGoldSoft = PetMapPalette.BrushOf(Color.FromArgb(0x14, 0xE8, 0xC3, 0x5A));
     private static readonly Brush RouteDark = PetMapPalette.BrushOf(Color.FromArgb(0xE6, 0x10, 0x14, 0x1A));
 
     /// <summary>The pet route to draw (world units): the stop being farmed first, then the next ones. Empty: no route.</summary>
-    public void SetRoute(IReadOnlyList<(double X, double Y, double Radius, int Step)> stops) => _route = stops;
+    public void SetRoute(IReadOnlyList<(double X, double Y, double Radius, int Step)> stops, (double X, double Y)? next = null)
+    {
+        _route = stops;
+        _next = next;
+    }
+
+    /// <summary>At the stop: the nearest of its pets' monsters (or spawn points), which the line leads to instead of the stop.</summary>
+    private (double X, double Y)? _next;
 
     /// <summary>Where a ray from the middle towards (dx, dy) leaves the view, a little inside it: on the square's edge, or on the circle when round.</summary>
     private (double X, double Y) EdgeOf(double cx, double cy, double dx, double dy)
@@ -416,6 +429,23 @@ public sealed class PetMapWindow : MovableOverlay
             return;
         }
 
+        // at the stop: a solid line to the nearest of its pets
+        if (_next is { } next)
+        {
+            double nx = cx + (next.X - worldX) * ppu, ny = cy + (next.Y - worldY) * ppu;
+            var line = new Line { X1 = cx, Y1 = cy, X2 = nx, Y2 = ny, Stroke = RouteGold, StrokeThickness = 2.6, IsHitTestVisible = false,
+                Effect = new System.Windows.Media.Effects.DropShadowEffect { BlurRadius = 3, ShadowDepth = 0, Color = Colors.Black, Opacity = 0.8 } };
+            Panel.SetZIndex(line, 4);
+            _canvas.Children.Add(line);
+            _routeParts.Add(line);
+            var target = new Ellipse { Width = 26, Height = 26, Stroke = RouteGold, StrokeThickness = 2.4, IsHitTestVisible = false };
+            Canvas.SetLeft(target, nx - 13);
+            Canvas.SetTop(target, ny - 13);
+            Panel.SetZIndex(target, 9);
+            _canvas.Children.Add(target);
+            _routeParts.Add(target);
+        }
+
         void Add(UIElement e, int z)
         {
             Panel.SetZIndex(e, z);
@@ -443,9 +473,10 @@ public sealed class PetMapWindow : MovableOverlay
                 continue;
             }
 
-            if (i == 0)
+            double reach = Math.Max(12, stop.Radius * 100 * ppu);
+            if (i == 0 && reach < Math.Min(cx, cy) * 0.8)
             {
-                double reach = Math.Max(12, stop.Radius * 100 * ppu);
+                // the stop's reach, while it fits in the view (zoomed out: the number alone)
                 var ring = new Ellipse { Width = 2 * reach, Height = 2 * reach, Stroke = RouteGold, StrokeThickness = 1.6, StrokeDashArray = new DoubleCollection { 4, 3 }, Fill = RouteGoldSoft, IsHitTestVisible = false };
                 Canvas.SetLeft(ring, x - reach);
                 Canvas.SetTop(ring, y - reach);
@@ -779,19 +810,25 @@ public sealed class PetMapWindow : MovableOverlay
             ar.Visibility = Visibility.Visible;
         }
 
+        // only the nearest few pets get an arrow (with every pet still needed on the map there would be dozens), on the route those of the stop being farmed
+        var arrows = new List<(Color Color, double Sq, double Bx, double By)>();
         foreach (var (pet, color) in colors)
         {
-            if (!seen.TryGetValue(pet, out var st))
+            if (!seen.TryGetValue(pet, out var st) || (ArrowPets is { } only && !only.Contains(pet)))
             {
                 continue;
             }
 
-            double bestSq = st.BestSq, bx = st.Bx, by = st.By;
-            if (st.Visible || bestSq == double.MaxValue)
+            if (st.Visible || st.BestSq == double.MaxValue)
             {
                 continue;
             }
 
+            arrows.Add((color, st.BestSq, st.Bx, st.By));
+        }
+
+        foreach (var (color, _, bx, by) in arrows.OrderBy(a => a.Sq).Take(ArrowLimit))
+        {
             PlaceArrow(color, bx, by);
         }
 

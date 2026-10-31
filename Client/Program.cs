@@ -2638,6 +2638,7 @@ internal static class Program
                 x = plan.Stops[0].X * 100 - 7000;
                 y = plan.Stops[0].Z * 100 + 5500;
                 window.SetRoute(plan.Stops.Take(6).Select(st => (st.X * 100, st.Z * 100, st.Radius, st.Step)).ToList());
+                window.ArrowPets = plan.Stops[0].Pets.ToHashSet();
                 chosen = plan.Stops.SelectMany(st => st.Pets).ToHashSet();
                 points = Aion2.Protocol.Aion2Maps.PointsOf(map, chosen);
                 pets = plan.Stops[0].Pets.Concat(points.Select(p => p.PetId).Distinct().OrderBy(i => i)).Distinct().Take(8).ToList();
