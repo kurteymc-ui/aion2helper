@@ -318,6 +318,7 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        ShareMenuStyles();
         AppMenu.Tag = _uploadFlags;
         _sessions.Identify = IdentifyForSession;
         _sessions.HpSource = HitPointsOfTarget;
@@ -1686,18 +1687,25 @@ public partial class MainWindow : Window
     private HistoryWindow? _historyWindow;
 
     /// <summary>The history window: every run, boss fight, dummy parse and arena stay saved on this PC.</summary>
-    private void OpenHistory()
+    private void OpenHistory() => OpenHistory(null);
+
+    /// <summary>The history window, on one of its tabs ("Training dummy" …) when given.</summary>
+    private void OpenHistory(string? tab)
     {
         ShowClient();
-        if (_historyWindow is { IsLoaded: true })
+        if (_historyWindow is not { IsLoaded: true })
         {
-            _historyWindow.Activate();
-            return;
+            _historyWindow = new HistoryWindow { Owner = this };
+            _historyWindow.Closed += (_, _) => _historyWindow = null;
+            _historyWindow.Show();
         }
 
-        _historyWindow = new HistoryWindow { Owner = this };
-        _historyWindow.Closed += (_, _) => _historyWindow = null;
-        _historyWindow.Show();
+        if (tab is not null)
+        {
+            _historyWindow.ShowTab(tab);
+        }
+
+        _historyWindow.Activate();
     }
 
     private void OnHistoryClicked(object sender, RoutedEventArgs e) => OpenHistory();
@@ -7575,6 +7583,26 @@ public partial class MainWindow : Window
         DragMove();
     }
 
+    /// <summary>
+    /// The dark menu, menu line, separator and tool tip styles for the whole app: a right-click menu (History, the meter's header menus) lives
+    /// in a popup outside any window, and found only the system's white box before (with the light lines on it: unreadable).
+    /// </summary>
+    private void ShareMenuStyles()
+    {
+        if (Application.Current is not { } app)
+        {
+            return;
+        }
+
+        foreach (Type type in new[] { typeof(ContextMenu), typeof(MenuItem), typeof(Separator), typeof(ToolTip) })
+        {
+            if (Resources[type] is Style style && !app.Resources.Contains(type))
+            {
+                app.Resources[type] = style;
+            }
+        }
+    }
+
     // ---- the meter's header menus: what is measured, past fights, lock, the look -------------------------------------------
 
     /// <summary>A menu under one of the meter's header buttons, in the app's menu style.</summary>
@@ -7714,21 +7742,24 @@ public partial class MainWindow : Window
     private void OnOverlaySettingsClicked(object sender, MouseButtonEventArgs e)
     {
         e.Handled = true;
-        var settings = MeterSettings.Load();
-        var opacity = new MenuItem { Header = "Opacity" };
-        if (TryFindResource(typeof(MenuItem)) is Style itemStyle)
-        {
-            opacity.Style = itemStyle;
-        }
+        OpenOverlayMenu((FrameworkElement)sender, OverlaySettingsItems());
+    }
 
+    /// <summary>The lines of the meter's own menu (also drawn by render-overlay … menu).</summary>
+    internal IList<Control> OverlaySettingsItems()
+    {
+        var settings = MeterSettings.Load();
+        MenuItem opacity = OverlaySubmenu($"Opacity  ·  {settings.OverlayOpacity * 100:0} %");
         foreach (double step in new[] { 0.4, 0.6, 0.8, 0.92, 1.0 })
         {
             double chosen = step;
             opacity.Items.Add(OverlayItem($"{step * 100:0} %", () => ChangeOverlaySetting(s => s.OverlayOpacity = chosen), Math.Abs(settings.OverlayOpacity - step) < 0.01));
         }
 
-        OpenOverlayMenu((FrameworkElement)sender, new Control[]
+        return new Control[]
         {
+            DummyMenu(settings),
+            new Separator(),
             OverlayItem("A2H colours", () => ChangeOverlaySetting(s => s.OverlayLook = "Themed"), !_overlayClear),
             OverlayItem("See-through", () => ChangeOverlaySetting(s => s.OverlayLook = "Clear"), _overlayClear),
             opacity,
@@ -7745,7 +7776,56 @@ public partial class MainWindow : Window
                 ShowClient();
                 OnSettingsClicked(this, new RoutedEventArgs());
             }),
+        };
+    }
+
+    private MenuItem OverlaySubmenu(string header)
+    {
+        var item = new MenuItem { Header = header };
+        if (TryFindResource(typeof(MenuItem)) is Style itemStyle)
+        {
+            item.Style = itemStyle;
+        }
+
+        return item;
+    }
+
+    /// <summary>
+    /// The training dummy's part of the meter's menu: a timed parse when you hit a dummy (on or off), how long it runs, and starting or ending one by
+    /// hand. The same as Settings' "Training dummy" card; a parse that ends is saved to the History (Training dummy).
+    /// </summary>
+    private MenuItem DummyMenu(MeterSettings settings)
+    {
+        DummyState state = _dummy?.Model.State ?? DummyState.Idle;
+        int seconds = Math.Clamp(settings.DummyTestSeconds, 10, 3600);
+        string length = seconds % 60 == 0 ? $"{seconds / 60} min" : $"{seconds} s";
+        MenuItem menu = OverlaySubmenu(state switch
+        {
+            DummyState.Armed => $"Training dummy  ·  {length} parse, waiting for your first hit",
+            DummyState.Running => $"Training dummy  ·  {length} parse running",
+            _ => settings.DummyAutoStart ? $"Training dummy  ·  {length} parse" : "Training dummy  ·  off",
         });
+        menu.Items.Add(OverlayItem("Start a parse when I hit a dummy", () => ChangeOverlaySetting(s => s.DummyAutoStart = !s.DummyAutoStart), settings.DummyAutoStart));
+        menu.Items.Add(new Separator());
+        foreach (int option in new[] { 30, 60, 120, 180, 300, 600 })
+        {
+            int chosen = option;
+            string label = option % 60 == 0 ? $"{option / 60} minute{(option == 60 ? "" : "s")}" : $"{option} seconds";
+            menu.Items.Add(OverlayItem(label, () => ChangeOverlaySetting(s => s.DummyTestSeconds = chosen), seconds == option, state is not (DummyState.Armed or DummyState.Running)));
+        }
+
+        menu.Items.Add(new Separator());
+        if (state is DummyState.Armed or DummyState.Running)
+        {
+            menu.Items.Add(OverlayItem(state == DummyState.Running ? "End the parse now (it is saved)" : "Take the waiting parse back", () => _dummy?.Model.Stop(DateTime.Now)));
+        }
+        else
+        {
+            menu.Items.Add(OverlayItem($"Start a {length} parse now (the clock starts with your first hit)", () => _dummy?.Start(TimeSpan.FromSeconds(seconds), ""), enabled: _dummy is not null));
+        }
+
+        menu.Items.Add(OverlayItem("Past parses (History → Training dummy)", () => OpenHistory("Training dummy")));
+        return menu;
     }
 
     private void OnOverlayCopyClicked(object sender, MouseButtonEventArgs e)

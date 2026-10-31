@@ -19,7 +19,7 @@ public static class ThemedChrome
     private static readonly Type[] SharedStyleTypes =
     {
         typeof(System.Windows.Controls.Primitives.ScrollBar), typeof(ToolTip), typeof(ComboBox), typeof(ComboBoxItem),
-        typeof(CheckBox), typeof(MenuItem), typeof(Separator), typeof(Button),
+        typeof(CheckBox), typeof(MenuItem), typeof(Separator), typeof(Button), typeof(ContextMenu),
     };
 
     /// <summary>

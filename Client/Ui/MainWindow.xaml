@@ -387,22 +387,26 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="MenuItem">
                         <Grid>
-                            <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="7">
+                            <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="4">
                                 <Grid Margin="{TemplateBinding Padding}">
+                                    <!-- the tick's column is as wide in every line of one menu (shared size): ticked and plain lines start at the same place -->
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto" SharedSizeGroup="MenuTick"/>
                                         <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
-                                    <Path x:Name="Check" Grid.Column="0" Data="M 2,7 L 6,11 L 12,3" Stroke="{DynamicResource Brush.Text}"
-                                          StrokeThickness="1.6" Margin="0,0,8,0" Visibility="Collapsed"/>
+                                    <Path x:Name="Check" Grid.Column="0" Data="M 2,7 L 6,11 L 12,3" Stroke="{DynamicResource Brush.Accent}"
+                                          StrokeThickness="1.8" Margin="0,0,9,0" VerticalAlignment="Center" Visibility="Collapsed"/>
                                     <ContentPresenter Grid.Column="1" ContentSource="Header"
                                                       RecognizesAccessKey="True" VerticalAlignment="Center"/>
+                                    <TextBlock x:Name="Arrow" Grid.Column="2" Text="&#xE76C;" FontFamily="Segoe MDL2 Assets" FontSize="9" Margin="14,0,0,0"
+                                               VerticalAlignment="Center" Foreground="{DynamicResource Brush.TextMuted}" Visibility="Collapsed"/>
                                 </Grid>
                             </Border>
                             <Popup x:Name="Popup" Placement="Bottom" IsOpen="{TemplateBinding IsSubmenuOpen}"
                                    AllowsTransparency="True" Focusable="False" PopupAnimation="Fade">
                                 <Border Background="{DynamicResource Brush.Panel}" BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1"
-                                        CornerRadius="10" Padding="0,4" Margin="0,4,0,0" MinWidth="190">
+                                        CornerRadius="6" Padding="0,4" Margin="0,4,0,0" MinWidth="190" Grid.IsSharedSizeScope="True">
                                     <ItemsPresenter/>
                                 </Border>
                             </Popup>
@@ -430,6 +434,12 @@
                             </Trigger>
                             <Trigger Property="Role" Value="SubmenuItem">
                                 <Setter TargetName="Popup" Property="Placement" Value="Right"/>
+                            </Trigger>
+                            <!-- a line with its own submenu (Opacity, Training dummy): an arrow, and the submenu opens beside it, not over the menu -->
+                            <Trigger Property="Role" Value="SubmenuHeader">
+                                <Setter TargetName="Popup" Property="Placement" Value="Right"/>
+                                <Setter TargetName="Popup" Property="HorizontalOffset" Value="6"/>
+                                <Setter TargetName="Arrow" Property="Visibility" Value="Visible"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -585,6 +595,30 @@
                                 <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Brush.ControlHover}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <!-- Found by the user: every right-click and meter menu was a white system box with the light menu lines on it (unreadable). The menu
+             itself in the app's colours: a dark panel with a thin border, small corners, no system shadow. Shared with every window (App resources). -->
+        <Style TargetType="ContextMenu">
+            <Setter Property="OverridesDefaultStyle" Value="True"/>
+            <Setter Property="Background" Value="{DynamicResource Brush.Panel}"/>
+            <Setter Property="Foreground" Value="{DynamicResource Brush.Text}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource Brush.Border}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="0,4"/>
+            <Setter Property="MinWidth" Value="200"/>
+            <Setter Property="HasDropShadow" Value="False"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Grid.IsSharedSizeScope" Value="True"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ContextMenu">
+                        <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="6" Padding="{TemplateBinding Padding}" SnapsToDevicePixels="True">
+                            <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Cycle"/>
+                        </Border>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>

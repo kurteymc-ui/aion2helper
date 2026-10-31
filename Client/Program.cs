@@ -1271,7 +1271,30 @@ internal static class Program
         }
 
         System.Windows.FrameworkElement panel;
-        if (kind == "chips")
+        if (kind is "menu" or "menu-dummy")
+        {
+            // the meter's own menu ("…" in its header), or its Training dummy submenu, as they open over the game
+            var items = window.OverlaySettingsItems();
+            var menu = new System.Windows.Controls.ContextMenu();
+            if (window.TryFindResource(typeof(System.Windows.Controls.ContextMenu)) is System.Windows.Style menuStyle)
+            {
+                menu.Style = menuStyle;
+            }
+
+            var lines = kind == "menu" ? items.Cast<object>().ToList() : ((System.Windows.Controls.MenuItem)items[0]).Items.Cast<object>().ToList();
+            if (kind == "menu-dummy")
+            {
+                ((System.Windows.Controls.MenuItem)items[0]).Items.Clear();
+            }
+
+            foreach (object line in lines)
+            {
+                menu.Items.Add(line);
+            }
+
+            panel = menu;
+        }
+        else if (kind == "chips")
         {
             panel = window.OverlayContent;
             panel.Visibility = System.Windows.Visibility.Visible;
