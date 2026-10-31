@@ -22,6 +22,7 @@ public enum HotkeyAction
     ToggleNetworkOverlay,
     ToggleCombatOverlay,
     TogglePetArrows,
+    TogglePetMapWhole,
     ToggleGatherArrows,
     ToggleAssistOverlay,
     ToggleLootOverlay,

@@ -77,6 +77,7 @@ public sealed class HotkeyOverlayWindow : MovableOverlay
                 ("Craft", "Main.MenuTools.Craft", s.HotkeyCraft),
                 ("PetMap", "Settings.Hotkey.PetMap", s.HotkeyPetMap),
                 ("PetArrows", "Settings.Hotkey.PetArrows", s.HotkeyPetArrows),
+                ("PetMapWhole", "Settings.Hotkey.PetMapWhole", s.HotkeyPetMapWhole),
                 ("GatherArrows", "Settings.Hotkey.GatherArrows", s.HotkeyGatherArrows),
                 ("Combat", "Settings.Hotkey.Combat", s.HotkeyCombatOverlay),
                 ("Assist", "Main.MenuTools.Assist", s.HotkeyAssist),

@@ -48,6 +48,8 @@ jobs:
             @('render-app', 'app-cubes.png', 'cubes'),
             @('render-petmap', 'petmap-route.png', 'altgard', '20000', '30000', 'route'),
             @('render-petmap', 'petmap-route-round.png', 'altgard', '20000', '30000', 'route-round'),
+            @('render-petmap', 'petmap-route-whole.png', 'altgard', '20000', '30000', 'route-whole'),
+            @('render-petmap', 'petmap-route-whole-v.png', 'verteron', '-215789', '262953', 'route-whole'),
             @('render-app', 'app-meterlook.png', 'meterlook'),
             @('render-app', 'app-petmap.png', 'petmap'),
             @('render-app', 'app-pets.png', 'petmap.pets'),

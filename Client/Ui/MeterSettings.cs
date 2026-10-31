@@ -663,6 +663,20 @@ public sealed class MeterSettings
     /// <summary>The interactive map shows only its marks and the route, no map picture (to lay over the game's minimap).</summary>
     public bool PetMapMarkersOnly { get; set; }
 
+    /// <summary>The full map overlay: the whole map with the player and the pet route (all its stops), to see where the route leads. Off until switched on
+    /// (the route card, or <see cref="HotkeyPetMapWhole"/>).</summary>
+    public bool PetMapWhole { get; set; }
+
+    /// <summary>Full map overlay on / off.</summary>
+    public string HotkeyPetMapWhole { get; set; } = "Ctrl+Alt+W";
+
+    /// <summary>Place, scale and own size of the full map overlay.</summary>
+    public double? PetWholeLeft { get; set; }
+    public double? PetWholeTop { get; set; }
+    public double PetWholeScale { get; set; } = 1.4;
+    public double? PetWholeWidth { get; set; }
+    public double? PetWholeHeight { get; set; }
+
     /// <summary>The map shows every pet the player still needs (all but those at the top level, from the collection the game sends) instead of
     /// <see cref="PetMapPets"/>. Null (never switched): on while no pet was picked by hand.</summary>
     public bool? PetMapAutoPets { get; set; }

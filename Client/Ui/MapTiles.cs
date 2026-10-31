@@ -77,6 +77,50 @@ internal static class MapTiles
         return target;
     }
 
+    /// <summary>
+    /// The land of a map in one picture: the tiles that exist (the sea around has none), each at <paramref name="cell"/> pixels, and which tiles
+    /// it spans (first column and row, how many of each). Null when the map has no tiles.
+    /// </summary>
+    public static (BitmapSource Image, int Col0, int Row0, int Cols, int Rows)? Land(Aion2MapInfo map, int cell)
+    {
+        string folder = Aion2Maps.TileFolder(map);
+        var present = new List<(int Col, int Row)>();
+        for (int col = 0; col < map.Grid; col++)
+        {
+            for (int row = 0; row < map.Grid; row++)
+            {
+                if (File.Exists(Path.Combine(folder, $"{col}_{row}.jpg")))
+                {
+                    present.Add((col, row));
+                }
+            }
+        }
+
+        if (present.Count == 0)
+        {
+            return null;
+        }
+
+        int c0 = present.Min(p => p.Col), c1 = present.Max(p => p.Col), r0 = present.Min(p => p.Row), r1 = present.Max(p => p.Row);
+        int cols = c1 - c0 + 1, rows = r1 - r0 + 1;
+        var drawing = new DrawingVisual();
+        using (var dc = drawing.RenderOpen())
+        {
+            foreach (var (col, row) in present)
+            {
+                if (Load(map, col, row, cell) is { } tile)
+                {
+                    dc.DrawImage(tile, new System.Windows.Rect((col - c0) * cell, (row - r0) * cell, cell, cell));
+                }
+            }
+        }
+
+        var target = new RenderTargetBitmap(cols * cell, rows * cell, 96, 96, PixelFormats.Pbgra32);
+        target.Render(drawing);
+        target.Freeze();
+        return (target, c0, r0, cols, rows);
+    }
+
     /// <summary>The colour picture with the mask as its alpha (the mask is stored at half size and stretched to the colour picture).</summary>
     private static BitmapSource Combine(BitmapSource color, BitmapSource mask)
     {

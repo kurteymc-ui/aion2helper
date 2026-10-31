@@ -30,7 +30,11 @@ public partial class MainWindow
         CheckBox Check(string label, bool on, Action<MeterSettings, bool> set, string? tip = null)
         {
             var box = new CheckBox { IsChecked = on, Content = ShellText(label, "Brush.Text", 12.5), ToolTip = tip, Margin = new Thickness(0, 0, 18, 6), VerticalAlignment = VerticalAlignment.Center };
-            box.Click += (_, _) => Save(s => set(s, box.IsChecked == true));
+            box.Click += (_, _) =>
+            {
+                Save(s => set(s, box.IsChecked == true));
+                _petMapController?.SettingsChanged(); // at once, not at the controller's next read of the settings
+            };
             return box;
         }
 
@@ -80,6 +84,12 @@ public partial class MainWindow
         shape.Children.Add(Check(loc["PetRoute.Round"], now.PetMapRound, (s, v) => s.PetMapRound = v));
         shape.Children.Add(Check(loc["PetRoute.MarksOnly"], now.PetMapMarkersOnly, (s, v) => s.PetMapMarkersOnly = v, loc["PetRoute.MarksOnlyTip"]));
         stack.Children.Add(shape);
+
+        // the full map overlay: the whole route and where the player is on it
+        string wholeKey = HotkeyBinding.Parse(now.HotkeyPetMapWhole).ToString();
+        var whole = new WrapPanel();
+        whole.Children.Add(Check(wholeKey.Length > 0 ? $"{loc["PetRoute.Whole"]} ({wholeKey})" : loc["PetRoute.Whole"], now.PetMapWhole, (s, v) => s.PetMapWhole = v, loc["PetRoute.WholeTip"]));
+        stack.Children.Add(whole);
 
         void Refresh()
         {

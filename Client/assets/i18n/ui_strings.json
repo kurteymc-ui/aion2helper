@@ -14551,5 +14551,25 @@
     "en": "Then stop {0} · {1}",
     "de": "Danach Stopp {0} · {1}",
     "fr": "Ensuite l’arrêt {0} · {1}"
+  },
+  "Settings.Hotkey.PetMapWhole": {
+    "en": "Full map with the pet route",
+    "de": "Ganze Karte mit der Pet-Route",
+    "fr": "Carte complète avec l’itinéraire des familiers"
+  },
+  "PetRoute.Whole": {
+    "en": "Full map",
+    "de": "Ganze Karte",
+    "fr": "Carte complète"
+  },
+  "PetRoute.WholeTip": {
+    "en": "A second map overlay with the whole map: where you are, every stop of the route numbered, the solid line to the stop you farm now and the dashed one on to the next. Unlock the overlays to move and size it; the hotkey (Settings, Hotkeys) shows and hides it.",
+    "de": "Ein zweites Karten-Overlay mit der ganzen Karte: wo du bist, jeder Stopp der Route nummeriert, die durchgezogene Linie zum Stopp, den du jetzt farmst, und die gestrichelte weiter zum nächsten. Entsperre die Overlays, um es zu verschieben und zu vergrößern; der Hotkey (Einstellungen, Hotkeys) blendet es ein und aus.",
+    "fr": "Un second overlay de carte avec la carte entière : où tu es, chaque arrêt de l’itinéraire numéroté, la ligne pleine vers l’arrêt que tu farmes maintenant et la ligne pointillée vers le suivant. Déverrouille les overlays pour le déplacer et le redimensionner ; le raccourci (Paramètres, Raccourcis) l’affiche et le masque."
+  },
+  "Settings.PetMap.CardWhole": {
+    "en": "Full map",
+    "de": "Ganze Karte",
+    "fr": "Carte complète"
   }
 }

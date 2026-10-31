@@ -634,6 +634,11 @@ public sealed class Aion2EntityDirectory : IEntityDirectory
         lock (_gate)
         {
             _around[entityId] = (x, y, Now);
+            if (_track is { } track && Sq(x - track.X, y - track.Y) <= 4500.0 * 4500.0)
+            {
+                _evidenceAt = Now; // something moves near the guess: the player is still about there
+            }
+
             // a monster that walks: the list and the map show where it is now, not where it appeared
             if (_liveMobs.TryGetValue(entityId, out var mob))
             {
@@ -737,10 +742,13 @@ public sealed class Aion2EntityDirectory : IEntityDirectory
     private readonly Queue<(DateTime At, float X, float Y)> _recentSpawns = new();
 
     /// <summary>
-    /// The best guess of where the player is: the server reports the player's own position only at skills, hits and corrections, but it announces every
-    /// monster and player that comes into range (a radius of roughly 65 m) with its place and moves them with the movement frames. A fresh exact report
-    /// (up to <see cref="FixTrust"/>) is taken as it is; after that the middle of the entities around him, which is 10 m off in the median where an old
-    /// report is 68 m off after 5 to 15 s.
+    /// The best guess of where the player is. The server reports the player's own position only at skills, hits and dashes - never while he only walks,
+    /// rides or glides - but it announces every monster that comes within about 25 m of him (spawn frame, with its place) and takes it away again when he
+    /// is 30 to 50 m from it (reason 1). That is enough to follow him: the guess is pulled into reach of every monster that appears (<see cref="TrackSpawn"/>)
+    /// and pushed out of reach of every one that is left behind; the middle of the monsters in range then refines it. Measured on a recording of
+    /// 31 October 2026 (fighting and riding, 340 exact reports): 5.7 m off on average where the old guess was 7.7 m, and 12 m instead of 23 m (at worst 16 m
+    /// instead of 130 m) after 4 to 50 s without a report; with every report but the first hidden the guess still followed him for three minutes, 14 m off
+    /// on average, where the old one was 106 m off.
     /// </summary>
     public (float X, float Y, DateTime At)? BestPosition
     {
@@ -749,41 +757,171 @@ public sealed class Aion2EntityDirectory : IEntityDirectory
             lock (_gate)
             {
                 DateTime now = Now;
-                // an exact report is good to half a metre while it is fresh; after a few seconds the player has walked on (68 m off on average after 5 to 15 s)
-                if (_position is { } fix && now - fix.At <= FixTrust)
+                if (_track is not { } track)
                 {
-                    return fix;
+                    return _position;
                 }
 
-                // The game reports the player's own position only for some movements (not when a monster is targeted), so it can stay unknown for a long
-                // time (after a relog, or standing still). The monsters and players around him, announced or moved and not gone again, surround him
-                // (within the ~65 m range): their middle is 10 m off in the median (measured on recordings), far better than an old report.
-                if (EnvironmentEstimateLocked(now) is { } around && GuessIsPlausible(around.X, around.Y, now))
+                double fixAge = _position is { } fix ? (now - fix.At).TotalSeconds : double.MaxValue;
+                if (_position is { } exact && fixAge <= TrackFixAlone)
                 {
-                    return (around.X, around.Y, now);
+                    return exact; // just reported: good to half a metre
                 }
 
-                return _position;
+                // the monsters (and players) in range around the guess: their middle, taken half-way - from half a second after a report on, fully after 2.5 s
+                // (seen within two minutes: a player whose leaving the game did not announce must not hold the guess for ever)
+                var near = _around.Values.Where(e => (now - e.At).TotalSeconds <= 120 && Sq(e.X - track.X, e.Y - track.Y) <= TrackNear * TrackNear).Select(e => (e.X, e.Y)).ToList();
+                DateTime at = near.Count > 0 ? now : _trackAt;
+                if (near.Count < 2)
+                {
+                    return (track.X, track.Y, at);
+                }
+
+                (float cx, float cy) = TrimmedMiddle(near);
+                double w = TrackBlend * Math.Clamp((fixAge - TrackFixAlone) / 2.0, 0, 1);
+                return ((float)(track.X + (cx - track.X) * w), (float)(track.Y + (cy - track.Y) * w), at);
             }
         }
     }
 
-    /// <summary>
-    /// The middle of the monsters around the player is only a guess, and monsters far outside his range are announced too (a group that respawns
-    /// 190 m away, seen at an obelisk: the guess jumped there every ten seconds and the map swung back and forth while he stood still). A guess that
-    /// lies further from his last exact place than he could have walked since (10 m/s plus 30 m, for at most 12 s) is not taken; with no exact place
-    /// known yet every guess counts.
-    /// </summary>
-    private bool GuessIsPlausible(float x, float y, DateTime now)
+    private static double Sq(double dx, double dy) => dx * dx + dy * dy;
+
+    /// <summary>The middle of the places within 45 m of their median (the ones far from it are at the edge of the range).</summary>
+    private static (float X, float Y) TrimmedMiddle(List<(float X, float Y)> pts)
     {
-        if (_position is not { } last)
+        var xs = pts.Select(p => p.X).OrderBy(v => v).ToList();
+        var ys = pts.Select(p => p.Y).OrderBy(v => v).ToList();
+        float cx = xs[xs.Count / 2], cy = ys[ys.Count / 2];
+        for (int round = 0; round < 3; round++)
         {
-            return true;
+            var close = pts.Where(p => Sq(p.X - cx, p.Y - cy) <= 4500.0 * 4500.0).ToList();
+            if (close.Count == 0)
+            {
+                break;
+            }
+
+            (cx, cy) = (close.Average(p => p.X), close.Average(p => p.Y));
         }
 
-        double seconds = Math.Min((now - last.At).TotalSeconds, 12);
-        double dx = x - last.X, dy = y - last.Y;
-        return Math.Sqrt(dx * dx + dy * dy) <= 3000 + 1000 * seconds;
+        return (cx, cy);
+    }
+
+    // The tracked guess (world units, 100 per metre). Measured on the recording of 31 October 2026: monsters appear 9 to 30 m from the player (median 25 m)
+    // and are taken away as out of range 30 to 88 m from him (median 36 m).
+    private (float X, float Y)? _track;
+    private DateTime _trackAt;     // the last report or correction
+    private DateTime _evidenceAt;  // the last time something near the guess moved (the player is still about there)
+    private readonly List<(DateTime At, float X, float Y)> _farSpawns = new();
+
+    /// <summary>How far from the player a monster appears, at most (a little less than measured: the guess is pulled just into reach).</summary>
+    public static double TrackSpawnReach { get; set; } = 2200;
+    /// <summary>How far from the player a monster is at least when it is taken away as out of range.</summary>
+    public static double TrackLeaveReach { get; set; } = 2500;
+    /// <summary>The entities within this distance of the guess count for its refinement.</summary>
+    public static double TrackNear { get; set; } = 6000;
+    /// <summary>How much of the way to the middle of the entities around the guess goes; and for how many seconds a report stands alone.</summary>
+    public static double TrackBlend { get; set; } = 0.5;
+    public static double TrackFixAlone { get; set; } = 0.5;
+
+    private void TrackFix(float x, float y)
+    {
+        _track = (x, y);
+        _trackAt = _evidenceAt = Now;
+        _farSpawns.Clear();
+    }
+
+    /// <summary>
+    /// A monster appeared at (x, y): the player is within reach of it. A guess further away is pulled just into reach - unless that is further than he can
+    /// have gone since the guess was last confirmed (60 m, plus 25 m/s for up to 10 s: riding and gliding are 13 to 17 m/s): such a monster is announced from
+    /// afar (a world boss, a group at an obelisk). Three of those within 10 s that stand together, with nothing near the guess moving for 5 s, mean the player
+    /// was moved without a zone frame: the guess goes to them.
+    /// </summary>
+    private void TrackSpawn(float x, float y)
+    {
+        DateTime now = Now;
+        if (_track is not { } track)
+        {
+            _track = (x, y);
+            _trackAt = _evidenceAt = now;
+            return;
+        }
+
+        double dx = track.X - x, dy = track.Y - y, d = Math.Sqrt(dx * dx + dy * dy);
+        if (d <= TrackSpawnReach)
+        {
+            _evidenceAt = now;
+            return;
+        }
+
+        double since = Math.Min((now - (_trackAt > _evidenceAt ? _trackAt : _evidenceAt)).TotalSeconds, 10);
+        if (d - TrackSpawnReach <= 6000 + 2500 * Math.Max(since, 0))
+        {
+            _track = ((float)(x + dx / d * TrackSpawnReach), (float)(y + dy / d * TrackSpawnReach));
+            _trackAt = now;
+            return;
+        }
+
+        _farSpawns.RemoveAll(f => (now - f.At).TotalSeconds > 10);
+        _farSpawns.Add((now, x, y));
+        if (_farSpawns.Count < 3 || (now - _evidenceAt).TotalSeconds <= 5)
+        {
+            return;
+        }
+
+        var xs = _farSpawns.Select(f => f.X).OrderBy(v => v).ToList();
+        var ys = _farSpawns.Select(f => f.Y).OrderBy(v => v).ToList();
+        float mx = xs[xs.Count / 2], my = ys[ys.Count / 2];
+        var together = _farSpawns.Where(f => Sq(f.X - mx, f.Y - my) <= 8000.0 * 8000.0).ToList();
+        if (together.Count >= 3)
+        {
+            _track = (together.Average(f => f.X), together.Average(f => f.Y));
+            _trackAt = _evidenceAt = now;
+            _farSpawns.Clear();
+        }
+    }
+
+    /// <summary>A monster was taken away as out of range: the player is at least <see cref="TrackLeaveReach"/> from where it last stood.</summary>
+    private void TrackLeft(float x, float y)
+    {
+        if (_track is not { } track)
+        {
+            return;
+        }
+
+        double dx = track.X - x, dy = track.Y - y, d = Math.Sqrt(dx * dx + dy * dy);
+        if (d > 1 && d < TrackLeaveReach)
+        {
+            _track = ((float)(x + dx / d * TrackLeaveReach), (float)(y + dy / d * TrackLeaveReach));
+            _trackAt = Now;
+        }
+    }
+
+    /// <summary>The direction of the player's last dash or movement skill (degrees, as atan2 of the world's y and x; the position frame carries it); null before any.</summary>
+    public (double Degrees, DateTime At)? LocalFacing
+    {
+        get
+        {
+            lock (_gate)
+            {
+                return _facing;
+            }
+        }
+    }
+
+    private (double Degrees, DateTime At)? _facing;
+
+    /// <summary>The position frame's angle: verified on the recording of 31 October 2026, it is exactly the direction of the dash it reports (37 of 37 within 0.1 degree where the dash was a straight line).</summary>
+    public void NoteLocalFacing(double degrees)
+    {
+        if (!double.IsFinite(degrees) || Math.Abs(degrees) > 720)
+        {
+            return;
+        }
+
+        lock (_gate)
+        {
+            _facing = (degrees, Now);
+        }
     }
 
     public void NoteLocalPosition(float x, float y)
@@ -797,6 +935,7 @@ public sealed class Aion2EntityDirectory : IEntityDirectory
 
             _position = (x, y, Now);
             _positionIsSpawn = false;
+            TrackFix(x, y);
         }
     }
 
@@ -812,6 +951,7 @@ public sealed class Aion2EntityDirectory : IEntityDirectory
             _position = (x, y, Now);
             _positionIsSpawn = true;
             _around.Clear();
+            TrackFix(x, y);
             // the monsters and cubes announced so far belong to the place he left (the game does not always announce their end): the ones of the new place
             // follow this frame
             _env.Clear();
@@ -849,6 +989,7 @@ public sealed class Aion2EntityDirectory : IEntityDirectory
         lock (_gate)
         {
             _liveMobs[entityId] = (npcId, x, y);
+            TrackSpawn(x, y);
             _around[entityId] = (x, y, Now);
             _recentSpawns.Enqueue((Now, x, y));
             while (_recentSpawns.Count > 0 && Now - _recentSpawns.Peek().At > TimeSpan.FromSeconds(30))
@@ -1892,6 +2033,9 @@ public sealed class Aion2EntityDirectory : IEntityDirectory
 
     public const byte RemovedDead = 3;
 
+    /// <summary>Taken away because the player went out of its range (30 to 88 m from it, measured on the recording of 31 October 2026).</summary>
+    public const byte RemovedOutOfRange = 1;
+
     private readonly Dictionary<int, Removal> _removed = new();
 
     public void NoteRemoved(int entityId, byte reason, DateTime at)
@@ -1900,6 +2044,11 @@ public sealed class Aion2EntityDirectory : IEntityDirectory
         {
             _removed[entityId] = new Removal(at, reason);
             _liveMobs.Remove(entityId);
+            if (reason == RemovedOutOfRange && _around.TryGetValue(entityId, out var left))
+            {
+                TrackLeft(left.X, left.Y);
+            }
+
             _around.Remove(entityId);
         }
     }

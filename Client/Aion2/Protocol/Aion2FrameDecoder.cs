@@ -2369,6 +2369,11 @@ public sealed class Aion2FrameDecoder
         {
             _entities.NoteLocalPosition(x, y);
             _entities.Combat.NotePosition(timestamp, (int)entityId, x, y);
+            if (frame.Length >= p + 17)
+            {
+                // after x, y, z: the direction of the dash in degrees (atan2 of y and x; 37 of 37 straight dashes of the recording of 31 October 2026)
+                _entities.NoteLocalFacing(BinaryPrimitives.ReadSingleLittleEndian(frame[(p + 13)..]));
+            }
         }
     }
 

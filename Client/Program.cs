@@ -2618,7 +2618,7 @@ internal static class Program
         var points = Aion2.Protocol.Aion2Maps.PointsOf(map, chosen);
         var pets = points.Select(p => p.PetId).Distinct().OrderBy(i => i).ToList();
         var colors = pets.Select((id, i) => (id, i)).ToDictionary(t => t.id, t => Ui.PetMapPalette.Of(t.i));
-        var window = new Ui.PetMapWindow();
+        var window = new Ui.PetMapWindow(whole: route == "route-whole");
         if ((guards || route is not null) && window.Content is System.Windows.UIElement root)
         {
             // never shown: lay the frame out once so that the map knows how much of itself is visible
@@ -2637,7 +2637,7 @@ internal static class Program
             {
                 x = plan.Stops[0].X * 100 - 7000;
                 y = plan.Stops[0].Z * 100 + 5500;
-                window.SetRoute(plan.Stops.Take(6).Select(st => (st.X * 100, st.Z * 100, st.Radius, st.Step)).ToList());
+                window.SetRoute(plan.Stops.Take(window.Whole ? Ui.PetMapWindow.RouteBadges : 6).Select(st => (st.X * 100, st.Z * 100, st.Radius, st.Step)).ToList(), null, plan.Stops[0].Zone);
                 window.ArrowPets = plan.Stops[0].Pets.ToHashSet();
                 chosen = plan.Stops.SelectMany(st => st.Pets).ToHashSet();
                 points = Aion2.Protocol.Aion2Maps.PointsOf(map, chosen);
@@ -2656,9 +2656,17 @@ internal static class Program
 
         // sample "live" monsters: every 7th spawn point within 120 m stands there right now
         var live = points.Where(p => Math.Abs(p.X - x) < 12000 && Math.Abs(p.Y - y) < 12000).Where((p, i) => i % 7 == 0).ToList();
-        window.Render(map, x, y, settings.PetMapRadius, opacity, points.ToList(), live, colors,
-            Aion2.Protocol.Aion2Gather.PointsOf(map, Aion2.Protocol.Aion2Gather.Items().Where(i => i.Count > 0).Select(i => i.Key).ToHashSet()),
-            guards: guards ? new List<(float X, float Y)> { ((float)x + 1500, (float)y + 700), ((float)x - 1200, (float)y - 400), ((float)x - 30000, (float)y + 5000), ((float)x + 9000, (float)y - 21000) } : null);
+        if (window.Whole)
+        {
+            window.MeHeading = 40;
+            window.RenderWhole(map, x, y, points.ToList(), live, colors, null, true);
+        }
+        else
+        {
+            window.Render(map, x, y, settings.PetMapRadius, opacity, points.ToList(), live, colors,
+                Aion2.Protocol.Aion2Gather.PointsOf(map, Aion2.Protocol.Aion2Gather.Items().Where(i => i.Count > 0).Select(i => i.Key).ToHashSet()),
+                guards: guards ? new List<(float X, float Y)> { ((float)x + 1500, (float)y + 700), ((float)x - 1200, (float)y - 400), ((float)x - 30000, (float)y + 5000), ((float)x + 9000, (float)y - 21000) } : null);
+        }
         var list = new Ui.PetListWindow();
         list.Render(pets.Select(id => (colors.GetValueOrDefault(id, System.Windows.Media.Colors.White), Aion2.Protocol.Aion2Pets.PetName(id, "en") ?? "?", "Level 2 · 22/75", "104 m", false)).ToList());
         if (plan is { Stops.Count: > 0 } shownPlan)

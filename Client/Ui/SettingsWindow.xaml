@@ -833,6 +833,16 @@
                                 </Grid>
 <Grid Margin="0,2">
                                     <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="170"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <CheckBox x:Name="OvPetMapWholeBox" Tag="PetMapWhole" Grid.Column="3" Margin="8,0,0,0" VerticalAlignment="Center" IsChecked="True" ToolTip="{local:Loc Settings.HotkeyOverlay.Row.Tip}"/>
+                                    <TextBlock Text="{local:Loc Settings.Hotkey.PetMapWhole}" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,10,0"/>
+                                    <TextBox x:Name="HotkeyPetMapWholeBox" Grid.Column="1" Height="28" Margin="0,2" IsReadOnly="True" IsReadOnlyCaretVisible="False" Cursor="Hand" GotKeyboardFocus="OnHotkeyBoxGotFocus" LostKeyboardFocus="OnHotkeyBoxLostFocus"
+                                             VerticalContentAlignment="Center" Background="{DynamicResource Brush.Control}"
+                                             Foreground="{DynamicResource Brush.Text}" BorderBrush="{DynamicResource Brush.Border}"/>
+                                    <Button Grid.Column="2" Tag="HotkeyPetMapWholeBox" Click="OnHotkeyClearClicked" Height="28" Width="28" Margin="6,2,0,2" Padding="0"
+                                            Content="✕" ToolTip="{local:Loc Settings.Hotkey.Clear.Tip}"/>
+                                </Grid>
+<Grid Margin="0,2">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="170"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                                     <CheckBox x:Name="OvGatherArrowsBox" Tag="GatherArrows" Grid.Column="3" Margin="8,0,0,0" VerticalAlignment="Center" IsChecked="True" ToolTip="{local:Loc Settings.HotkeyOverlay.Row.Tip}"/>
                                     <TextBlock Text="{local:Loc Settings.Hotkey.GatherArrows}" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,10,0"/>
                                     <TextBox x:Name="HotkeyGatherArrowsBox" Grid.Column="1" Height="28" Margin="0,2" IsReadOnly="True" IsReadOnlyCaretVisible="False" Cursor="Hand" GotKeyboardFocus="OnHotkeyBoxGotFocus" LostKeyboardFocus="OnHotkeyBoxLostFocus"

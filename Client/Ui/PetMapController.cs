@@ -13,6 +13,7 @@ namespace AionDPS.Ui;
 public sealed class PetMapController : IDisposable
 {
     private readonly PetMapWindow _map = new();
+    private readonly PetMapWindow _whole = new(whole: true);
     private readonly PetListWindow _list = new();
     private readonly Func<Aion2EntityDirectory?> _directory;
     private readonly System.Windows.Threading.DispatcherTimer _timer = new() { Interval = TimeSpan.FromMilliseconds(50) };
@@ -38,9 +39,13 @@ public sealed class PetMapController : IDisposable
         _timer.Start();
     }
 
+    /// <summary>A switch was changed: the settings are read again on the next tick (not only once a second).</summary>
+    public void SettingsChanged() => _settingsAt = DateTime.MinValue;
+
     public void ApplyLocked(bool locked)
     {
         _map.ApplyLocked(locked);
+        _whole.ApplyLocked(locked);
         _list.ApplyLocked(_settings.PetListLocked ?? locked);
     }
 
@@ -56,6 +61,22 @@ public sealed class PetMapController : IDisposable
         _mapViews.Add(map);
         _listViews.Add(list);
         return (map, list);
+    }
+
+    /// <summary>Never shown full maps whose content a tool window shows live (the map page).</summary>
+    private readonly List<PetMapWindow> _wholeViews = new();
+
+    public PetMapWindow CreateWholeView()
+    {
+        var view = new PetMapWindow(whole: true);
+        _wholeViews.Add(view);
+        return view;
+    }
+
+    public void RemoveWholeView(PetMapWindow view)
+    {
+        _wholeViews.Remove(view);
+        view.Close();
     }
 
     public void RemoveViews(PetMapWindow map, PetListWindow list)
@@ -121,9 +142,12 @@ public sealed class PetMapController : IDisposable
 
     private bool InMenu => MenuWatcher.Hidden || _inShop;
 
-    public bool HasViews => _mapViews.Count > 0;
+    public bool HasViews => _mapViews.Count > 0 || _wholeViews.Count > 0;
 
     private void ShowMap(bool visible) => _map.ShowOverlay(visible && !_hideOverlays && !InMenu && (_settings.PetMapShowMap || _cubeMapOverride));
+
+    /// <summary>The full map overlay: on its own switch, shown with the map (not over a game menu).</summary>
+    private void ShowWhole(bool visible) => _whole.ShowOverlay(visible && !_hideOverlays && !InMenu && _settings.PetMapWhole);
 
     private void ShowList(bool visible) => _list.ShowOverlay(visible && !_hideOverlays && _settings.ShowPetMap && _settings.PetMapShowList);
 
@@ -149,6 +173,7 @@ public sealed class PetMapController : IDisposable
     public void RaiseToFront()
     {
         _map.RaiseToFront();
+        _whole.RaiseToFront();
         _list.RaiseToFront();
     }
 
@@ -156,6 +181,7 @@ public sealed class PetMapController : IDisposable
     {
         _timer.Stop();
         _map.Close();
+        _whole.Close();
         _list.Close();
     }
 
@@ -166,9 +192,9 @@ public sealed class PetMapController : IDisposable
     private DateTime _steadyAt;
 
     /// <summary>
-    /// The position the map follows. An exact report of the game is taken as it is; the guess from the monsters around is only a pull towards the
-    /// estimate - slow (about a second) and at most 15 m/s - so a wrong or flipping guess cannot throw the view across the map. A jump of more than
-    /// 300 m (a teleport, a new map) is taken at once.
+    /// The position the map follows. The guess moves in steps (a monster comes into range, a report arrives): the map glides after it instead of
+    /// jumping - nine tenths of the way in about 0.6 s, at most 60 m/s, so a wrong guess cannot fling the view; an exact report in about 0.3 s without
+    /// a limit (it used to be taken at once: after a long ride the player's arrow leapt). A jump of more than 300 m (a teleport, a new map) is taken at once.
     /// </summary>
     private (float X, float Y) Steady(Aion2EntityDirectory directory, (float X, float Y, DateTime At) p)
     {
@@ -182,12 +208,18 @@ public sealed class PetMapController : IDisposable
         }
 
         double dx = p.X - cur.X, dy = p.Y - cur.Y, dist = Math.Sqrt(dx * dx + dy * dy);
-        if (exact || dist > 30000)
+        if (dist > 30000)
         {
             return (_steady = (p.X, p.Y)).Value;
         }
 
-        double step = Math.Min(dist, Math.Min(dist * (1 - Math.Pow(0.94, dt * 20)), 1500 * dt));
+        // per 50 ms the way left shrinks to 70 % (a report) or 82 % (a guess)
+        double step = dist * (1 - Math.Pow(exact ? 0.70 : 0.82, dt * 20));
+        if (!exact)
+        {
+            step = Math.Min(step, 6000 * dt);
+        }
+
         if (dist > 0)
         {
             _steady = ((float)(cur.X + dx / dist * step), (float)(cur.Y + dy / dist * step));
@@ -198,13 +230,24 @@ public sealed class PetMapController : IDisposable
 
     private (float X, float Y)? _headingFrom;
     private double _heading;
+    private double _shownHeading;
+    private DateTime _facingUsed = DateTime.MinValue;
 
     /// <summary>
-    /// The game sends no facing, so the arrow points the way the player moves: from the point where he last stood to where he is now, once he has gone
-    /// far enough (the reported position jitters by a few metres) - 8 m; standing still keeps the last direction.
+    /// Where the arrow points. A dash or movement skill names its direction (the position frame carries it): taken at once. Otherwise the arrow
+    /// points the way the player moves - from where he last stood to where he is now, once he has gone 6 m (the guess jitters by a few metres);
+    /// standing still keeps the last direction. The arrow turns to it smoothly (<see cref="TurnArrow"/>).
     /// </summary>
-    private void FollowHeading(float x, float y)
+    private void FollowHeading(Aion2EntityDirectory directory, float x, float y)
     {
+        if (directory.LocalFacing is { } facing && facing.At > _facingUsed && DateTime.UtcNow - facing.At < TimeSpan.FromSeconds(2))
+        {
+            _facingUsed = facing.At;
+            _heading = facing.Degrees + 90; // the arrow points up at 0 degrees; the map's y runs down the screen
+            _headingFrom = (x, y);
+            return;
+        }
+
         if (_headingFrom is not { } from)
         {
             _headingFrom = (x, y);
@@ -212,11 +255,18 @@ public sealed class PetMapController : IDisposable
         }
 
         double dx = x - from.X, dy = y - from.Y;
-        if (dx * dx + dy * dy >= 800.0 * 800.0)
+        if (dx * dx + dy * dy >= 600.0 * 600.0)
         {
-            _heading = Math.Atan2(dy, dx) * 180 / Math.PI + 90; // the arrow points up at 0 degrees; the map's y runs down the screen
+            _heading = Math.Atan2(dy, dx) * 180 / Math.PI + 90;
             _headingFrom = (x, y);
         }
+    }
+
+    /// <summary>The arrow on the map turns towards <see cref="_heading"/> the short way round, most of the turn within a quarter of a second.</summary>
+    private void TurnArrow()
+    {
+        double diff = ((_heading - _shownHeading) % 360 + 540) % 360 - 180;
+        _shownHeading = Math.Abs(diff) < 0.5 ? _heading : _shownHeading + diff * 0.4;
     }
 
     private DateTime _lastCubeBeep = DateTime.MinValue;
@@ -364,13 +414,14 @@ public sealed class PetMapController : IDisposable
         bool mapLocked = settings.PetFarmLocked, listLocked = settings.PetListLocked ?? settings.PetFarmLocked;
         bool locked = mapLocked && listLocked;
         _map.ApplyLockedIfChanged(mapLocked);
+        _whole.ApplyLockedIfChanged(mapLocked);
         _list.ApplyLockedIfChanged(listLocked);
         bool inGame = GameWindow.ForegroundClientArea(ignoreMenu: true) is not null;
         _hideOverlays = (!inGame && locked) || !(settings.ShowPetMap || _cubeMapOverride); // with the module's switch off only the tool window's views are fed (a cube that came into range shows the map all the same)
         if (_hideOverlays)
         {
             Hide();
-            if (_mapViews.Count == 0)
+            if (_mapViews.Count == 0 && _wholeViews.Count == 0)
             {
                 return; // nothing to show anywhere; with a tool window open the views go on
             }
@@ -428,7 +479,7 @@ public sealed class PetMapController : IDisposable
             _list.ApplyStoredOpacity();
         }
 
-        if (nothing && _mapViews.Count == 0)
+        if (nothing && _mapViews.Count == 0 && _wholeViews.Count == 0)
         {
             // nothing picked and no tool page open: the overlays have nothing to show (the tool page's map still shows the land and the player)
             if (shopRows.Count == 0)
@@ -442,6 +493,7 @@ public sealed class PetMapController : IDisposable
             RenderList(shopRows.Take(_list.RowCapacity).ToList());
             ShowList(true);
             ShowMap(!mapLocked);
+            ShowWhole(!mapLocked);
             return;
         }
 
@@ -453,7 +505,8 @@ public sealed class PetMapController : IDisposable
         {
             (tx, ty) = Steady(directory!, position!.Value);
             RememberPosition(tx, ty);
-            FollowHeading(tx, ty);
+            FollowHeading(directory!, tx, ty);
+            TurnArrow();
         }
         else
         {
@@ -488,6 +541,11 @@ public sealed class PetMapController : IDisposable
         var routeStops = settings.PetRouteOn && _plan is { } routePlan
             ? routePlan.Stops.Take(6).Select(st => (st.X * 100, st.Z * 100, st.Radius, st.Step)).ToList()
             : new List<(double, double, double, int)>();
+        // the full map shows the route further on (up to twelve stops)
+        var wholeStops = settings.PetRouteOn && _plan is { } wholePlan
+            ? wholePlan.Stops.Take(PetMapWindow.RouteBadges).Select(st => (st.X * 100, st.Z * 100, st.Radius, st.Step)).ToList()
+            : new List<(double, double, double, int)>();
+        string? firstName = settings.PetRouteOn ? _plan?.Stops.FirstOrDefault()?.Zone : null;
         IReadOnlySet<int>? arrowPets = settings.PetRouteOn && _plan?.Stops.FirstOrDefault() is { } arrowStop ? arrowStop.Pets.ToHashSet() : null;
         // at the stop (within its reach): the line leads on to the nearest of its pets, a monster that is there first, else its nearest spawn point
         (double X, double Y)? nextPet = null;
@@ -507,12 +565,18 @@ public sealed class PetMapController : IDisposable
 
         _map.Round = settings.PetMapRound;
         _map.ArrowPets = arrowPets;
-        _map.SetRoute(routeStops, nextPet);
+        _map.SetRoute(routeStops, nextPet, firstName);
         foreach (var view in _mapViews)
         {
             view.Round = settings.PetMapRound;
             view.ArrowPets = arrowPets;
-            view.SetRoute(routeStops, nextPet);
+            view.SetRoute(routeStops, nextPet, firstName);
+        }
+
+        _whole.SetRoute(wholeStops, nextPet, firstName);
+        foreach (var view in _wholeViews)
+        {
+            view.SetRoute(wholeStops, nextPet, firstName);
         }
 
         // Glide to the reported position
@@ -524,8 +588,8 @@ public sealed class PetMapController : IDisposable
         }
         else
         {
-            _x += (tx - _x) * 0.22;
-            _y += (ty - _y) * 0.22;
+            _x += (tx - _x) * 0.45;
+            _y += (ty - _y) * 0.45;
         }
 
         // without a known map the list names everything chosen (no distances; not the whole collection); with one, only what stands on it
@@ -545,7 +609,7 @@ public sealed class PetMapController : IDisposable
             colors[CubePet] = PetMapPalette.OfGather("Cube");
         }
 
-        _map.MeHeading = _heading;
+        _map.MeHeading = _shownHeading;
         if (_current is not null)
         {
             // the militia guards, on the open maps of the other side only (they are friendly at home)
@@ -559,16 +623,41 @@ public sealed class PetMapController : IDisposable
 
             foreach (var view in _mapViews)
             {
-                view.MeHeading = _heading;
+                view.MeHeading = _shownHeading;
                 // the page's map is a card on the app's page: the land in full, whatever the overlay's see-through setting
                 view.Render(_current, _x, _y, Math.Clamp(settings.PetMapRadius, 50, 500), 1.0, _pointsShown, live, colors, _gather, known, settings.ShowPetArrows, settings.ShowGatherArrows, guards);
             }
 
+            // the full map: the whole land with the route, to see where it leads (rendered only while it is shown somewhere)
+            bool wholeShown = settings.PetMapWhole && !_hideOverlays && !InMenu && (!nothing || !mapLocked);
+            if (wholeShown || _wholeViews.Count > 0)
+            {
+                // only the spawn points of the pets the route farms when it is on (every needed pet on the whole map would be hundreds of dots)
+                var wholePoints = settings.PetRouteOn && _plan is { Stops.Count: > 0 } farmPlan
+                    ? _points.Where(pt => farmPlan.Stops.Take(PetMapWindow.RouteBadges).Any(st => st.Pets.Contains(pt.PetId))).ToList()
+                    : _points;
+                // the collectibles too, without the route (with it the stops are what counts)
+                var wholeGather = settings.PetRouteOn && _plan is { Stops.Count: > 0 } ? null : _gather;
+                if (wholeShown)
+                {
+                    _whole.MeHeading = _shownHeading;
+                    _whole.RenderWhole(_current, _x, _y, wholePoints, live, colors, wholeGather, known);
+                }
+
+                foreach (var view in _wholeViews)
+                {
+                    view.MeHeading = _shownHeading;
+                    view.RenderWhole(_current, _x, _y, wholePoints, live, colors, wholeGather, known);
+                }
+            }
+
             ShowMap(!nothing || !mapLocked);
+            ShowWhole(!nothing || !mapLocked);
         }
         else
         {
             ShowMap(!mapLocked);
+            ShowWhole(false);
         }
 
         Status = StatusOf(directory, inInstance, known, nothing, auto, petsHere.Count);
@@ -989,11 +1078,13 @@ public sealed class PetMapController : IDisposable
         RenderList(SampleRows());
         ShowList(!listLocked && !InMenu);
         ShowMap(!mapLocked);
+        ShowWhole(!mapLocked);
     }
 
     private void Hide()
     {
         ShowMap(false);
+        ShowWhole(false);
         ShowList(false);
     }
 }

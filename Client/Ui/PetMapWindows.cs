@@ -388,12 +388,22 @@ public sealed class PetMapWindow : MovableOverlay
     private static readonly Brush RouteGoldSoft = PetMapPalette.BrushOf(Color.FromArgb(0x14, 0xE8, 0xC3, 0x5A));
     private static readonly Brush RouteDark = PetMapPalette.BrushOf(Color.FromArgb(0xE6, 0x10, 0x14, 0x1A));
 
-    /// <summary>The pet route to draw (world units): the stop being farmed first, then the next ones. Empty: no route.</summary>
-    public void SetRoute(IReadOnlyList<(double X, double Y, double Radius, int Step)> stops, (double X, double Y)? next = null)
+    /// <summary>The pet route to draw (world units): the stop being farmed first, then the next ones. Empty: no route. <paramref name="firstName"/>: where the
+    /// stop being farmed is (its area), written beside the arrow and, on the full map, beside the stop.</summary>
+    public void SetRoute(IReadOnlyList<(double X, double Y, double Radius, int Step)> stops, (double X, double Y)? next = null, string? firstName = null)
     {
         _route = stops;
         _next = next;
+        _firstName = firstName;
     }
+
+    private string? _firstName;
+
+    /// <summary>The whole map instead of the part around the player (the full map overlay): the route's stops, all of them, and where the player is on it.</summary>
+    public bool Whole { get; }
+
+    /// <summary>As many stops as the route draws: the minimap the next six, the full map up to twelve.</summary>
+    public const int RouteBadges = 12;
 
     /// <summary>At the stop: the nearest of its pets' monsters (or spawn points), which the line leads to instead of the stop.</summary>
     private (double X, double Y)? _next;
@@ -412,10 +422,11 @@ public sealed class PetMapWindow : MovableOverlay
     }
 
     /// <summary>
-    /// The route: a dashed path from the player through the next stops, the stop being farmed with its reach and its number in gold, the next
-    /// ones numbered, and, when the stop is out of view, a gold arrow on the edge towards it with its number and distance.
+    /// The route: a solid gold line from the player to the stop being farmed (at the stop: to the nearest of its pets), a dashed one on from there through
+    /// the next stops, the stop being farmed with its reach and its number in gold, the next ones numbered, and, when the stop is out of view, a gold arrow on
+    /// the edge towards it with its number, its area and the distance. <paramref name="at"/> puts a world place on the canvas; <paramref name="me"/> is the player there.
     /// </summary>
-    private void DrawRoute(double worldX, double worldY, double ppu, double cx, double cy, double vw, double vh)
+    private void DrawRoute(Func<double, double, Point> at, Point me, double worldX, double worldY, double ppu, double cx, double cy, double vw, double vh)
     {
         // the parts are made once and moved on every frame (20 a second): new shapes with shadows every frame made the map stutter
         RouteParts parts = _routeShapes ??= NewRouteParts();
@@ -432,33 +443,49 @@ public sealed class PetMapWindow : MovableOverlay
         // at the stop: a solid line to the nearest of its pets
         if (_next is { } next)
         {
-            double nx = cx + (next.X - worldX) * ppu, ny = cy + (next.Y - worldY) * ppu;
-            parts.NextLine.X1 = cx;
-            parts.NextLine.Y1 = cy;
-            parts.NextLine.X2 = nx;
-            parts.NextLine.Y2 = ny;
+            Point n = at(next.X, next.Y);
+            parts.NextLine.X1 = me.X;
+            parts.NextLine.Y1 = me.Y;
+            parts.NextLine.X2 = n.X;
+            parts.NextLine.Y2 = n.Y;
             parts.NextLine.Visibility = Visibility.Visible;
-            Canvas.SetLeft(parts.NextTarget, nx - 13);
-            Canvas.SetTop(parts.NextTarget, ny - 13);
+            Canvas.SetLeft(parts.NextTarget, n.X - 13);
+            Canvas.SetTop(parts.NextTarget, n.Y - 13);
             parts.NextTarget.Visibility = Visibility.Visible;
         }
 
-        bool Inside(double x, double y, double margin) => Round
+        bool round = Round && !Whole;
+        bool Inside(double x, double y, double margin) => round
             ? (x - cx) * (x - cx) + (y - cy) * (y - cy) <= (Math.Min(cx, cy) - margin) * (Math.Min(cx, cy) - margin)
             : x >= margin && y >= margin && x <= vw - margin && y <= vh - margin;
-        var shown = _route.Take(parts.Badges.Count).Select(st => (Stop: st, X: cx + (st.X - worldX) * ppu, Y: cy + (st.Y - worldY) * ppu)).ToList();
-        var points = new PointCollection(shown.Count + 1) { new Point(cx, cy) };
-        foreach (var (_, x, y) in shown)
+        var shown = _route.Take(parts.Badges.Count).Select(st => (Stop: st, P: at(st.X, st.Y))).ToList();
+        if (shown.Count > 1)
         {
-            points.Add(new Point(x, y));
+            // the way on from the stop being farmed: dashed
+            var points = new PointCollection(shown.Count);
+            foreach (var (_, pt) in shown)
+            {
+                points.Add(pt);
+            }
+
+            parts.Path.Points = points;
+            parts.Path.Visibility = Visibility.Visible;
         }
 
-        parts.Path.Points = points;
-        parts.Path.Visibility = Visibility.Visible;
+        if (_next is null)
+        {
+            // the way to the stop being farmed: solid, from the player
+            parts.Leg.X1 = me.X;
+            parts.Leg.Y1 = me.Y;
+            parts.Leg.X2 = shown[0].P.X;
+            parts.Leg.Y2 = shown[0].P.Y;
+            parts.Leg.Visibility = Visibility.Visible;
+        }
+
         for (int i = 0; i < shown.Count; i++)
         {
-            var (stop, x, y) = shown[i];
-            if (!Inside(x, y, 6))
+            var (stop, pt) = shown[i];
+            if (!Inside(pt.X, pt.Y, 6))
             {
                 continue;
             }
@@ -468,35 +495,51 @@ public sealed class PetMapWindow : MovableOverlay
             {
                 // the stop's reach, while it fits in the view (zoomed out: the number alone)
                 parts.Ring.Width = parts.Ring.Height = 2 * reach;
-                Canvas.SetLeft(parts.Ring, x - reach);
-                Canvas.SetTop(parts.Ring, y - reach);
+                Canvas.SetLeft(parts.Ring, pt.X - reach);
+                Canvas.SetTop(parts.Ring, pt.Y - reach);
                 parts.Ring.Visibility = Visibility.Visible;
             }
 
             Border badge = parts.Badges[i];
             ((TextBlock)badge.Child).Text = stop.Step.ToString(System.Globalization.CultureInfo.InvariantCulture);
-            Canvas.SetLeft(badge, x - badge.Width / 2);
-            Canvas.SetTop(badge, y - badge.Height / 2);
+            Canvas.SetLeft(badge, pt.X - badge.Width / 2);
+            Canvas.SetTop(badge, pt.Y - badge.Height / 2);
             badge.Visibility = Visibility.Visible;
         }
 
-        // the stop being farmed out of view: a gold arrow on the edge, its number and how far
-        var (first, fx, fy) = shown[0];
-        if (!Inside(fx, fy, 6))
+        var (first, fp) = shown[0];
+        double metres = Math.Sqrt((first.X - worldX) * (first.X - worldX) + (first.Y - worldY) * (first.Y - worldY)) / 100.0;
+        string name = _firstName is { Length: > 0 } n0 ? (n0.Length > 22 ? n0[..21] + "\u2026" : n0) : "";
+        if (!Inside(fp.X, fp.Y, 6))
         {
-            double dx = fx - cx, dy = fy - cy, angle = Math.Atan2(dy, dx);
+            // the stop being farmed out of view: a gold arrow on the edge, its number, where it is and how far
+            double dx = fp.X - me.X, dy = fp.Y - me.Y, angle = Math.Atan2(dy, dx);
             var (tipX, tipY) = EdgeOf(cx, cy, dx, dy);
             parts.Arrow.RenderTransform = new RotateTransform(angle * 180 / Math.PI);
             Canvas.SetLeft(parts.Arrow, tipX);
             Canvas.SetTop(parts.Arrow, tipY);
             parts.Arrow.Visibility = Visibility.Visible;
-            double metres = Math.Sqrt((first.X - worldX) * (first.X - worldX) + (first.Y - worldY) * (first.Y - worldY)) / 100.0;
-            parts.LabelText.Text = string.Format(System.Globalization.CultureInfo.CurrentCulture, "{0} · {1:0} m", first.Step, metres);
+            parts.LabelText.Text = name.Length > 0
+                ? string.Format(System.Globalization.CultureInfo.CurrentCulture, "{0} · {1} · {2:0} m", first.Step, name, metres)
+                : string.Format(System.Globalization.CultureInfo.CurrentCulture, "{0} · {1:0} m", first.Step, metres);
             parts.Label.Visibility = Visibility.Visible;
             parts.Label.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
             Size sz = parts.Label.DesiredSize;
             Canvas.SetLeft(parts.Label, Math.Clamp(tipX - 30 * Math.Cos(angle) - sz.Width / 2, 3, Math.Max(3, vw - sz.Width - 3)));
             Canvas.SetTop(parts.Label, Math.Clamp(tipY - 30 * Math.Sin(angle) - sz.Height / 2, 3, Math.Max(3, vh - sz.Height - 3)));
+        }
+        else if (Whole && _next is null)
+        {
+            // on the full map: the stop's area and how far, beside it
+            parts.LabelText.Text = name.Length > 0
+                ? string.Format(System.Globalization.CultureInfo.CurrentCulture, "{0} · {1:0} m", name, metres)
+                : string.Format(System.Globalization.CultureInfo.CurrentCulture, "{0:0} m", metres);
+            parts.Label.Visibility = Visibility.Visible;
+            parts.Label.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            Size sz = parts.Label.DesiredSize;
+            bool left = fp.X + 16 + sz.Width > vw - 3;
+            Canvas.SetLeft(parts.Label, Math.Clamp(left ? fp.X - 16 - sz.Width : fp.X + 16, 3, Math.Max(3, vw - sz.Width - 3)));
+            Canvas.SetTop(parts.Label, Math.Clamp(fp.Y - sz.Height / 2, 3, Math.Max(3, vh - sz.Height - 3)));
         }
     }
 
@@ -510,8 +553,9 @@ public sealed class PetMapWindow : MovableOverlay
         public required TextBlock LabelText { get; init; }
         public required Line NextLine { get; init; }
         public required Ellipse NextTarget { get; init; }
+        public required Line Leg { get; init; }
 
-        public IEnumerable<UIElement> All => new UIElement[] { Path, Ring, Arrow, Label, NextLine, NextTarget }.Concat(Badges);
+        public IEnumerable<UIElement> All => new UIElement[] { Path, Ring, Arrow, Label, NextLine, NextTarget, Leg }.Concat(Badges);
     }
 
     private RouteParts? _routeShapes;
@@ -525,7 +569,7 @@ public sealed class PetMapWindow : MovableOverlay
         {
             Path = new Polyline { Stroke = RouteGold, StrokeThickness = 2.2, Opacity = 0.75, StrokeDashArray = new DoubleCollection { 3, 2.5 }, IsHitTestVisible = false },
             Ring = new Ellipse { Stroke = RouteGold, StrokeThickness = 1.6, StrokeDashArray = new DoubleCollection { 4, 3 }, Fill = RouteGoldSoft, IsHitTestVisible = false },
-            Badges = Enumerable.Range(0, 6).Select(i =>
+            Badges = Enumerable.Range(0, RouteBadges).Select(i =>
             {
                 double size = i == 0 ? 22 : 17;
                 return new Border
@@ -544,6 +588,7 @@ public sealed class PetMapWindow : MovableOverlay
             LabelText = labelText,
             NextLine = new Line { Stroke = RouteGold, StrokeThickness = 2.6, IsHitTestVisible = false, Effect = shadow },
             NextTarget = new Ellipse { Width = 26, Height = 26, Stroke = RouteGold, StrokeThickness = 2.4, IsHitTestVisible = false },
+            Leg = new Line { Stroke = RouteGold, StrokeThickness = 3, StrokeStartLineCap = PenLineCap.Round, StrokeEndLineCap = PenLineCap.Round, IsHitTestVisible = false, Effect = shadow },
         };
         void Add(UIElement e, int z)
         {
@@ -554,6 +599,7 @@ public sealed class PetMapWindow : MovableOverlay
 
         Add(parts.Ring, 2);
         Add(parts.Path, 3);
+        Add(parts.Leg, 4);
         Add(parts.NextLine, 4);
         foreach (Border badge in Enumerable.Reverse(parts.Badges))
         {
@@ -566,8 +612,12 @@ public sealed class PetMapWindow : MovableOverlay
         return parts;
     }
 
-    public PetMapWindow() : base("Aion DPS Pet Map", new Border { Child = null }, Load, Save, SystemParameters.WorkArea.Right - ViewSize - 40, 120, LoadSize, SaveSize, OverlayEdgeMode.CropAnchored)
+    public PetMapWindow(bool whole = false) : base(whole ? "Aion DPS Full Map" : "Aion DPS Pet Map", new Border { Child = null }, whole ? LoadWhole : Load, whole ? SaveWhole : Save,
+        whole ? Math.Max(0, SystemParameters.WorkArea.Left + (SystemParameters.WorkArea.Width - ViewSize * 1.4) / 2) : SystemParameters.WorkArea.Right - ViewSize - 40,
+        whole ? Math.Max(0, SystemParameters.WorkArea.Top + (SystemParameters.WorkArea.Height - ViewSize * 1.4) / 2) : 120,
+        whole ? LoadWholeSize : LoadSize, whole ? SaveWholeSize : SaveSize, OverlayEdgeMode.CropAnchored)
     {
+        Whole = whole;
         _me = new Polygon
         {
             Points = new PointCollection { new Point(0, -11), new Point(8, 9), new Point(0, 5), new Point(-8, 9) },
@@ -586,6 +636,35 @@ public sealed class PetMapWindow : MovableOverlay
         Canvas.SetTop(_meUnknown, ViewSize / 2 - 20);
         _canvas.Children.Add(_meUnknown);
         Body = _canvas;
+    }
+
+    private static (double?, double?) LoadWholeSize()
+    {
+        var s = MeterSettings.Load();
+        return (s.PetWholeWidth, s.PetWholeHeight);
+    }
+
+    private static void SaveWholeSize(double? width, double? height)
+    {
+        var s = MeterSettings.Load();
+        s.PetWholeWidth = width;
+        s.PetWholeHeight = height;
+        s.Save();
+    }
+
+    private static (double?, double?, double) LoadWhole()
+    {
+        var s = MeterSettings.Load();
+        return (s.PetWholeLeft, s.PetWholeTop, s.PetWholeScale);
+    }
+
+    private static void SaveWhole(double left, double top, double scale)
+    {
+        var s = MeterSettings.Load();
+        s.PetWholeLeft = left;
+        s.PetWholeTop = top;
+        s.PetWholeScale = scale;
+        s.Save();
     }
 
     private static (double?, double?) LoadSize()
@@ -918,7 +997,16 @@ public sealed class PetMapWindow : MovableOverlay
         }
 
         DrawGuards(guards, worldX, worldY, ppu, cx, cy, vw, vh);
-        DrawRoute(worldX, worldY, ppu, cx, cy, vw, vh);
+        DrawRoute((x, y) => new Point(cx + (x - worldX) * ppu, cy + (y - worldY) * ppu), new Point(cx, cy), worldX, worldY, ppu, cx, cy, vw, vh);
+        if (_wholeImage is not null)
+        {
+            _wholeImage.Visibility = Visibility.Collapsed;
+        }
+
+        if (_halo is not null)
+        {
+            _halo.Visibility = Visibility.Collapsed;
+        }
         // round: the view is a circle (the minimap's shape)
         _canvas.Clip = Round ? new EllipseGeometry(new Point(cx, cy), cx, cy) : null;
 
@@ -928,6 +1016,204 @@ public sealed class PetMapWindow : MovableOverlay
         Canvas.SetLeft(_meUnknown, cx - 14);
         Canvas.SetTop(_meUnknown, cy - 20);
         // the player on top; a "?" instead of the arrow when the position is not known (the view then shows the last one)
+        _me.Visibility = positionKnown ? Visibility.Visible : Visibility.Collapsed;
+        _meUnknown.Visibility = positionKnown ? Visibility.Collapsed : Visibility.Visible;
+        _canvas.Children.Remove(_me);
+        _canvas.Children.Add(_me);
+        _canvas.Children.Remove(_meUnknown);
+        _canvas.Children.Add(_meUnknown);
+    }
+
+    private Image? _wholeImage;
+    private Ellipse? _halo;
+    private Border? _wholeTitle;
+
+    /// <summary>The land picture of each map and where it lies (world units), made once per map (every tile at 192 pixels).</summary>
+    private static readonly Dictionary<string, (BitmapSource Image, double X0, double Y0, double W, double H)?> Lands = new();
+
+    private static (BitmapSource Image, double X0, double Y0, double W, double H)? LandOf(Aion2MapInfo map)
+    {
+        if (!Lands.TryGetValue(map.Key, out var land))
+        {
+            land = MapTiles.Land(map, 192) is { } l
+                ? (l.Image, (l.Col0 * map.Tile - map.OffsetX) / map.Scale, (l.Row0 * map.Tile - map.OffsetY) / map.Scale, l.Cols * map.Tile / map.Scale, l.Rows * map.Tile / map.Scale)
+                : null;
+            Lands[map.Key] = land;
+        }
+
+        return land;
+    }
+
+    /// <summary>
+    /// The full map: the whole land of <paramref name="map"/> in the view, the player's arrow where he is (<paramref name="worldX"/>, <paramref name="worldY"/>),
+    /// the spawn points of the chosen pets small, the monsters and collectibles around him, and the whole route with every stop numbered.
+    /// </summary>
+    public void RenderWhole(Aion2MapInfo map, double worldX, double worldY, IReadOnlyList<(int PetId, float X, float Y)> points,
+        IReadOnlyList<(int PetId, float X, float Y)> live, IReadOnlyDictionary<int, Color> colors, IReadOnlyList<(string Kind, float X, float Y)>? gather, bool positionKnown)
+    {
+        double vw = Math.Clamp(BodyWidth, 40, ViewSize), vh = Math.Clamp(BodyHeight, 40, ViewSize);
+        var land = LandOf(map);
+        // without tiles the map's spawn points still give its extent
+        (double X0, double Y0, double W, double H) r = land is { } l0 ? (l0.X0, l0.Y0, l0.W, l0.H)
+            : points.Count > 0 ? (points.Min(p => p.X), points.Min(p => p.Y), Math.Max(1000, points.Max(p => p.X) - points.Min(p => p.X)), Math.Max(1000, points.Max(p => p.Y) - points.Min(p => p.Y)))
+            : (worldX - 50000, worldY - 50000, 100000, 100000);
+        double ppu = Math.Min((vw - 10) / r.W, (vh - 10) / r.H);
+        double ox = vw / 2 - (r.X0 + r.W / 2) * ppu, oy = vh / 2 - (r.Y0 + r.H / 2) * ppu;
+        Point At(double x, double y) => new(ox + x * ppu, oy + y * ppu);
+
+        foreach (Image tile in _tileImages)
+        {
+            tile.Visibility = Visibility.Collapsed;
+        }
+
+        if (_wholeImage is null)
+        {
+            _wholeImage = new Image { Stretch = Stretch.Fill, IsHitTestVisible = false };
+            Panel.SetZIndex(_wholeImage, -2);
+            RenderOptions.SetBitmapScalingMode(_wholeImage, BitmapScalingMode.HighQuality);
+            _canvas.Children.Insert(0, _wholeImage);
+        }
+
+        if (land is { } l)
+        {
+            _wholeImage.Source = l.Image;
+            _wholeImage.Width = r.W * ppu;
+            _wholeImage.Height = r.H * ppu;
+            Canvas.SetLeft(_wholeImage, ox + r.X0 * ppu);
+            Canvas.SetTop(_wholeImage, oy + r.Y0 * ppu);
+            _wholeImage.Visibility = Visibility.Visible;
+        }
+        else
+        {
+            _wholeImage.Visibility = Visibility.Collapsed;
+        }
+
+        // the spawn points of the chosen pets: small
+        int dot = 0;
+        foreach ((int pet, float x, float y) in points)
+        {
+            Point pt = At(x, y);
+            if (pt.X < 3 || pt.Y < 3 || pt.X > vw - 3 || pt.Y > vh - 3)
+            {
+                continue;
+            }
+
+            if (dot >= _dots.Count)
+            {
+                var e = new Ellipse { Stroke = Brushes.White, StrokeThickness = 0.8, Opacity = 0.75, IsHitTestVisible = false };
+                _dots.Add(e);
+                _canvas.Children.Add(e);
+            }
+
+            var d = _dots[dot++];
+            d.Width = d.Height = 5;
+            d.Fill = PetMapPalette.BrushOf(colors.GetValueOrDefault(pet, Colors.White));
+            Canvas.SetLeft(d, pt.X - 2.5);
+            Canvas.SetTop(d, pt.Y - 2.5);
+            d.Visibility = Visibility.Visible;
+        }
+
+        for (int i = dot; i < _dots.Count; i++)
+        {
+            _dots[i].Visibility = Visibility.Collapsed;
+        }
+
+        int mark = 0;
+        foreach ((string kind, float x, float y) in gather ?? Array.Empty<(string, float, float)>())
+        {
+            Point pt = At(x, y);
+            if (pt.X < 4 || pt.Y < 4 || pt.X > vw - 4 || pt.Y > vh - 4)
+            {
+                continue;
+            }
+
+            if (mark >= _gatherMarks.Count)
+            {
+                var g = new Polygon { Points = new PointCollection { new Point(0, -5), new Point(4.5, 0), new Point(0, 5), new Point(-4.5, 0) }, Stroke = Brushes.Black, StrokeThickness = 1, IsHitTestVisible = false };
+                _gatherMarks.Add(g);
+                _canvas.Children.Add(g);
+            }
+
+            var m = _gatherMarks[mark++];
+            m.Fill = PetMapPalette.BrushOf(PetMapPalette.OfGather(kind));
+            Canvas.SetLeft(m, pt.X);
+            Canvas.SetTop(m, pt.Y);
+            m.Visibility = Visibility.Visible;
+        }
+
+        for (int i = mark; i < _gatherMarks.Count; i++)
+        {
+            _gatherMarks[i].Visibility = Visibility.Collapsed;
+        }
+
+        int liveDot = 0;
+        foreach ((int pet, float x, float y) in live)
+        {
+            Point pt = At(x, y);
+            if (liveDot >= _liveDots.Count)
+            {
+                var e = new Ellipse { Width = 9, Height = 9, Stroke = Brushes.White, StrokeThickness = 1.6, IsHitTestVisible = false };
+                _liveDots.Add(e);
+                _canvas.Children.Add(e);
+            }
+
+            var d = _liveDots[liveDot++];
+            d.Fill = PetMapPalette.BrushOf(colors.GetValueOrDefault(pet, Colors.White));
+            Canvas.SetLeft(d, pt.X - 4.5);
+            Canvas.SetTop(d, pt.Y - 4.5);
+            d.Visibility = Visibility.Visible;
+        }
+
+        for (int i = liveDot; i < _liveDots.Count; i++)
+        {
+            _liveDots[i].Visibility = Visibility.Collapsed;
+        }
+
+        // everything is in view: no arrows on the edge, no guards (they are only near the player)
+        foreach (Polygon a in _edgeArrows)
+        {
+            a.Visibility = Visibility.Collapsed;
+        }
+
+        DrawGuards(null, worldX, worldY, ppu, vw / 2, vh / 2, vw, vh);
+        Point me = At(worldX, worldY);
+        DrawRoute((x, y) => At(x, y), me, worldX, worldY, ppu, vw / 2, vh / 2, vw, vh);
+        _canvas.Clip = null;
+
+        // the map's name in the corner
+        if (_wholeTitle is null)
+        {
+            _wholeTitle = new Border
+            {
+                Background = new SolidColorBrush(Color.FromArgb(0xC8, 0x10, 0x14, 0x1A)), CornerRadius = new CornerRadius(4), Padding = new Thickness(6, 2, 6, 2), IsHitTestVisible = false,
+                Child = new TextBlock { FontSize = 12, FontWeight = FontWeights.SemiBold, Foreground = RouteGold },
+            };
+            Panel.SetZIndex(_wholeTitle, 9);
+            _canvas.Children.Add(_wholeTitle);
+            Canvas.SetLeft(_wholeTitle, 6);
+            Canvas.SetTop(_wholeTitle, 6);
+        }
+
+        ((TextBlock)_wholeTitle.Child).Text = map.Title;
+        _wholeTitle.Visibility = Visibility.Visible;
+
+        // the player: his arrow in a white ring, so he is found at a glance on the whole map
+        if (_halo is null)
+        {
+            _halo = new Ellipse { Width = 30, Height = 30, Stroke = Brushes.White, StrokeThickness = 2, Fill = new SolidColorBrush(Color.FromArgb(0x50, 0xFF, 0xBA, 0x42)), IsHitTestVisible = false };
+            _canvas.Children.Add(_halo);
+        }
+
+        Canvas.SetLeft(_halo, me.X - 15);
+        Canvas.SetTop(_halo, me.Y - 15);
+        _halo.Visibility = positionKnown ? Visibility.Visible : Visibility.Collapsed;
+        _canvas.Children.Remove(_halo);
+        _canvas.Children.Add(_halo);
+        Canvas.SetLeft(_me, me.X);
+        Canvas.SetTop(_me, me.Y);
+        _me.RenderTransform = new RotateTransform(MeHeading);
+        Canvas.SetLeft(_meUnknown, me.X - 14);
+        Canvas.SetTop(_meUnknown, me.Y - 20);
         _me.Visibility = positionKnown ? Visibility.Visible : Visibility.Collapsed;
         _meUnknown.Visibility = positionKnown ? Visibility.Collapsed : Visibility.Visible;
         _canvas.Children.Remove(_me);

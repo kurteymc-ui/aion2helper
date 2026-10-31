@@ -117,6 +117,7 @@ public partial class SettingsWindow : Window
             box.IsChecked = !settings.NetworkOverlayHidden.Contains((string)box.Tag);
         }
         SetHotkeyBox(HotkeyPetArrowsBox, HotkeyBinding.Parse(settings.HotkeyPetArrows).ToString());
+        SetHotkeyBox(HotkeyPetMapWholeBox, HotkeyBinding.Parse(settings.HotkeyPetMapWhole).ToString());
         SetHotkeyBox(HotkeyGatherArrowsBox, HotkeyBinding.Parse(settings.HotkeyGatherArrows).ToString());
         ShowHotkeyOverlayBox.IsChecked = settings.ShowHotkeyOverlay;
         foreach (var box in HotkeyOverlayRowBoxes())
@@ -556,7 +557,7 @@ public partial class SettingsWindow : Window
 
     /// <summary>The switches in front of the hotkey names: shown in the hotkey overlay or not (Tag = the hotkey's id).</summary>
     private IEnumerable<CheckBox> HotkeyOverlayRowBoxes() =>
-        new[] { OvHideUiBox, OvPauseBox, OvCopyDamageBox, OvClearBox, OvUploadBossBox, OvModeBox, OvTimetableBox, OvPetMapBox, OvHotkeyOverlayBox, OvAllOverlaysBox, OvWorldBossBox, OvNetworkBox, OvCombatBox, OvAssistBox, OvLootBox, OvCraftBox, OvPetArrowsBox, OvGatherArrowsBox };
+        new[] { OvHideUiBox, OvPauseBox, OvCopyDamageBox, OvClearBox, OvUploadBossBox, OvModeBox, OvTimetableBox, OvPetMapBox, OvHotkeyOverlayBox, OvAllOverlaysBox, OvWorldBossBox, OvNetworkBox, OvCombatBox, OvAssistBox, OvLootBox, OvCraftBox, OvPetArrowsBox, OvPetMapWholeBox, OvGatherArrowsBox };
 
     /// <summary>The switches of the lines the network overlay shows (Tag = the line's id).</summary>
     private IEnumerable<CheckBox> NetworkRowBoxes() =>
@@ -683,6 +684,13 @@ public partial class SettingsWindow : Window
         _settings.PetListLeft = onDisk.PetListLeft;
         _settings.PetListTop = onDisk.PetListTop;
         _settings.PetListScale = onDisk.PetListScale;
+        // the full map: switched on the map page or by its hotkey, placed on the screen
+        _settings.PetMapWhole = onDisk.PetMapWhole;
+        _settings.PetWholeLeft = onDisk.PetWholeLeft;
+        _settings.PetWholeTop = onDisk.PetWholeTop;
+        _settings.PetWholeScale = onDisk.PetWholeScale;
+        _settings.PetWholeWidth = onDisk.PetWholeWidth;
+        _settings.PetWholeHeight = onDisk.PetWholeHeight;
         _settings.ShowAssistOverlay = onDisk.ShowAssistOverlay;
         _settings.AssistOverlayLocked = onDisk.AssistOverlayLocked;
         _settings.AssistOverlayLeft = onDisk.AssistOverlayLeft;
@@ -826,6 +834,7 @@ public partial class SettingsWindow : Window
         _settings.NetworkOverlayLocked = !(NetworkOverlayLockedBox.IsChecked ?? false);
         _settings.NetworkOverlayHidden = NetworkRowBoxes().Where(b => b.IsChecked != true).Select(b => (string)b.Tag).ToList();
         _settings.HotkeyPetArrows = (string?)HotkeyPetArrowsBox.Tag ?? "";
+        _settings.HotkeyPetMapWhole = (string?)HotkeyPetMapWholeBox.Tag ?? "";
         _settings.HotkeyGatherArrows = (string?)HotkeyGatherArrowsBox.Tag ?? "";
         _settings.ShowPetArrows = ShowPetArrowsBox.IsChecked ?? true;
         _settings.ShowGatherArrows = ShowGatherArrowsBox.IsChecked ?? true;

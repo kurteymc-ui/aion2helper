@@ -852,6 +852,9 @@ public partial class MainWindow : Window
             case HotkeyAction.TogglePetArrows:
                 TogglePetArrows();
                 break;
+            case HotkeyAction.TogglePetMapWhole:
+                TogglePetMapWhole();
+                break;
             case HotkeyAction.ToggleGatherArrows:
                 ToggleGatherArrows();
                 break;
@@ -892,6 +895,7 @@ public partial class MainWindow : Window
             [HotkeyAction.ToggleLootOverlay] = HotkeyBinding.Parse(settings.HotkeyLoot),
             [HotkeyAction.ToggleCraftOverlay] = HotkeyBinding.Parse(settings.HotkeyCraft),
             [HotkeyAction.TogglePetArrows] = HotkeyBinding.Parse(settings.HotkeyPetArrows),
+            [HotkeyAction.TogglePetMapWhole] = HotkeyBinding.Parse(settings.HotkeyPetMapWhole),
             [HotkeyAction.ToggleGatherArrows] = HotkeyBinding.Parse(settings.HotkeyGatherArrows),
         });
         if (failed.Count > 0)
@@ -6786,6 +6790,12 @@ public partial class MainWindow : Window
                 var mapCard = new Border { Child = map.DetachBody()!, CornerRadius = new CornerRadius(6), ClipToBounds = true, HorizontalAlignment = HorizontalAlignment.Left };
                 mapCard.SetResourceReference(Border.BackgroundProperty, "Brush.Control");
                 stack.Children.Add(mapCard);
+                // the whole map with the route: where it leads (the same as the full map overlay)
+                var wholeView = _petMapController.CreateWholeView();
+                stack.Children.Add(ModulePage.Caption(loc["Settings.PetMap.CardWhole"]));
+                var wholeCard = new Border { Child = wholeView.DetachBody()!, CornerRadius = new CornerRadius(6), ClipToBounds = true, HorizontalAlignment = HorizontalAlignment.Left };
+                wholeCard.SetResourceReference(Border.BackgroundProperty, "Brush.Control");
+                stack.Children.Add(wholeCard);
                 stack.Children.Add(ModulePage.Caption(loc["Settings.PetMap.CardList"]));
                 stack.Children.Add(list.DetachBody()!);
                 var page = new ModulePage(loc["Settings.Nav.PetMap"], stack, s => s.ShowPetMap, (s, v) => s.ShowPetMap = v, s => s.HotkeyPetMap, hotkeys, settingsPage, applied);
@@ -6797,6 +6807,7 @@ public partial class MainWindow : Window
                         page.Stop();
                         statusTimer.Stop();
                         _petMapController?.RemoveViews(map, list);
+                        _petMapController?.RemoveWholeView(wholeView);
                         if (MeterSettings.Load() is { ShowPetMap: false, CubeSoundEnabled: false } && _petMapController is { HasViews: false, CubeMapOverride: false })
                         {
                             _petMapController.Dispose();
@@ -7551,6 +7562,22 @@ public partial class MainWindow : Window
         var settings = MeterSettings.Load();
         settings.ShowPetArrows = !settings.ShowPetArrows;
         settings.Save();
+        _settingsWindow?.SyncOverlaySwitches(settings);
+    }
+
+    /// <summary>The full map overlay on or off; the map controller reads the settings every second (it needs the pet map running, which this switches on with it).</summary>
+    private void TogglePetMapWhole()
+    {
+        var settings = MeterSettings.Load();
+        settings.PetMapWhole = !settings.PetMapWhole;
+        if (settings.PetMapWhole && !settings.ShowPetMap)
+        {
+            settings.ShowPetMap = true;
+        }
+
+        settings.Save();
+        ApplyPetFarm(settings);
+        _petMapController?.SettingsChanged();
         _settingsWindow?.SyncOverlaySwitches(settings);
     }
 
