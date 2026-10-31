@@ -648,15 +648,6 @@ public sealed class MeterSettings
     /// <summary>The pets whose monsters the pet map shows (pet ids). Empty until the player picks some.</summary>
     public List<int> PetMapPets { get; set; } = new();
 
-    /// <summary>The pets still needed, the collectibles picked and the Hidden Cubes drawn on the game's own map (M) when it is open (GameMapOverlay). On by default.</summary>
-    public bool GameMapMarks { get; set; } = true;
-
-    /// <summary>On the game's map: a line from the player to the nearest pet, with its name and distance.</summary>
-    public bool GameMapGuide { get; set; } = true;
-
-    /// <summary>On the game's map: the legend of the pets shown, in their colours.</summary>
-    public bool GameMapLegend { get; set; } = true;
-
     /// <summary>The map shows every pet the player still needs (all but those at the top level, from the collection the game sends) instead of
     /// <see cref="PetMapPets"/>. Null (never switched): on while no pet was picked by hand.</summary>
     public bool? PetMapAutoPets { get; set; }

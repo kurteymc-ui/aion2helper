@@ -14441,45 +14441,5 @@
     "en": "What the player’s buffs added to the others’ damage per second (rDPS minus nDPS).",
     "de": "Was die Buffs des Spielers dem Schaden pro Sekunde der anderen hinzufügten (rDPS minus nDPS).",
     "fr": "Ce que les buffs du joueur ont ajouté aux dégâts par seconde des autres (rDPS moins nDPS)."
-  },
-  "GameMap.Title": {
-    "en": "On the game’s own map (M)",
-    "de": "Auf der Karte des Spiels (M)",
-    "fr": "Sur la carte du jeu (M)"
-  },
-  "GameMap.What": {
-    "en": "When you open the game’s map, the meter finds it on your screen (by its picture, also zoomed and dragged) and draws the pets you still need right on it, with a line to the nearest one. The picture of the screen stays in memory and is never saved or sent.",
-    "de": "Wenn du die Karte des Spiels öffnest, findet der Meter sie auf deinem Bildschirm (an ihrem Bild, auch gezoomt und verschoben) und zeichnet die Haustiere, die dir fehlen, direkt darauf, mit einer Linie zum nächsten. Das Bild des Bildschirms bleibt im Speicher und wird nie gespeichert oder gesendet.",
-    "fr": "Quand tu ouvres la carte du jeu, le meter la trouve sur ton écran (par son image, même zoomée et déplacée) et y dessine les familiers qu’il te manque, avec une ligne vers le plus proche. L’image de l’écran reste en mémoire et n’est jamais enregistrée ni envoyée."
-  },
-  "GameMap.Unavailable": {
-    "en": "Not available on this PC: the picture-matching part could not be loaded.",
-    "de": "Auf diesem PC nicht verfügbar: Der Bildvergleich konnte nicht geladen werden.",
-    "fr": "Indisponible sur ce PC : la partie de comparaison d’images n’a pas pu être chargée."
-  },
-  "GameMap.Marks": {
-    "en": "Show the pets and collectibles",
-    "de": "Haustiere und Sammelbares zeigen",
-    "fr": "Afficher familiers et récoltes"
-  },
-  "GameMap.Guide": {
-    "en": "Line to the nearest pet",
-    "de": "Linie zum nächsten Haustier",
-    "fr": "Ligne vers le familier le plus proche"
-  },
-  "GameMap.LegendSwitch": {
-    "en": "Legend",
-    "de": "Legende",
-    "fr": "Légende"
-  },
-  "GameMap.Legend": {
-    "en": "Pets on this map",
-    "de": "Haustiere auf dieser Karte",
-    "fr": "Familiers sur cette carte"
-  },
-  "GameMap.LegendMore": {
-    "en": "and {0} more",
-    "de": "und {0} weitere",
-    "fr": "et {0} de plus"
   }
 }

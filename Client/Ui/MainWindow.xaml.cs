@@ -143,7 +143,6 @@ public partial class MainWindow : Window
     private PetFarmWindow? _petFarm;
     private PetFarmController? _petFarmController;
     private PetMapController? _petMapController;
-    private GameMapOverlay? _gameMap;
     private bool _autoReset;
     /// <summary>Whose rows are shown: everybody, the own group, or the corps (two groups together).</summary>
     private enum MeterScope { All, Group, Corps, Me }
@@ -1360,8 +1359,6 @@ public partial class MainWindow : Window
             _loot ??= new LootOverlayController();
             _craft ??= new CraftOverlayController(() => _liveSource?.Entities as Aion2.Aion2EntityDirectory);
             _menuWatcher ??= new MenuWatcher();
-            // the pets on the game's own map (M): looks for the map only while the game is in front and a menu is open (switched off in the restricted mode)
-            _gameMap ??= new GameMapOverlay(() => _liveSource?.Entities as Aion2.Aion2EntityDirectory);
             _streamTimer.Tick += (_, _) => StreamTick();
             _streamTimer.Start();
             MeterSettings.BackupOnStart(); // after the first Load of this start, which restores a damaged file from the last copy
@@ -1878,7 +1875,6 @@ public partial class MainWindow : Window
         _petFarmController?.Dispose();
         _petFarm?.Close();
         _petMapController?.Dispose();
-        _gameMap?.Dispose();
         _trayIcon?.Dispose();
         base.OnClosed(e);
     }
@@ -6783,7 +6779,6 @@ public partial class MainWindow : Window
                 };
                 statusTimer.Start();
                 stack.Children.Add(mapStatus);
-                stack.Children.Add(GameMapSwitches());
                 var mapCard = new Border { Child = map.DetachBody()!, CornerRadius = new CornerRadius(6), ClipToBounds = true, HorizontalAlignment = HorizontalAlignment.Left };
                 mapCard.SetResourceReference(Border.BackgroundProperty, "Brush.Control");
                 stack.Children.Add(mapCard);
