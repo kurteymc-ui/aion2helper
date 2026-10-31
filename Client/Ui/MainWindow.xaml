@@ -770,6 +770,9 @@
                             <Button x:Name="ModeDamageButton" Style="{StaticResource ModeTab}" Tag="Damage" ToolTip="{local:Loc Main.ModeDamage}" Click="OnModeButtonClicked">
                             <Grid><Image x:Name="ModeDamageImage" Width="0" Height="0" Visibility="Collapsed"/><TextBlock Text="Damage" FontSize="13"/></Grid>
                         </Button>
+                            <Button x:Name="ModeRaidButton" Style="{StaticResource ModeTab}" Tag="Raid" ToolTip="rDPS: each player's damage without other people's buffs, plus what their own party buffs added to the others (Chanter, Cleric, Gladiator and Templar party buffs, at the level they were cast)" Click="OnModeButtonClicked">
+                            <Grid><Image x:Name="ModeRaidImage" Width="0" Height="0" Visibility="Collapsed"/><TextBlock Text="rDPS" FontSize="13"/></Grid>
+                        </Button>
                             <Button x:Name="ModeHealButton" Style="{StaticResource ModeTab}" Tag="Heal" ToolTip="{local:Loc Main.ModeHeal}" Click="OnModeButtonClicked">
                             <Grid><Image x:Name="ModeHealImage" Width="0" Height="0" Visibility="Collapsed"/><TextBlock Text="Healing" FontSize="13"/></Grid>
                         </Button>

@@ -2047,7 +2047,11 @@ public sealed class Aion2FrameDecoder
             return;
         }
 
-        _entities.Combat.NoteBuff(new BuffNotice(timestamp, (int)target, (int)instance, (int)Math.Min(effect, int.MaxValue), (int)(effect / 10), stays != 0 ? -1 : (int)Math.Min(duration, 86_400_000u), (int)caster), renewed);
+        // Right after the caster: the caster's skill level for this effect, then the 8-digit code of the class skill that cast it
+        // (waffle_meter's reading, MIT): taken only when both make sense (a level of 1..40 and a class skill code), else 0.
+        int level = p + 5 <= frame.Length && frame[p] is >= 1 and <= 40
+            && BinaryPrimitives.ReadUInt32LittleEndian(frame[(p + 1)..]) is >= 11_000_000 and <= 19_999_999 ? frame[p] : 0;
+        _entities.Combat.NoteBuff(new BuffNotice(timestamp, (int)target, (int)instance, (int)Math.Min(effect, int.MaxValue), (int)(effect / 10), stays != 0 ? -1 : (int)Math.Min(duration, 86_400_000u), (int)caster, level), renewed);
 
         // The last 12 bytes are the caster's own place (206,692 effect frames of a recording all end in a plausible x, y, z; where the
         // local player cast, it equals the position frame's to the centimetre), so every effect the local player puts on or renews is a free, exact position report -

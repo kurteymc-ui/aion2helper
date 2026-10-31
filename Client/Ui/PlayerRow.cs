@@ -81,7 +81,7 @@ public sealed class PlayerRow : INotifyPropertyChanged
     public long Damage
     {
         get => _damage;
-        set { if (_damage == value) { return; } _damage = value; OnPropertyChanged(); OnPropertyChanged(nameof(DamageDisplay)); OnPropertyChanged(nameof(DamageCompact)); OnPropertyChanged(nameof(RateOrDamageCompact)); OnPropertyChanged(nameof(TotalOrTakenCompact)); }
+        set { if (_damage == value) { return; } _damage = value; OnPropertyChanged(); OnPropertyChanged(nameof(DamageDisplay)); OnPropertyChanged(nameof(DamageCompact)); OnPropertyChanged(nameof(RateOrDamageCompact)); OnPropertyChanged(nameof(TotalOrTakenCompact)); OnPropertyChanged(nameof(SortKey)); }
     }
 
     private bool _isEstimated;
@@ -111,13 +111,44 @@ public sealed class PlayerRow : INotifyPropertyChanged
     public double? Dps
     {
         get => _dps;
-        set { if (_dps == value) { return; } _dps = value; OnPropertyChanged(); OnPropertyChanged(nameof(DpsDisplay)); OnPropertyChanged(nameof(DpsCompact)); OnPropertyChanged(nameof(RateOrHealDisplay)); OnPropertyChanged(nameof(RateOrDamageCompact)); }
+        set { if (_dps == value) { return; } _dps = value; OnPropertyChanged(); RateChanged(); }
     }
 
     /// <summary>Damage and rate in thousands/millions, for the compact overlay's dense lines.</summary>
     public string DamageCompact => (IsEstimated ? "~" : "") + Compact(Damage);
 
-    public string DpsCompact => Dps is double d ? Compact((long)Math.Round(d)) : "-";
+    public string DpsCompact => (RdpsView ? Rdps ?? Dps : Dps) is double d ? Compact((long)Math.Round(d)) : "-";
+
+    /// <summary>rDPS (Combat/RaidDps): this player's damage without other people's buffs, plus what their own buffs added to the
+    /// others. Null until it has been worked out for the fight on screen.</summary>
+    public double? Rdps
+    {
+        get => _rdps;
+        set { if (_rdps == value) { return; } _rdps = value; RateChanged(); }
+    }
+
+    private double? _rdps;
+
+    /// <summary>The rDPS view: the rate shown (and the order) is rDPS instead of DPS.</summary>
+    public bool RdpsView
+    {
+        get => _rdpsView;
+        set { if (_rdpsView == value) { return; } _rdpsView = value; RateChanged(); }
+    }
+
+    private bool _rdpsView;
+
+    /// <summary>What the list is sorted by: the damage, or rDPS in the rDPS view.</summary>
+    public double SortKey => RdpsView ? Rdps ?? Dps ?? 0 : Damage;
+
+    private void RateChanged()
+    {
+        OnPropertyChanged(nameof(DpsDisplay));
+        OnPropertyChanged(nameof(DpsCompact));
+        OnPropertyChanged(nameof(RateOrHealDisplay));
+        OnPropertyChanged(nameof(RateOrDamageCompact));
+        OnPropertyChanged(nameof(SortKey));
+    }
 
     /// <summary>Short form for the compact overlay: 1.24B, 91.60M, 412.3K, 2.8K, 950.</summary>
     public static string Compact(long value) => Math.Abs(value) switch
@@ -128,7 +159,7 @@ public sealed class PlayerRow : INotifyPropertyChanged
         _ => value.ToString("N0", System.Globalization.CultureInfo.CurrentCulture),
     };
 
-    public string DpsDisplay => Dps is double d ? d.ToString("N0", System.Globalization.CultureInfo.CurrentCulture) : "n/a";
+    public string DpsDisplay => (RdpsView ? Rdps ?? Dps : Dps) is double d ? d.ToString("N0", System.Globalization.CultureInfo.CurrentCulture) : "n/a";
 
     /// <summary>AP the relics currently in this player's bag will pay out once exchanged (see
     /// Data/RelicApDatabase) -- shown on its own, not folded into the session's real AP total,

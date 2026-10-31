@@ -10,8 +10,9 @@ public enum BuffKind
     End,
 }
 
-/// <summary>An effect put on, renewed on or taken off an entity. <see cref="DurationMs"/> is -1 for one without an end; an <see cref="BuffKind.End"/> carries no skill.</summary>
-public readonly record struct BuffEvent(DateTime At, BuffKind Kind, int Target, int Instance, int SkillId, int Caster, int DurationMs);
+/// <summary>An effect put on, renewed on or taken off an entity. <see cref="DurationMs"/> is -1 for one without an end; an <see cref="BuffKind.End"/> carries no skill.
+/// <see cref="Level"/> is the caster's skill level for it (0 = not read), which sets what a party buff is worth (Combat/RaidDps).</summary>
+public readonly record struct BuffEvent(DateTime At, BuffKind Kind, int Target, int Instance, int SkillId, int Caster, int DurationMs, int Level = 0);
 
 /// <summary>A reading of a monster's stagger bar (<see cref="Current"/> of <see cref="Max"/>), or the moment it broke.</summary>
 public readonly record struct StaggerEvent(DateTime At, int Entity, int Current, int Max, bool Broke);

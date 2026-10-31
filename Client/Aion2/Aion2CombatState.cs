@@ -13,7 +13,7 @@ public readonly record struct CastNotice(
 }
 
 /// <summary>An effect put on an entity (the game's buff frames). <see cref="DurationMs"/> is -1 for one that stays until it is taken off.</summary>
-public readonly record struct BuffNotice(DateTime At, int Target, int Instance, int EffectId, int SkillId, int DurationMs, int Caster)
+public readonly record struct BuffNotice(DateTime At, int Target, int Instance, int EffectId, int SkillId, int DurationMs, int Caster, int Level = 0)
 {
     public DateTime? Ends => DurationMs < 0 ? null : At.AddMilliseconds(DurationMs);
 }
@@ -638,6 +638,16 @@ public sealed class Aion2CombatState
     }
 
     /// <summary>What was logged between two moments. Effects are taken from a few minutes earlier, so one put on before the fight began still has its start.</summary>
+    /// <summary>The buff log between ten minutes before <paramref name="from"/> (a long buff put on before the fight) and <paramref name="to"/>.</summary>
+    public List<BuffEvent> BuffsAround(DateTime from, DateTime to)
+    {
+        lock (_gate)
+        {
+            DateTime buffFrom = from - TimeSpan.FromMinutes(10);
+            return _buffLog.Where(b => b.At >= buffFrom && b.At <= to).ToList();
+        }
+    }
+
     public FightExtras Slice(DateTime from, DateTime to, Func<int, string?> nameOf, Func<int, bool>? keep = null, Func<int, DateTime, DateTime, HpSeries?>? hpOf = null)
     {
         lock (_gate)
@@ -707,7 +717,7 @@ public sealed class Aion2CombatState
     {
         lock (_gate)
         {
-            Append(_buffLog, new BuffEvent(buff.At, renewed ? BuffKind.Renewed : BuffKind.On, buff.Target, buff.Instance, buff.SkillId, buff.Caster, buff.DurationMs));
+            Append(_buffLog, new BuffEvent(buff.At, renewed ? BuffKind.Renewed : BuffKind.On, buff.Target, buff.Instance, buff.SkillId, buff.Caster, buff.DurationMs, buff.Level));
             if (!_buffs.TryGetValue(buff.Target, out var byInstance))
             {
                 if (_buffs.Count >= MaxTargets)

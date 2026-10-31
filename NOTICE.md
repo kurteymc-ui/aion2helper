@@ -11,3 +11,9 @@ Parts taken from other projects keep their own notices: see `Client/assets/aion2
 (Waffle meter and hate-jp, MIT).
 
 AION 2 and all related names, texts and artwork belong to NCSOFT. This project is not affiliated with or endorsed by NCSOFT.
+
+## rDPS
+
+`Client/Combat/RaidDps.cs` (rDPS and nDPS, the party buffs' values by level, and reading a buff's level off the wire in
+`Aion2FrameDecoder.DecodeBuff`) is ported from [waffle_meter](https://github.com/Waffle-ens/waffle_meter), Copyright (c) 2026
+TK-open-public, under the MIT License; the license text is at the top of that file.

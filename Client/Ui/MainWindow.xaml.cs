@@ -167,7 +167,7 @@ public partial class MainWindow : Window
 
     /// <summary>What the rows show: damage dealt, healing done, or damage taken (with deaths) -
     /// the Mode menu, the compact overlay's badge or the mode hotkey go round the three.</summary>
-    private enum MeterMode { Damage, Heal, Taken, All, AllCompact }
+    private enum MeterMode { Damage, Raid, Heal, Taken, All, AllCompact }
 
     private MeterMode _mode;
 
@@ -298,9 +298,10 @@ public partial class MainWindow : Window
         // would freeze after the initial snapshot and never reflect who's actually ahead now.
         var playersView = (ListCollectionView)CollectionViewSource.GetDefaultView(_rows);
         _playersView = playersView;
-        playersView.SortDescriptions.Add(new SortDescription(nameof(PlayerRow.Damage), ListSortDirection.Descending));
+        // SortKey is the damage, or rDPS in the rDPS view (PlayerRow.SortKey).
+        playersView.SortDescriptions.Add(new SortDescription(nameof(PlayerRow.SortKey), ListSortDirection.Descending));
         playersView.IsLiveSorting = true;
-        playersView.LiveSortingProperties.Add(nameof(PlayerRow.Damage));
+        playersView.LiveSortingProperties.Add(nameof(PlayerRow.SortKey));
 
         _pollTimer.Tick += OnPollTimerTick;
 
@@ -1599,6 +1600,7 @@ public partial class MainWindow : Window
             row.Faction = (_source?.Entities as Aion2.Aion2EntityDirectory)?.FactionOf(sourceId) ?? "";
         }
 
+        UpdateRaidDps(filteredSpan);
                 // Rank and share are relative to what is on screen, so they are settled once every row's
         // damage for this refresh is known - and by damage, not by the grid's current sort order.
         RankRows();
@@ -1823,6 +1825,23 @@ public partial class MainWindow : Window
         // Live sorting alone left the list in the previous mode's order after a switch (PVE -> PVP kept the
         // PVE ranking); sorting explicitly here covers every mode, since each refresh ends in RankRows.
         _playersView?.Refresh();
+        if (_rows.Count > 0 && _rows[0].RdpsView)
+        {
+            // the rDPS view: rank, share and bar by rDPS (what each player made possible)
+            double rdpsTotal = _rows.Sum(r => r.Rdps ?? r.Dps ?? 0), rdpsMax = _rows.Max(r => r.Rdps ?? r.Dps ?? 0);
+            int place = 0;
+            foreach (PlayerRow row in _rows.OrderByDescending(r => r.SortKey))
+            {
+                double value = row.Rdps ?? row.Dps ?? 0;
+                row.Rank = ++place;
+                row.SharePercent = rdpsTotal > 0 ? 100.0 * value / rdpsTotal : 0;
+                row.FillPercent = rdpsMax > 0 ? 100.0 * value / rdpsMax : 0;
+                row.AbsorbedFillPercent = 0;
+            }
+
+            return;
+        }
+
         long shownTotal = _rows.Sum(r => r.Damage);
         // In Taken mode the bar is drawn to the damage that got through, behind it a blue one to the absorbed
         // damage on top; both scale to the biggest of the two together.
@@ -1834,6 +1853,73 @@ public partial class MainWindow : Window
             row.SharePercent = shownTotal > 0 ? 100.0 * row.Damage / shownTotal : 0;
             row.FillPercent = shownMax > 0 ? 100.0 * row.Damage / shownMax : 0;
             row.AbsorbedFillPercent = _takenMode && shownMax > 0 && row.Absorbed > 0 ? 100.0 * (row.Damage + row.Absorbed) / shownMax : 0;
+        }
+    }
+
+    private DateTime _rdpsAt = DateTime.MinValue;
+
+    /// <summary>The class prefix of a class's skill codes (11 Gladiator .. 18 Chanter, 19 Brawler), for RaidDps.</summary>
+    private static int JobPrefixOf(string? className) => className switch
+    {
+        "Gladiator" => 11, "Templar" => 12, "Assassin" => 13, "Ranger" => 14, "Sorcerer" => 15,
+        "Spiritmaster" => 16, "Cleric" => 17, "Chanter" => 18, "Brawler" => 19, _ => 0,
+    };
+
+    /// <summary>
+    /// The rDPS view (Combat/RaidDps): every shown player's rDPS over the fight on screen, from the party buffs on them, the debuffs on
+    /// the boss and the extra hits party effects dealt. Worked out at most every 1.5 s (the buff log is sliced and walked), so a long
+    /// fight costs nothing between two updates; the rows keep the last values meanwhile.
+    /// </summary>
+    private void UpdateRaidDps((DateTime From, DateTime To)? span)
+    {
+        bool on = _mode == MeterMode.Raid && !_pvpOnly;
+        foreach (PlayerRow row in _rows)
+        {
+            row.RdpsView = on;
+        }
+
+        if (!on || span is not (DateTime from, DateTime to) || to <= from || _source?.Entities is not Aion2.Aion2EntityDirectory directory)
+        {
+            return;
+        }
+
+        if (!Headless && DateTime.UtcNow - _rdpsAt < TimeSpan.FromSeconds(1.5))
+        {
+            return;
+        }
+
+        _rdpsAt = DateTime.UtcNow;
+        try
+        {
+            var players = _rows.Where(r => !r.IsEnemy).ToList();
+            var ids = players.Select(r => r.ObjectId).ToHashSet();
+            int? bossId = _selectedTargetId is int target && !directory.IsKnownPlayer(target) ? target : null;
+            var (onPlayers, onBoss) = RaidDps.BuffsIn(directory.Combat.BuffsAround(from, to), ids, bossId, from, to);
+            var granted = new Dictionary<int, Dictionary<int, long>>();
+            foreach (DamageEvent ev in _aggregator.Events)
+            {
+                if (ev.IsHeal || ev.Timestamp < from || ev.Timestamp > to || !ids.Contains(ev.SourceObjectId) || RaidDps.GrantedDamageSource(ev.SkillId) is not (> 0 and int source))
+                {
+                    continue;
+                }
+
+                var bySource = granted.TryGetValue(ev.SourceObjectId, out var known) ? known : granted[ev.SourceObjectId] = new Dictionary<int, long>();
+                bySource[source] = bySource.GetValueOrDefault(source) + ev.Amount;
+            }
+
+            var participants = players.Select(r => new RaidParticipant(r.ObjectId, r.Dps ?? 0,
+                onPlayers.TryGetValue(r.ObjectId, out var buffs) ? buffs : new List<RaidBuff>(),
+                granted.TryGetValue(r.ObjectId, out var g) ? g : new Dictionary<int, long>(), JobPrefixOf(r.ClassName))).ToList();
+            Dictionary<int, RaidDpsResult> results = RaidDps.Compute(participants, onBoss, (to - from).TotalSeconds);
+            foreach (PlayerRow row in players)
+            {
+                row.Rdps = results.TryGetValue(row.ObjectId, out RaidDpsResult r) ? r.Rdps : row.Dps;
+            }
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or ArgumentException)
+        {
+            // the logs changed while being read: the next refresh tries again
+            _rdpsAt = DateTime.MinValue;
         }
     }
 
@@ -2351,7 +2437,7 @@ public partial class MainWindow : Window
         DpsHeaderText.Text = _healMode && !_pvpOnly ? "Healing / HPS"
             : _takenMode && !_pvpOnly ? "Taken / DTPS"
             : _allMode ? "Taken / Heal / Damage"
-            : _pvpOnly ? "Damage / DPS (PvP)" : _selectedTargetId is int ? "Damage / iDPS" : "Damage / DPS";
+            : _pvpOnly ? "Damage / DPS (PvP)" : _mode == MeterMode.Raid ? "Damage / rDPS" : _selectedTargetId is int ? "Damage / iDPS" : "Damage / DPS";
     }
 
     // ---- the stream overlay (OBS browser source) ------------------------------------------------------------
@@ -6193,6 +6279,7 @@ public partial class MainWindow : Window
         }
 
         Tab(ModeDamageButton, ModeDamageImage, _mode == MeterMode.Damage ? "mode-damage-on" : "mode-damage-off", _mode == MeterMode.Damage);
+        Tab(ModeRaidButton, ModeRaidImage, "mode-damage-off", _mode == MeterMode.Raid);
         Tab(ModeHealButton, ModeHealImage, _mode == MeterMode.Heal ? "mode-heal-on" : "mode-heal-off", _mode == MeterMode.Heal);
         Tab(ModeTakenButton, ModeTakenImage, _mode == MeterMode.Taken ? "mode-taken-on" : "mode-taken-off", _mode == MeterMode.Taken);
         Tab(ModeAllButton, ModeAllImage, "mode-all", _mode == MeterMode.All);
@@ -6221,7 +6308,8 @@ public partial class MainWindow : Window
     /// <summary>Damage, then heal, taken, all in one, all in one compact, then damage again.</summary>
     private void NextMode() => SetMode(_mode switch
     {
-        MeterMode.Damage => MeterMode.Heal,
+        MeterMode.Damage => MeterMode.Raid,
+        MeterMode.Raid => MeterMode.Heal,
         MeterMode.Heal => MeterMode.Taken,
         MeterMode.Taken => MeterMode.All,
         MeterMode.All => MeterMode.AllCompact,
@@ -6947,8 +7035,9 @@ public partial class MainWindow : Window
             : _selectedTargetId is int targetId ? ResolveDisplayName(targetId)
             : LocalizationManager.Instance["Main.FilterAllTargets"];
         var strings = LocalizationManager.Instance;
-        OverlayModeText.Text = strings[_healMode ? "Main.Overlay.ModeHeal" : _takenMode ? "Main.Overlay.ModeTaken" : _allMode ? "Main.Overlay.ModeAll" : _allCompactMode ? "Main.Overlay.ModeAllCompact" : "Main.Overlay.ModeDamage"];
-        OverlayRateHeader.Text = _allMode ? strings["Main.Overlay.ColDamage"] : _healMode ? "HPS" : _takenMode ? "DTPS" : "DPS";
+        OverlayModeText.Text = _mode == MeterMode.Raid && !_pvpOnly ? "rDPS"
+            : strings[_healMode ? "Main.Overlay.ModeHeal" : _takenMode ? "Main.Overlay.ModeTaken" : _allMode ? "Main.Overlay.ModeAll" : _allCompactMode ? "Main.Overlay.ModeAllCompact" : "Main.Overlay.ModeDamage"];
+        OverlayRateHeader.Text = _allMode ? strings["Main.Overlay.ColDamage"] : _healMode ? "HPS" : _takenMode ? "DTPS" : _mode == MeterMode.Raid ? "rDPS" : "DPS";
         OverlayShareHeader.Text = _allMode ? strings["Main.Overlay.ColHeal"] : "%";
         OverlayTotalHeader.Text = _allMode ? strings["Main.Overlay.ColTaken"] : strings["Main.Overlay.ColTotal"];
         bool capturing = (_source as Aion2.Aion2PacketCombatSource)?.ServerFingerprint is not null;
