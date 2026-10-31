@@ -35,7 +35,15 @@ jobs:
             @('render-overlay', 'chips.png', 'chips'),
             @('render-details', 'details-skills.png', 'skills'),
             @('render-details', 'details-buffs.png', 'buffs'),
-            @('render-settings', 'settings.png', 'Interface')
+            @('render-settings', 'settings.png', 'Interface'),
+            @('render-report', 'report-damage.png', 'Damage'),
+            @('render-report', 'report-healing.png', 'Healing'),
+            @('render-report', 'report-taken.png', 'Damage-taken'),
+            @('render-report', 'report-buffs.png', 'Buffs'),
+            @('render-report', 'report-support.png', 'Support'),
+            @('render-report', 'report-rotation.png', 'Rotation'),
+            @('render-report', 'report-timeline.png', 'Timeline'),
+            @('render-report', 'report-defense.png', 'Defense')
           )
           foreach ($s in $shots) {
             $out = Join-Path (Resolve-Path screens).Path $s[1]

@@ -249,6 +249,12 @@ internal static class Program
             return;
         }
 
+        if (args.Length > 0 && args[0] == "render-report")
+        {
+            RunRenderReportMode(args.Length > 1 ? args[1] : "report.png", args.Length > 2 ? args[2] : "Damage");
+            return;
+        }
+
         if (args.Length > 0 && args[0] == "render-messagebox")
         {
             RunRenderMessageBoxMode(args.Length > 1 ? args[1] : "messagebox.png");
@@ -968,6 +974,47 @@ internal static class Program
         window.TabRotationButton.IsChecked = tab == "rotation";
         window.TabBuffsButton.IsChecked = tab == "buffs";
         return window;
+    }
+
+    /// <summary>Draws the fight report of a made-up fight on one of its tabs ("Damage", "Healing", "Damage taken", "Shields", "Defense", "Buffs", "Support",
+    /// "Rotation", "Timeline") into a picture; no window is shown.</summary>
+    private static void RunRenderReportMode(string path, string tab)
+    {
+        Environment.SetEnvironmentVariable("AIONDPS_DATA_DIR", Path.Combine(Path.GetTempPath(), "aiondps-render-report"));
+        var app = new System.Windows.Application();
+        var settings = Ui.MeterSettings.Load();
+        Ui.ThemeManager.Apply(app, settings);
+        Ui.MainWindow.Headless = true;
+        app.Resources.MergedDictionaries.Add(
+            (System.Windows.ResourceDictionary)System.Windows.Application.LoadComponent(new Uri("/Ui/Styles/Shared.xaml", UriKind.Relative)));
+        var window = new Ui.FightReportWindow(Combat.FightReport.Build(Ui.FightReportSample.Input()));
+        window.ShowTab(tab.Replace('-', ' '));
+        var scroller = (System.Windows.Controls.ScrollViewer)window.Content;
+        var page = (System.Windows.FrameworkElement)scroller.Content;
+        scroller.Content = null;
+        window.Content = null;
+        const double width = 1240;
+        var content = new System.Windows.Controls.Border { Child = page };
+        content.SetResourceReference(System.Windows.Controls.Border.BackgroundProperty, "Brush.Window");
+        content.SetResourceReference(System.Windows.Documents.TextElement.ForegroundProperty, "Brush.Text");
+        content.SetResourceReference(System.Windows.Documents.TextElement.FontFamilyProperty, "Font.Ui");
+        content.Measure(new System.Windows.Size(width, double.PositiveInfinity));
+        double height = Math.Min(3200, Math.Ceiling(content.DesiredSize.Height));
+        content.Arrange(new System.Windows.Rect(0, 0, width, height));
+        content.UpdateLayout();
+        System.Windows.Threading.Dispatcher.CurrentDispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.ContextIdle);
+        content.UpdateLayout();
+        var bitmap = new System.Windows.Media.Imaging.RenderTargetBitmap((int)width, (int)height, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
+        bitmap.Render(content);
+        var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
+        encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bitmap));
+        using (var file = File.Create(path))
+        {
+            encoder.Save(file);
+        }
+
+        Console.WriteLine("render-report: wrote " + path);
+        Environment.Exit(0);
     }
 
     private static void RunRenderDetailsMode(string path, string tab)

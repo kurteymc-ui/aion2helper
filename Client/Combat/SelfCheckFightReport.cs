@@ -1,0 +1,40 @@
+namespace AionDPS.Combat;
+
+/// <summary>The fight report on a made-up fight (Ui.FightReportSample): totals add up, the shares make 100 %, a buff that was on before the pull
+/// counts from its start, shields, avoided attacks, the death, whom the boss aimed at and what the Chanter lent out are where they belong.</summary>
+public static class SelfCheckFightReport
+{
+    public static bool Run()
+    {
+        Console.WriteLine("[selftest] Fight report:");
+        ReportInput input = Ui.FightReportSample.Input();
+        FightReport r = FightReport.Build(input);
+        long onBoss = input.Events.Where(e => !e.IsHeal && e.TargetObjectId == Ui.FightReportSample.Boss && e.SourceObjectId is >= 1 and <= 5).Sum(e => e.Amount);
+        bool totals = r.Damage == onBoss && r.Players.Sum(p => p.Damage) == onBoss && Math.Abs(r.Players.Sum(p => p.Share) - 100) < 0.01
+            && Math.Abs(r.PartyDps - onBoss / 55.0) < 0.5 && r.Players.All(p => p.Skills.Sum(s => s.Total) == p.Damage)
+            && r.PeakDps >= r.AverageDps && r.AverageDps >= r.LowestDps && r.Killed && Math.Abs(r.Seconds - 55) < 0.001;
+        Console.WriteLine($"  -> damage, DPS, shares and the skills add up; peak >= average >= lowest: {totals}");
+
+        ReportPlayerLine you = r.PlayerOf(3)!;
+        ReportEffect? mantra = you.Buffs.FirstOrDefault(b => b.Name == "Undefeated Mantra");
+        bool effects = mantra is { UptimePercent: > 99.9, Applications: 0 } && mantra.Givers.Contains(2)
+            && r.BossEffects.Any(b => b.Name == "Earth's Promise" && b.Harmful && b.By(2) == 1 && Math.Abs(b.UptimePercent - 100.0 * 25 / 55) < 0.1);
+        Console.WriteLine($"  -> a buff put on before the pull is on from the start; a debuff on the boss counts its giver and its 25 s: {effects}");
+
+        bool defense = you.Absorbed == 3110 && you.Blocked == 1 && you.Parried == 1 && you.Dodged == 1 && you.ShieldsOn.Count == 1
+            && r.PlayerOf(5)!.Deaths.Count == 1 && r.Deaths == 1 && r.PartyDeaths.Count == 1 && you.TakenBy.Count == 1 && you.Taken > 0;
+        Console.WriteLine($"  -> shields, avoided attacks, damage taken by source and the death are on the right players: {defense}");
+
+        bool boss = r.BossTargets.Count == 3 && r.BossTargets[0].Start == 0 && r.BossTargets[0].End == 24 && r.BossTargets[0].Target == 3 && r.BossTargets[1].Target == 1 && r.CastBars.Count == 5
+            && Math.Abs(r.CastBars[3].End - 41) < 0.01 && r.BossCasts.Count == 5;
+        Console.WriteLine($"  -> whom the boss aimed at, its casts and cast bars: {boss}");
+
+        ReportSupport? chanter = r.Support.FirstOrDefault(s => s.PlayerId == 2);
+        bool support = chanter is { GivenDps: > 0 } && chanter.Items.Any(i => i.Name == "Undefeated Mantra" && i.Damage > 0 && i.UptimePercent > 99) && r.PlayerOf(1)!.Rdps is double rd && rd < r.PlayerOf(1)!.Dps;
+        Console.WriteLine($"  -> the Chanter's mantra is worth DPS to the others, a buffed player's rDPS is below their DPS: {support}");
+
+        bool series = you.DamageSeries.Count is > 0 and <= FightReport.SeriesShown + 1 && r.PartyLine.Length == 55 && you.DamageSeries.All(s => s.Values.Length == 55);
+        Console.WriteLine($"  -> one chart point a second, at most {FightReport.SeriesShown} skills and the rest: {series}");
+        return totals && effects && defense && boss && support && series;
+    }
+}

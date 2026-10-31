@@ -174,7 +174,9 @@ public static class RaidDps
     }
 
     /// <summary>nDPS, rDPS and what each player lent out, for the players of one fight window of <paramref name="seconds"/>.</summary>
-    public static Dictionary<int, RaidDpsResult> Compute(IReadOnlyList<RaidParticipant> participants, IReadOnlyList<RaidBuff> bossDebuffs, double seconds)
+    /// <param name="byBuff">When given, filled with what each player lent out per effect: (caster, effect's display base) → DPS given.</param>
+    public static Dictionary<int, RaidDpsResult> Compute(IReadOnlyList<RaidParticipant> participants, IReadOnlyList<RaidBuff> bossDebuffs, double seconds,
+        Dictionary<(int Caster, int DisplayBase), double>? byBuff = null)
     {
         var results = new Dictionary<int, RaidDpsResult>();
         if (participants.Count == 0)
@@ -183,7 +185,7 @@ public static class RaidDps
         }
 
         var ids = participants.Select(p => p.Id).ToHashSet();
-        var incoming = participants.ToDictionary(p => p.Id, _ => new List<(int Actor, double Gain)>());
+        var incoming = participants.ToDictionary(p => p.Id, _ => new List<(int Actor, double Gain, int Base)>());
         BuffGainContext context = BuffGainContext.Default;
         foreach (RaidParticipant p in participants)
         {
@@ -197,7 +199,7 @@ public static class RaidDps
                 double gain = Gain(buff, context);
                 if (gain > 0)
                 {
-                    incoming[p.Id].Add((ids.Contains(buff.Caster) ? buff.Caster : -1, gain));
+                    incoming[p.Id].Add((ids.Contains(buff.Caster) ? buff.Caster : -1, gain, buff.DisplayBase));
                 }
             }
         }
@@ -219,13 +221,13 @@ public static class RaidDps
                 double gain = Gain(debuff, context);
                 if (gain > 0)
                 {
-                    incoming[p.Id].Add((debuff.Caster, gain));
+                    incoming[p.Id].Add((debuff.Caster, gain, debuff.DisplayBase));
                 }
             }
         }
 
         // the extra hits a party effect dealt on someone's meter move to whoever granted them
-        var moves = new List<(int Recipient, int Granter, long Damage)>();
+        var moves = new List<(int Recipient, int Granter, long Damage, int Base)>();
         foreach (RaidParticipant p in participants)
         {
             foreach ((int source, long damage) in p.GrantedDamageBySource)
@@ -234,14 +236,14 @@ public static class RaidDps
                 {
                     foreach ((int granter, long share) in SplitGrant(p, source, damage, ids, participants))
                     {
-                        moves.Add((p.Id, granter, share));
+                        moves.Add((p.Id, granter, share, source));
                     }
                 }
             }
         }
 
         var movedOut = participants.ToDictionary(p => p.Id, _ => 0L);
-        foreach ((int recipient, int _, long damage) in moves)
+        foreach ((int recipient, int _, long damage, int _) in moves)
         {
             movedOut[recipient] += damage;
         }
@@ -257,18 +259,26 @@ public static class RaidDps
         var given = participants.ToDictionary(p => p.Id, _ => 0.0);
         foreach (RaidParticipant p in participants)
         {
-            foreach ((int actor, double gain) in incoming[p.Id])
+            foreach ((int actor, double gain, int display) in incoming[p.Id])
             {
                 if (actor >= 0 && given.ContainsKey(actor))
                 {
                     given[actor] += ndps[p.Id] * gain;
+                    if (byBuff is not null)
+                    {
+                        byBuff[(actor, display)] = byBuff.GetValueOrDefault((actor, display)) + ndps[p.Id] * gain;
+                    }
                 }
             }
         }
 
-        foreach ((int _, int granter, long damage) in moves)
+        foreach ((int _, int granter, long damage, int display) in moves)
         {
             given[granter] += PerSecond(damage, seconds);
+            if (byBuff is not null && given.ContainsKey(granter))
+            {
+                byBuff[(granter, display)] = byBuff.GetValueOrDefault((granter, display)) + PerSecond(damage, seconds);
+            }
         }
 
         foreach (RaidParticipant p in participants)

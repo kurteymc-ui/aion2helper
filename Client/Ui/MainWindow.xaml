@@ -835,6 +835,16 @@
                                 </Border>
                             </StackPanel>
                         </Button>
+                        <!-- The fight report: the fight on screen (the picked target's, else all) on tabs - damage, healing, damage taken, shields, defense,
+                             effects, support, rotation, timeline. -->
+                        <Button x:Name="FightReportButton" Style="{StaticResource ToolbarIconButton}" Click="OnFightReportClicked" Padding="8,5" Margin="4,0,1,0"
+                                ToolTip="Fight report: this fight on tabs - damage, healing, damage taken, shields, defense, buffs, support, rotation and a timeline">
+                            <StackPanel Orientation="Horizontal">
+                                <Path Data="M2,14 L2,8 M6,14 L6,4 M10,14 L10,9 M14,14 L14,2" Stroke="{DynamicResource Brush.Accent}" StrokeThickness="2"
+                                      StrokeStartLineCap="Round" StrokeEndLineCap="Round" Width="16" Height="16" Stretch="None" Margin="0,0,6,0"/>
+                                <TextBlock Text="Report" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center" Foreground="{DynamicResource Brush.Text}"/>
+                            </StackPanel>
+                        </Button>
                         <Button x:Name="UploadReplayButton" Style="{StaticResource ToolbarIconButton}" Click="OnUploadReplayClicked" Padding="6,5" Margin="1,0"
                                 Visibility="Collapsed"
                                 ToolTip="{local:Loc Main.UploadReplay.Tooltip}">

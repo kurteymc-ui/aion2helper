@@ -36,6 +36,7 @@ public static class SelfCheck
         ok &= SelfCheckRaidDps.Run();
         ok &= SelfCheckBuffUpload.Run();
         ok &= SelfCheckDummy.Run();
+        ok &= SelfCheckFightReport.Run();
         ok &= SelfCheckMenu.Run();
         ok &= SelfCheckSettings.Run();
         ok &= SelfCheckStream.Run();

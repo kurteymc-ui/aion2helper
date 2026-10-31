@@ -5587,6 +5587,80 @@ public partial class MainWindow : Window
         }.Show();
     }
 
+    private void OnFightReportClicked(object sender, RoutedEventArgs e) => _ = OpenFightReportAsync();
+
+    /// <summary>
+    /// The fight report of what is on screen: the picked target's fight (its run), else all the damage shown; live or a stored fight. The players are the
+    /// ones of the fight (in the overlay's scope while it is on); the effects, casts and deaths come from the capture's extras (the stored ones in the history).
+    /// Worked out off the window's thread, then opened in a window of its own.
+    /// </summary>
+    private async Task OpenFightReportAsync()
+    {
+        List<DamageEvent> all = _aggregator.Events.ToList();
+        List<DamageEvent> hits = _selectedTargetId is int picked ? ShownFightHits(all.Where(ev => !ev.IsHeal), picked) : all.Where(ev => !ev.IsHeal).ToList();
+        hits = hits.Where(ev => IsPlayerName(ev.SourceObjectId)).ToList();
+        if (hits.Count == 0)
+        {
+            ShowUploadStatus("No fight to report yet: hit something first, or pick a fight in the list.");
+            return;
+        }
+
+        DateTime start = hits.Min(ev => ev.Timestamp), end = hits.Max(ev => ev.Timestamp);
+        if (end - start < TimeSpan.FromSeconds(1))
+        {
+            end = start.AddSeconds(1);
+        }
+
+        var directory = ReplayDirectory;
+        FightExtras extras = _historyMode
+            ? _historyExtras?.Remap(id => _historyReplayIds.GetValueOrDefault(id, id)) ?? FightExtras.Empty
+            : directory?.Combat.Slice(start, end, ResolveDisplayName, ReplayKeeps, ReplayHp) ?? FightExtras.Empty;
+        List<DamageEvent> inWindow = all.Where(ev => ev.Timestamp >= start && ev.Timestamp <= end).ToList();
+        string? ownName = (_liveSource?.Entities as Aion2EntityDirectory)?.LocalCharacter?.Name;
+        var ids = new HashSet<int>();
+        foreach (DamageEvent ev in inWindow)
+        {
+            if (!ev.IsHeal && hits.Count > 0 && IsPlayerName(ev.SourceObjectId))
+            {
+                ids.Add(ev.SourceObjectId);
+            }
+            else if (ev.IsHeal && IsPlayerName(ev.SourceObjectId) && IsPlayerName(ev.TargetObjectId))
+            {
+                ids.Add(ev.SourceObjectId);
+            }
+        }
+
+        ids.RemoveWhere(id => !IsInScope(id) || (_rowsByObjectId.TryGetValue(id, out PlayerRow? r) && r.IsEnemy));
+        var players = ids.Select(id =>
+        {
+            string name = ResolveDisplayName(id);
+            int liveId = _historyMode ? _historyLiveIds.GetValueOrDefault(id, id) : id;
+            int? power = (_liveSource?.Entities as Aion2EntityDirectory)?.SeenProfileOf(liveId)?.CombatPower;
+            bool self = (!_historyMode && _source?.Entities.IsLocalPlayer(id) == true) || (ownName is not null && name == ownName);
+            return new ReportPlayer(id, name, ResolveClassName(id), power is 397228 ? null : power, self);
+        }).ToList();
+
+        int? bossId = _selectedTargetId is int target && !IsPlayerName(target) ? target : null;
+        string title = bossId is int b ? ResolveDisplayName(b) : _pvpOnly ? "PvP" : LocalizationManager.Instance["Main.FilterAllTargets"];
+        bool killed = bossId is int dead && _kills.Any(k => k.VictimObjectId == dead && k.Timestamp >= start);
+        var input = new ReportInput(title, start, end, players, inWindow,
+            _aggregator.Shields.Where(ev => ev.Timestamp >= start && ev.Timestamp <= end).ToList(),
+            _avoids.Where(a => a.Timestamp >= start && a.Timestamp <= end).ToList(),
+            extras, bossId, bossId is int npcOf ? BossNpcIdOf(npcOf) : null, killed, ResolveDisplayName,
+            bossId is int only ? new HashSet<int> { only } : null);
+        ShowUploadStatus("Working out the fight report…");
+        try
+        {
+            FightReport report = await Task.Run(() => FightReport.Build(input));
+            ShowUploadStatus("");
+            new FightReportWindow(report) { Owner = this }.Show();
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or ArgumentException or KeyNotFoundException)
+        {
+            ShowUploadStatus("The fight report could not be made: " + ex.Message);
+        }
+    }
+
     /// <summary>What the "player appeared" frame told of a player (level, item level, combat power, worn pieces); null for yourself and for players it never told of.</summary>
     private PlayerSeenInfo? SeenInfoOf(PlayerRow row)
     {
