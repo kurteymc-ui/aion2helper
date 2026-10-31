@@ -14266,5 +14266,140 @@
     "en": "Put the meter back to its usual look? Its size and place stay.",
     "de": "Den Meter auf sein übliches Aussehen zurücksetzen? Größe und Platz bleiben.",
     "fr": "Remettre le meter à son apparence habituelle ? Sa taille et sa place restent."
+  },
+  "Home.Morning": {
+    "en": "Good morning",
+    "de": "Guten Morgen",
+    "fr": "Bonjour"
+  },
+  "Home.Afternoon": {
+    "en": "Good afternoon",
+    "de": "Guten Tag",
+    "fr": "Bon après-midi"
+  },
+  "Home.Evening": {
+    "en": "Good evening",
+    "de": "Guten Abend",
+    "fr": "Bonsoir"
+  },
+  "Home.Hello": {
+    "en": "{0}, {1}",
+    "de": "{0}, {1}",
+    "fr": "{0}, {1}"
+  },
+  "Home.Reading": {
+    "en": "Reading the game",
+    "de": "Liest das Spiel",
+    "fr": "Lecture du jeu"
+  },
+  "Home.Waiting": {
+    "en": "Waiting for AION 2",
+    "de": "Wartet auf AION 2",
+    "fr": "En attente d’AION 2"
+  },
+  "Home.GameAlready": {
+    "en": "AION 2 is already running. Go to character selection and back once, so the meter can read your character, its Odyle Energy and your pets.",
+    "de": "AION 2 läuft bereits. Geh einmal zur Charakterauswahl und zurück, damit der Meter deinen Charakter, seine Odyle-Energie und deine Haustiere lesen kann.",
+    "fr": "AION 2 est déjà lancé. Va une fois à la sélection de personnage et reviens, pour que le meter lise ton personnage, son énergie d’Odyle et tes familiers."
+  },
+  "Home.NoCharacterYet": {
+    "en": "The game is being read, but your character not yet: it is sent when you log in or change map.",
+    "de": "Das Spiel wird gelesen, dein Charakter aber noch nicht: Er wird beim Einloggen oder Kartenwechsel gesendet.",
+    "fr": "Le jeu est lu, mais pas encore ton personnage : il est envoyé à la connexion ou au changement de carte."
+  },
+  "Home.Outdated": {
+    "en": "This version can no longer upload fights. Update to keep uploading.",
+    "de": "Diese Version kann keine Kämpfe mehr hochladen. Aktualisiere, um weiter hochzuladen.",
+    "fr": "Cette version ne peut plus envoyer de combats. Mets à jour pour continuer."
+  },
+  "Home.Update": {
+    "en": "Update",
+    "de": "Aktualisieren",
+    "fr": "Mettre à jour"
+  },
+  "Home.UpdateReady": {
+    "en": "Version {0} is ready: restart the meter to use it.",
+    "de": "Version {0} ist bereit: Starte den Meter neu, um sie zu nutzen.",
+    "fr": "La version {0} est prête : redémarre le meter pour l’utiliser."
+  },
+  "Home.Restart": {
+    "en": "Restart",
+    "de": "Neu starten",
+    "fr": "Redémarrer"
+  },
+  "Home.LastFight": {
+    "en": "Last fight",
+    "de": "Letzter Kampf",
+    "fr": "Dernier combat"
+  },
+  "Home.Killed": {
+    "en": "Killed",
+    "de": "Besiegt",
+    "fr": "Vaincu"
+  },
+  "Home.Wipe": {
+    "en": "Wipe",
+    "de": "Wipe",
+    "fr": "Échec"
+  },
+  "Home.Dummy": {
+    "en": "Training dummy",
+    "de": "Trainingspuppe",
+    "fr": "Mannequin"
+  },
+  "Home.YourDps": {
+    "en": "your DPS",
+    "de": "dein DPS",
+    "fr": "ton DPS"
+  },
+  "Home.NextEvents": {
+    "en": "Next events",
+    "de": "Nächste Ereignisse",
+    "fr": "Prochains événements"
+  },
+  "Home.NoEvents": {
+    "en": "No event in the timetable.",
+    "de": "Kein Ereignis im Zeitplan.",
+    "fr": "Aucun événement dans l’horaire."
+  },
+  "Home.Possible": {
+    "en": "(possible)",
+    "de": "(möglich)",
+    "fr": "(possible)"
+  },
+  "Home.EventOn": {
+    "en": "on · ends in {0}",
+    "de": "läuft · endet in {0}",
+    "fr": "en cours · fin dans {0}"
+  },
+  "Home.EventIn": {
+    "en": "in {0} · {1}",
+    "de": "in {0} · {1}",
+    "fr": "dans {0} · {1}"
+  },
+  "Home.Pets": {
+    "en": "Pet collection",
+    "de": "Haustiersammlung",
+    "fr": "Collection de familiers"
+  },
+  "Home.PetsOwned": {
+    "en": "pets collected",
+    "de": "Haustiere gesammelt",
+    "fr": "familiers collectés"
+  },
+  "Home.PetsTop": {
+    "en": "{0} at the top level",
+    "de": "{0} auf der höchsten Stufe",
+    "fr": "{0} au niveau maximum"
+  },
+  "Home.PetsMapAuto": {
+    "en": "The interactive map shows every pet you still need.",
+    "de": "Die interaktive Karte zeigt jedes Haustier, das dir noch fehlt.",
+    "fr": "La carte interactive montre chaque familier qu’il te manque."
+  },
+  "Home.PetsMapPicked": {
+    "en": "The interactive map shows the pets you picked.",
+    "de": "Die interaktive Karte zeigt die Haustiere, die du ausgewählt hast.",
+    "fr": "La carte interactive montre les familiers que tu as choisis."
   }
 }

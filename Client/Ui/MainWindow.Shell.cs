@@ -292,108 +292,6 @@ public partial class MainWindow
     /// Home: everything at a glance. The resets and the characters' Odyle Energy (who is full, who is soon), the recent fights, the training dummy, the overlays
     /// with a switch each, and the account. Every card opens its section.
     /// </summary>
-    private UIElement BuildHomePage()
-    {
-        LocalizationManager loc = LocalizationManager.Instance;
-        DateTime now = DateTime.Now, utcNow = DateTime.UtcNow;
-        var page = new StackPanel { Margin = new Thickness(24, 18, 24, 24) };
-        page.Children.Add(PageTitle(loc["Shell.Home"], Account.SignedIn && Account.Name is { } name ? string.Format(CultureInfo.CurrentCulture, loc["Shell.HomeHello"], name) : loc["Shell.HomeLede"]));
-
-        var cards = new WrapPanel();
-        page.Children.Add(cards);
-
-        // the resets
-        var resets = new StackPanel();
-        if (Aion2Tickets.Find(4) is { } daily && Aion2Tickets.NextReset(daily, now) is { } nextDaily)
-        {
-            resets.Children.Add(BigLine(loc["Checklist.DailyReset"], ShortSpan(nextDaily - now), nextDaily.ToString("t", CultureInfo.CurrentCulture)));
-        }
-
-        if (Aion2Tickets.Find(101) is { } weekly && Aion2Tickets.NextReset(weekly, now) is { } nextWeekly)
-        {
-            resets.Children.Add(BigLine(loc["Checklist.WeeklyReset"], ShortSpan(nextWeekly - now), nextWeekly.ToString("ddd", CultureInfo.CurrentCulture) + " " + nextWeekly.ToString("t", CultureInfo.CurrentCulture)));
-        }
-
-        cards.Children.Add(HomeCard(loc["Shell.Resets"], resets, null, 300));
-
-        // the characters' Odyle Energy: who is full, who is next
-        string? online = Aion2Tickets.CurrentName;
-        var odyle = Aion2Tickets.Snapshot().Where(c => c.Tickets.Count > 0)
-            .Select(c => (Character: c, State: Aion2Tickets.OdyleNow(c, utcNow, c.Name == online))).Where(x => x.State is not null)
-            .OrderBy(x => x.State!.Full ? DateTime.MinValue : x.State.FullAt ?? DateTime.MaxValue).Take(6).ToList();
-        var energy = new StackPanel();
-        if (odyle.Count == 0)
-        {
-            energy.Children.Add(Wrapped(loc["Shell.NoCharacters"], "Brush.TextMuted", 12.5));
-        }
-
-        foreach (var (character, state) in odyle)
-        {
-            energy.Children.Add(OdyleRow(character, state!, utcNow));
-        }
-
-        cards.Children.Add(HomeCard(loc["Shell.Odyle"], energy, "characters", 420));
-
-        // the recent fights
-        var fights = new StackPanel();
-        IReadOnlyList<FightLogEntry> entries = FightLog.Entries();
-        if (entries.Count == 0)
-        {
-            fights.Children.Add(Wrapped(loc["Shell.NoFights"], "Brush.TextMuted", 12.5));
-        }
-
-        foreach (FightLogEntry entry in entries.Take(6))
-        {
-            fights.Children.Add(FightRow(entry, now));
-        }
-
-        cards.Children.Add(HomeCard(loc["Shell.RecentFights"], fights, "history", 420));
-
-        // the training dummy
-        var settings = MeterSettings.Load();
-        var dummy = new StackPanel();
-        int seconds = Math.Clamp(settings.DummyTestSeconds, 10, 3600);
-        dummy.Children.Add(Wrapped(settings.DummyAutoStart
-            ? string.Format(CultureInfo.CurrentCulture, loc["Shell.DummyOn"], seconds % 60 == 0 ? $"{seconds / 60} min" : $"{seconds} s")
-            : loc["Shell.DummyOff"], "Brush.Text", 13));
-        if (entries.FirstOrDefault(e => e.Kind == FightLogKind.Dummy) is { } lastDummy)
-        {
-            TextBlock last = Wrapped(string.Format(CultureInfo.CurrentCulture, loc["Shell.DummyLast"], lastDummy.YourDps.ToString("N0", CultureInfo.CurrentCulture), lastDummy.Detail ?? "", Ago(now - lastDummy.Start)), "Brush.TextMuted", 12);
-            last.Margin = new Thickness(0, 6, 0, 0);
-            dummy.Children.Add(last);
-        }
-
-        cards.Children.Add(HomeCard(loc["Shell.Dummy"], dummy, "dummy", 300));
-
-        // the overlays: a switch each for the main ones
-        var overlays = new StackPanel();
-        foreach (OverlayDef def in OverlayDefs().Take(5))
-        {
-            overlays.Children.Add(OverlaySwitch(def, compact: true));
-        }
-
-        cards.Children.Add(HomeCard(loc["Shell.Overlays"], overlays, "overlays", 300));
-
-        // the account
-        var account = new StackPanel();
-        account.Children.Add(Wrapped(Account.SignedIn ? string.Format(CultureInfo.CurrentCulture, loc["Shell.SignedIn"], Account.Name ?? "Discord") : loc["Shell.SignedOut"], "Brush.Text", 13));
-        TextBlock site = ShellLink(Account.SignedIn ? loc["Shell.SiteRoster"] : loc["Shell.SignIn"], () =>
-        {
-            if (Account.SignedIn)
-            {
-                OpenUrl(Brand.Site + "/meter/roster");
-            }
-            else
-            {
-                OnAccountClicked(this, new RoutedEventArgs());
-            }
-        });
-        site.Margin = new Thickness(0, 8, 0, 0);
-        account.Children.Add(site);
-        cards.Children.Add(HomeCard(loc["Shell.Account"], account, null, 420));
-        return new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Content = page };
-    }
-
     private UIElement OdyleRow(TicketCharacter c, Aion2Tickets.OdyleState o, DateTime utcNow)
     {
         LocalizationManager loc = LocalizationManager.Instance;
@@ -798,20 +696,6 @@ public partial class MainWindow
         card.SetResourceReference(Border.BackgroundProperty, "Brush.Panel");
         card.SetResourceReference(Border.BorderBrushProperty, "Brush.Border");
         return card;
-    }
-
-    private static UIElement BigLine(string label, string value, string sub)
-    {
-        var stack = new StackPanel { Margin = new Thickness(0, 0, 0, 8) };
-        stack.Children.Add(ShellText(label, "Brush.TextMuted", 12));
-        var line = new StackPanel { Orientation = Orientation.Horizontal };
-        line.Children.Add(ShellText(value, "Brush.Text", 20, bold: true));
-        TextBlock small = ShellText("  " + sub, "Brush.TextSubtle", 12);
-        small.VerticalAlignment = VerticalAlignment.Bottom;
-        small.Margin = new Thickness(0, 0, 0, 3);
-        line.Children.Add(small);
-        stack.Children.Add(line);
-        return stack;
     }
 
     private static TextBlock ShellText(string text, string brush, double size, bool bold = false)
