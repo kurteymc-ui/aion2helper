@@ -44,6 +44,7 @@ public static class SelfCheck
         ok &= SelfCheckProtocolHealth.Run();
         ok &= SelfCheckTickets.Run();
         ok &= SelfCheckBossTimers.Run();
+        ok &= SelfCheckPetRoute.Run();
         ok &= SelfCheckInstanceTimer.Run();
         ok &= SelfCheckCubesGuards.Run();
         ok &= SelfCheckMaps.Run();

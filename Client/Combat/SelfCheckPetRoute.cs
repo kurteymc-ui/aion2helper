@@ -1,0 +1,53 @@
+using System.Text.Json;
+using AionDPS.Aion2;
+
+namespace AionDPS.Combat;
+
+/// <summary>
+/// The pet route (Aion2/PetRoute.cs) against the website's own: aion2helper.com's Pet Soul Map Atlas planned these routes with its buildRoute
+/// (run as it is, on the data the meter's route.json was made from); the meter must plan the same stops, in the same order, with the same pets
+/// and teleports, and start where the site starts.
+/// </summary>
+public static class SelfCheckPetRoute
+{
+    // made by running the site's buildRoute (guides/pets-route-map.html) on its data: the start, then each stop as "x,z,pets,teleport" (metres)
+    private const string Expected = """
+[{"name":"Altgard, Cogni, from the camp","map":"altgard","faction":"Asmodian","genera":["Cogni"],"from":null,"done":[],"origin":[457,-1178],"stops":["460,-1461,Mumu Worker,Briskwind Shelter","1812,887,Drakan Watcher,Eastern Gribade Highland Cliff","1048,-934,Decomposed Lupyllini,Purifying Forest Sunny Hill","-1637,-735,Biruta|Biruta Herbalist,Gravekeeper Camp","-1646,-153,Dratona,Temporary Retreat","708,1576,Manduri Fighter|Manduri Trebuchet Worker|Mumu Warrior|Varg Berserker,Kumrica's Cellar","1030,1496,Elite Manduri Fighter,","1373,314,Addicted Shulak Cart Worker,Gribade Highland Crossroad","420,-734,Klaw Scout,Faded Stump","2220,-2376,Dracuni Herbalist,","-2046,2050,Kuru Overseer|Kuru Tinkerer|Kuru Worker|Modified Lupyllini,","-1984,2439,Kerubar|Kerubian|Kerubiel,"]},{"name":"Verteron, every genus, from the camp","map":"verteron","faction":"Elyos","genera":["Cogni","Natura","Fera","Varian"],"from":null,"done":[],"origin":[792,1477],"stops":["927,1595,Forest Guardian|Forest Specter|Gravi|Intermediate Earth Spirit|Intermediate Water Spirit|Intermediate Wind Spirit|Large Leaf Gravi|Magic Gravi|Mutated Aberrant Odyle Spider|Papis|Superior Earth Spirit|Superior Fire Spirit|Superior Water Spirit|Superior Wind Spirit|Withered Agrint,Pilgrim's Rest","336,-1045,Lesser Water Spirit,Spirit's Rest","-726,-692,Aberrant Armadon|Blue Kalgolem|Fungen|Fungie|Kalgolem,Eastern Cantas Valley Campsite","-594,1370,Unstable Spider,Forest of Exiles","170,-6,Elite Klaw|Giant Bee|Klaw|Modified Karnif|Young Ursus,Verteron Fortress Valley","779,-966,Cave Bat|Dratona,Scarlet Forest Observation Site","-725,473,Fossa|Nepenthes,Southern Shugo Station","-65,-947,Baby Odyle Spider|Black Spirit|Contaminated Slime|Marsh Targon|Potcrab|Starturtle|Zelophi,Collapsed Verteron Barrier Tower","1359,-1191,Drakan Guard Dog,Nahid Disposal Plant","1069,-1192,Krall Warrior,","1520,328,Aberrant Skama|Decomposed Lupyllini|Elite Guardite|Guardite|Lupyllini|Mutated Forest Spirit|Scorpion|Watcher Guardite,Hill of Purification","901,739,Dark Spirit,Canyon Campsite","-776,-148,Ashen Spider|Crestlich|Slink,Pamos Farm","-482,-319,Aberrant Bee|Aberrant Tog|Giant Sparkie|Kailin|Male Crestlich|Skama|Sparkie|Young Kailin|Young Slink,","291,1490,Zaif,Southern Altamia Coastal Cliffs","121,489,Aberrant Zaif|Skyray|Tamed Zaif,Rock Hill Outpost","-438,873,Aullaeu Shaman|Biruta|Dry Leaf Agrint|Pino|Pino Worker|Ursus,Astin Mercenaries Base","-343,288,Agrint|Airon|Brax|Crasaur|Elite Manduri Fighter|Enhanced Krall Combatant|Enhanced Krall Sentry|Forest Monster|Forest Spirit|Konutin Worker|Krall Laborer|Mutated Cadaver Insectoid|Sylphen,Dawn Legion Temporary Outpost","443,744,Karnif|Vivel,Rock Hill Outpost","1168,-757,Dracuni Herbalist|Drakan Probe|Drakan Watcher|Krall Warshaman|Oculazen,Drana Transport Hub","1732,-727,Aberrant Coradon|Stone Spirit,","920,-2050,Aberrant Potcrab|Drana Predator|Drana Spore|Drana Swarm|Manduri Fighter|Manduri Trebuchet Worker|Rafflesia|Thin Agrint,","-2183,2417,Drana Mutant Brute|Intermediate Fire Spirit|Kerubar|Kerubian|Kerubiel|Kuru Overseer|Kuru Tinkerer|Kuru Worker|Lesser Earth Spirit|Lesser Fire Spirit|Lesser Wind Spirit|Modified Lupyllini,"]},{"name":"Altgard, every genus, from Moslan Forest","map":"altgard","faction":"Asmodian","genera":["Cogni","Natura","Fera","Varian"],"from":[200,300,"Moslan Forest"],"done":[],"origin":[200,300],"stops":["-1514,-787,Biruta|Biruta Herbalist|Mutated Forest Spirit|Rafflesia|Thin Agrint|Ursus|Vivel|Young Ursus,Gravekeeper Camp","-1493,-1324,Aberrant Bee,","522,-514,Large Leaf Gravi|Stone Spirit,Guide Rest Stop","396,-844,Crasaur|Distorted Mutant|Giant Sparkie|Gravi|Kalgolem|Klaw Scout|Magic Gravi|Poison Blood|Slime|Superior Earth Spirit|Superior Water Spirit|Withered Branch Spider,","-1735,-250,Dratona|Tog,Temporary Retreat","1599,1692,Black Spirit|Mudthorn|Oculazen,Collapsed Hall of Fame","1565,-1029,Agrint|Cadaver Cleaner|Fossa|Soulless Corpse Gnat,Graverobber Campsite","1475,265,Aberrant Zaif|Addicted Shulak Cart Worker|Airon|Scorpion,Gribade Highland Crossroad","933,1029,Starturtle,Abandoned Campsite","-1071,-393,Aberrant Coradon|Cadaver Insectoid|Congealed Drana|Drakan Probe|Drana Predator|Kailin|Papis|Skyray|Slink|Young Kailin,Watcher's Tent","1392,962,Eternal Coradon|Tamed Karnif|Young Slink,Idun's Lake","855,1573,Duduka Trebuchet Worker|Duduka Worker|Elite Manduri Fighter|Manduri Fighter|Manduri Trebuchet Worker|Mumu Warrior|Tayga|Varg Berserker,Kumrica's Cellar","-573,-702,Armadon|Drakana Kalgolem|Drana Mutant|Drana Slime,Temporary Investigation Base","1184,596,Blue Kalgolem|Faded Drana|Faded Floater|Faded Mutant|Faded Mutant Brute|Faded Predator|Parasite Swarm|Swarm,Steel Hammer Workcamp","882,-713,Brax|Decomposed Lupyllini|Forest Spirit|Lesser Fire Spirit|Lesser Wind Spirit|Superior Fire Spirit|Superior Wind Spirit|Unstable Spider,Purifying Forest Coastal Cliff","1833,810,Drakan Guard Dog|Drakan Watcher,Eastern Gribade Highland Cliff","-624,388,Ashen Dionae|Ashen Spider|Basilisk|Forest Monster|Mutated Ursus,Collapsed Chasm","550,-1315,Aberrant Tog|Mumu Worker|Sylphen|Vigilant Oculazen,Briskwind Shelter","305,-1645,Potcrab,","2345,-2202,Ashen Agrint|Dracuni Herbalist|Intermediate Water Spirit|Mutated Aberrant Odyle Spider|Mutated Forest Guardian|Odyle Stone Spirit,","-2025,2224,Drana Mutant Brute|Intermediate Earth Spirit|Intermediate Fire Spirit|Intermediate Wind Spirit|Kerubar|Kerubian|Kerubiel|Kuru Overseer|Kuru Tinkerer|Kuru Worker|Modified Lupyllini|Zelophi,"]},{"name":"Lower Reshanta, Asmodian","map":"abyss","faction":"Asmodian","genera":["Cogni","Natura","Fera","Varian"],"from":null,"done":[],"origin":[562,-549],"stops":["456,231,Blue Kalgolem|Drakan Guard Dog|Eternal Coradon|Nepenthes|Slink|Spider|Spirit King's Bodyguard Warrior|Stone Spirit|Unstable Spider|Zelophi,","127,421,Young Slink,","-6,-5,Agrint,","-212,113,Black Spirit|Kalgolem|Klaw Scout|Modified Karnif|Silver Blade Rotan,","-368,-293,Aberrant Skama|Contaminated Slime|Klaw|Naga Elite Priest|Nagarant Guardian Warrior|Swarm|Thin Agrint|Withered Agrint,"]},{"name":"Verteron, Fera and Varian, 12 pets done","map":"verteron","faction":"Elyos","genera":["Fera","Varian"],"from":null,"done":["Forest Specter","Dark Spirit","Withered Agrint","Airon","Lupyllini","Kerubim","Mookie","Brax","Krall Laborer","Dukaki","Shulack","Lepharist"],"origin":[775,-1062],"stops":["926,-1057,Cave Bat,Scarlet Forest Observation Site","-594,1370,Unstable Spider,Forest of Exiles","-898,-284,Ashen Spider|Crestlich|Kalgolem,Coastal Camp","754,-553,Aberrant Coradon|Karnif|Oculazen,Laborer's Rest Stop","-247,845,Pino|Pino Worker,Aullaeu Village Border","291,1490,Zaif,Southern Altamia Coastal Cliffs","-768,685,Fossa|Ursus,Southern Shugo Station","-490,457,Crasaur|Forest Monster,","458,-179,Young Ursus,Kraka Uphill Path","1518,372,Aberrant Skama|Elite Guardite|Guardite|Scorpion|Watcher Guardite,Hill of Purification","-535,-255,Aberrant Bee|Aberrant Tog|Giant Sparkie|Kailin|Male Crestlich|Papis|Skama|Slink|Sylphen|Young Kailin|Young Slink,Pamos Farm","-596,-819,Aberrant Armadon|Blue Kalgolem,Cantas Valley Mushroom Tree Peak","1359,-1191,Drakan Guard Dog,Nahid Disposal Plant","-52,-924,Baby Odyle Spider|Contaminated Slime|Marsh Targon|Mutated Aberrant Odyle Spider|Potcrab|Starturtle,Collapsed Verteron Barrier Tower","1214,-764,Drakan Probe,Drana Transport Hub","-33,-136,Modified Karnif,Collapsed Pillar","439,741,Vivel,Rock Hill Outpost","137,406,Aberrant Zaif|Giant Bee|Mutated Cadaver Insectoid|Skyray|Sparkie|Tamed Zaif,","934,-2023,Aberrant Potcrab|Drana Mutant Brute|Drana Predator|Drana Swarm,"]}]
+""";
+
+    public static bool Run()
+    {
+        Console.WriteLine("[selftest] Pet route (the website's route, planned by the meter):");
+        bool ok = true;
+        using JsonDocument doc = JsonDocument.Parse(Expected);
+        foreach (JsonElement c in doc.RootElement.EnumerateArray())
+        {
+            string name = c.GetProperty("name").GetString()!;
+            var genera = c.GetProperty("genera").EnumerateArray().Select(g => g.GetString()!).ToHashSet();
+            var done = c.GetProperty("done").EnumerateArray().Select(g => g.GetString()!).ToHashSet();
+            (double, double, string)? from = c.GetProperty("from").ValueKind == JsonValueKind.Array
+                ? (c.GetProperty("from")[0].GetDouble(), c.GetProperty("from")[1].GetDouble(), c.GetProperty("from")[2].GetString()!)
+                : null;
+            PetRoutePlan? plan = PetRoute.Plan(c.GetProperty("map").GetString()!, c.GetProperty("faction").GetString(), genera,
+                id => !done.Contains(PetRoute.NameOf(id) ?? ""), from);
+            var expected = c.GetProperty("stops").EnumerateArray().Select(s => s.GetString()!).ToList();
+            var got = plan?.Stops.Select(s => $"{Round(s.X)},{Round(s.Z)},{string.Join("|", s.Pets.Select(id => PetRoute.NameOf(id)))},{s.Teleport?.Name ?? ""}").ToList() ?? new List<string>();
+            bool origin = plan is not null && Round(plan.OriginX) == c.GetProperty("origin")[0].GetInt32() && Round(plan.OriginZ) == c.GetProperty("origin")[1].GetInt32();
+            int same = expected.Zip(got).TakeWhile(p => p.First == p.Second).Count();
+            bool good = origin && got.Count == expected.Count && same == expected.Count;
+            ok &= good;
+            Console.WriteLine($"  -> {name}: {got.Count} stops (site {expected.Count}), the same up to stop {same}, start {(origin ? "the same" : "different")}: {(good ? "ok" : "FAIL")}");
+            if (!good && same < Math.Max(expected.Count, got.Count))
+            {
+                Console.WriteLine($"     site:  {(same < expected.Count ? expected[same] : "-")}");
+                Console.WriteLine($"     meter: {(same < got.Count ? got[same] : "-")}");
+            }
+        }
+
+        Console.WriteLine(ok ? "  -> pet route: ok" : "  -> pet route: FAIL");
+        return ok;
+    }
+
+    /// <summary>Rounded as JavaScript's Math.round does (halves up).</summary>
+    private static int Round(double v) => (int)Math.Floor(v + 0.5);
+}
