@@ -1361,7 +1361,27 @@ public partial class MainWindow : Window
             _gateTimer.Start();
             CreateMeterOverlay();
             _sessions.StayClosed += stay => Dispatcher.BeginInvoke(new Action(() => LogStay(stay)));
+            BuildShell();
+            SizeForShell();
         }
+    }
+
+    /// <summary>The first start with the app's sections: the small meter window becomes an app window (the meter itself is over the game now).</summary>
+    private void SizeForShell()
+    {
+        var settings = MeterSettings.Load();
+        if (settings.AppShellSized)
+        {
+            return;
+        }
+
+        settings.AppShellSized = true;
+        settings.Save();
+        Rect area = SystemParameters.WorkArea;
+        Width = Math.Max(Width, Math.Min(1180, area.Width - 40));
+        Height = Math.Max(Height, Math.Min(760, area.Height - 40));
+        Left = area.Left + (area.Width - Width) / 2;
+        Top = area.Top + (area.Height - Height) / 2;
     }
 
     /// <summary>Moves the compact panel out of this window into the overlay window over the game; this window stays the client. The panel's
@@ -1697,6 +1717,17 @@ public partial class MainWindow : Window
     private void OpenHistory(string? tab)
     {
         ShowClient();
+        if (_shellBuilt)
+        {
+            ShowShellPage("history");
+            if (tab is not null && _shellWindow is HistoryWindow hosted)
+            {
+                hosted.ShowTab(tab);
+            }
+
+            return;
+        }
+
         if (_historyWindow is not { IsLoaded: true })
         {
             _historyWindow = new HistoryWindow { Owner = this };
@@ -5216,6 +5247,13 @@ public partial class MainWindow : Window
     /// <summary>The checklist window (Odyle Energy, daily and weekly counters); <paramref name="roster"/>: on the page of all characters.</summary>
     private void OpenChecklist(bool roster)
     {
+        if (_shellBuilt)
+        {
+            ShowClient();
+            ShowShellPage("characters");
+            return;
+        }
+
         if (_checklistWindow is null)
         {
             _checklistWindow = new ChecklistWindow { Owner = this };
@@ -6387,6 +6425,14 @@ public partial class MainWindow : Window
     {
         if (PrivacyConsent.Restricted && !PrivacyConsent.RestrictedTools.Contains(id))
         {
+            return;
+        }
+
+        // the tools are sections of the app now (MainWindow.Shell.cs); the tools window is left for a start without them
+        if (_shellBuilt)
+        {
+            ShowClient();
+            ShowShellPage(id);
             return;
         }
 

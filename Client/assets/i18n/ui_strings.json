@@ -13416,5 +13416,185 @@
   "Checklist.RosterOpenSite": {
     "en": "Open it on the site →",
     "de": "Auf der Seite öffnen →"
+  },
+  "Shell.Home": {
+    "en": "Home",
+    "de": "Start"
+  },
+  "Shell.Meter": {
+    "en": "Meter",
+    "de": "Meter"
+  },
+  "Shell.History": {
+    "en": "History",
+    "de": "Verlauf"
+  },
+  "Shell.Characters": {
+    "en": "Characters",
+    "de": "Charaktere"
+  },
+  "Shell.Dummy": {
+    "en": "Training dummy",
+    "de": "Trainingspuppe"
+  },
+  "Shell.Overlays": {
+    "en": "Overlays",
+    "de": "Overlays"
+  },
+  "Shell.Tools": {
+    "en": "Tools",
+    "de": "Werkzeuge"
+  },
+  "Shell.Account": {
+    "en": "AION 2 Helper account",
+    "de": "AION 2 Helper-Konto"
+  },
+  "Shell.Settings": {
+    "en": "Settings",
+    "de": "Einstellungen"
+  },
+  "Shell.Fold": {
+    "en": "Show only the pictures",
+    "de": "Nur die Bilder zeigen"
+  },
+  "Shell.Unfold": {
+    "en": "Show the names",
+    "de": "Die Namen zeigen"
+  },
+  "Shell.NotYet": {
+    "en": "Not available right now: the meter needs the game's connection for this (start it with the game running).",
+    "de": "Gerade nicht verfügbar: dafür braucht der Meter die Verbindung zum Spiel (mit laufendem Spiel starten)."
+  },
+  "Shell.HomeLede": {
+    "en": "Your characters, fights and overlays at a glance.",
+    "de": "Deine Charaktere, Kämpfe und Overlays auf einen Blick."
+  },
+  "Shell.HomeHello": {
+    "en": "Hello {0}: your characters, fights and overlays at a glance.",
+    "de": "Hallo {0}: deine Charaktere, Kämpfe und Overlays auf einen Blick."
+  },
+  "Shell.Resets": {
+    "en": "Resets",
+    "de": "Resets"
+  },
+  "Shell.Odyle": {
+    "en": "Odyle Energy",
+    "de": "Odenergie"
+  },
+  "Shell.RecentFights": {
+    "en": "Recent fights",
+    "de": "Letzte Kämpfe"
+  },
+  "Shell.NoCharacters": {
+    "en": "No characters yet: log in to the game with each of them while the meter runs.",
+    "de": "Noch keine Charaktere: logge dich mit jedem einmal ein, während der Meter läuft."
+  },
+  "Shell.NoFights": {
+    "en": "No fights yet. Every boss fight, dungeon run and dummy parse is saved here when it ends.",
+    "de": "Noch keine Kämpfe. Jeder Bosskampf, Dungeon-Lauf und Puppen-Test wird hier gespeichert, wenn er endet."
+  },
+  "Shell.DummyOn": {
+    "en": "A {0} parse starts when you hit a training dummy.",
+    "de": "Ein {0}-Test startet, wenn du eine Trainingspuppe triffst."
+  },
+  "Shell.DummyOff": {
+    "en": "Parses at the training dummy are off.",
+    "de": "Tests an der Trainingspuppe sind aus."
+  },
+  "Shell.DummyLast": {
+    "en": "Last: {0} DPS ({1}), {2}",
+    "de": "Zuletzt: {0} DPS ({1}), {2}"
+  },
+  "Shell.SignedIn": {
+    "en": "Signed in as {0}: fights you upload and your characters are on aion2helper.com.",
+    "de": "Angemeldet als {0}: hochgeladene Kämpfe und deine Charaktere sind auf aion2helper.com."
+  },
+  "Shell.SignedOut": {
+    "en": "Not signed in. Sign in with Discord to upload fights and see your characters on your phone.",
+    "de": "Nicht angemeldet. Melde dich mit Discord an, um Kämpfe hochzuladen und deine Charaktere am Handy zu sehen."
+  },
+  "Shell.SiteRoster": {
+    "en": "Your characters on the site →",
+    "de": "Deine Charaktere auf der Seite →"
+  },
+  "Shell.SignIn": {
+    "en": "Sign in with Discord →",
+    "de": "Mit Discord anmelden →"
+  },
+  "Shell.Open": {
+    "en": "Open →",
+    "de": "Öffnen →"
+  },
+  "Shell.OverlaysLede": {
+    "en": "Everything the meter can show over the game, each with its switch. Each overlay is moved by its header and can be locked in place on its own page.",
+    "de": "Alles, was der Meter über dem Spiel zeigen kann, jeweils mit Schalter. Jedes Overlay wird an seiner Kopfzeile verschoben und kann auf seiner Seite festgesetzt werden."
+  },
+  "Shell.OvSettings": {
+    "en": "Its settings →",
+    "de": "Einstellungen →"
+  },
+  "Shell.OvReset": {
+    "en": "Put it back in place",
+    "de": "An seinen Platz zurück"
+  },
+  "Shell.OvMeter": {
+    "en": "Meter",
+    "de": "Meter"
+  },
+  "Shell.OvMeterWhat": {
+    "en": "The DPS meter: in dungeons, during boss fights and at training dummies, with past fights, modes and the dummy countdown.",
+    "de": "Der DPS-Meter: in Dungeons, bei Bosskämpfen und an Trainingspuppen, mit früheren Kämpfen, Modi und dem Puppen-Countdown."
+  },
+  "Shell.OvCombatWhat": {
+    "en": "The boss's cast bar, the target of the target and the healer's target.",
+    "de": "Die Zauberleiste des Bosses, das Ziel des Ziels und das Ziel des Heilers."
+  },
+  "Shell.OvAssistWhat": {
+    "en": "Your cooldowns and the effects on you.",
+    "de": "Deine Abklingzeiten und die Effekte auf dir."
+  },
+  "Shell.OvTimetableWhat": {
+    "en": "World bosses and events coming up, with reminders.",
+    "de": "Kommende Weltbosse und Events, mit Erinnerungen."
+  },
+  "Shell.OvBossWhat": {
+    "en": "The world boss nearby: its health and who fights it.",
+    "de": "Der Weltboss in der Nähe: seine Lebenspunkte und wer ihn bekämpft."
+  },
+  "Shell.OvPetMapWhat": {
+    "en": "The map with pets, gathering spots and where you are.",
+    "de": "Die Karte mit Pets, Sammelstellen und deinem Standort."
+  },
+  "Shell.OvPetFarm": {
+    "en": "Pet farm",
+    "de": "Pet-Farm"
+  },
+  "Shell.OvPetFarmWhat": {
+    "en": "The pets you are farming and how far you are.",
+    "de": "Die Pets, die du farmst, und wie weit du bist."
+  },
+  "Shell.OvLootWhat": {
+    "en": "What dropped and what it is worth.",
+    "de": "Was gedroppt ist und was es wert ist."
+  },
+  "Shell.OvCraftWhat": {
+    "en": "Your crafting: success, costs and profit.",
+    "de": "Dein Handwerk: Erfolg, Kosten und Gewinn."
+  },
+  "Shell.OvNetworkWhat": {
+    "en": "Your ping to the game.",
+    "de": "Dein Ping zum Spiel."
+  },
+  "Shell.OvHotkeys": {
+    "en": "Hotkeys",
+    "de": "Tastenkürzel"
+  },
+  "Shell.OvHotkeysWhat": {
+    "en": "The meter's hotkeys as a small reminder.",
+    "de": "Die Tastenkürzel des Meters als kleine Erinnerung."
+  },
+  "Shell.OvStreamWhat": {
+    "en": "The overlays for OBS, to show them on stream.",
+    "de": "Die Overlays für OBS, um sie im Stream zu zeigen."
   }
 }

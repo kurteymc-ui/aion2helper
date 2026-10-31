@@ -293,6 +293,12 @@ public sealed class MeterSettings
     /// the player's own Discord account only (to check them on the phone). On until switched off (the checklist's roster page).</summary>
     public bool SyncRoster { get; set; } = true;
 
+    /// <summary>The app's column of sections shows only its pictures (MainWindow.Shell.cs).</summary>
+    public bool AppNavCollapsed { get; set; }
+
+    /// <summary>The window was given the app's size once (it was the small meter before 1.18.8); the player's own size is kept after.</summary>
+    public bool AppShellSized { get; set; }
+
     /// <summary>The combat overlay (see CombatOverlayWindow): the boss cast bar, the target of the target and the healer's target in one frame.
     /// Off until switched on; every element has its own place and size inside the frame (<see cref="CombatElements"/>, in the frame's own units).</summary>
     /// <summary>The overlays step aside while a game menu is open (the game shows the mouse cursor then). Only works in the control mode that hides the cursor while playing; off until switched on.</summary>

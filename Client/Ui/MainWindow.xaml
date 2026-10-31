@@ -745,425 +745,433 @@
                     </StackPanel>
                 </DockPanel>
                 </Border>
-                <!-- The menus, quiet words like the site's top menu, and who is counted: PvE (monsters and bosses) or PvP (players). -->
-                <DockPanel DockPanel.Dock="Top" Margin="10,8,12,0" LastChildFill="False">
-                    <Menu Background="Transparent" Foreground="{DynamicResource Brush.Text}" VerticalAlignment="Center">
+                <!-- The app (MainWindow.Shell.cs): its sections on the left, the chosen one on the right. "Meter" is the live meter below, kept in place;
+                     every other section is a page in AppPageHost (Home, Overlays, History, Characters and the tools that had a window of their own). -->
+                <Border x:Name="AppNav" DockPanel.Dock="Left" Width="196" Background="{DynamicResource Brush.TitleBar}" BorderBrush="{DynamicResource Brush.Border}" BorderThickness="0,0,1,0"/>
+                <Grid x:Name="AppBody">
+                <DockPanel x:Name="MeterPage" LastChildFill="True">
+                    <!-- The menus, quiet words like the site's top menu, and who is counted: PvE (monsters and bosses) or PvP (players). -->
+                    <DockPanel DockPanel.Dock="Top" Margin="10,8,12,0" LastChildFill="False">
+                        <Menu Background="Transparent" Foreground="{DynamicResource Brush.Text}" VerticalAlignment="Center">
                     
-                    <MenuItem x:Name="AppMenu" Header="{local:Loc Main.MenuApp}"
-                              Style="{StaticResource AppMenuFlyoutStyle}" Click="OnAppMenuClicked"/>
+                        <MenuItem x:Name="AppMenu" Header="{local:Loc Main.MenuApp}"
+                                  Style="{StaticResource AppMenuFlyoutStyle}" Click="OnAppMenuClicked"/>
                     
-                    <MenuItem x:Name="SessionMenu" Header="{local:Loc Main.MenuSession}"
-                              SubmenuOpened="OnSessionMenuOpened">
+                        <MenuItem x:Name="SessionMenu" Header="{local:Loc Main.MenuSession}"
+                                  SubmenuOpened="OnSessionMenuOpened">
                         
-                        <MenuItem Header="..." IsEnabled="False"/>
-                    </MenuItem>
+                            <MenuItem Header="..." IsEnabled="False"/>
+                        </MenuItem>
                     
                     
-                                        <MenuItem x:Name="ToolsMenu" Header="{local:Loc Main.MenuTools}">
-                        <MenuItem Header="{local:Loc Main.MenuTools.Checklist}" Tag="checklist" Click="OnOpenModuleClicked"/>
-                        <MenuItem Header="{local:Loc Main.MenuTools.Attributes}" Tag="attributes" Click="OnOpenModuleClicked"/>
-                        <MenuItem Header="{local:Loc Main.MenuTools.StatCalc}" Tag="statcalc" Click="OnOpenModuleClicked"/>
-                        <Separator/>
-                        <MenuItem Header="{local:Loc Main.MenuTools.Loot}" Tag="loot" Click="OnOpenModuleClicked"/>
-                        <MenuItem Header="{local:Loc Main.MenuTools.Craft}" Tag="craft" Click="OnOpenModuleClicked"/>
-                        <MenuItem Header="{local:Loc Settings.Nav.PetMap}" Tag="petmap" Click="OnOpenModuleClicked"/>
-                        <Separator/>
-                        <MenuItem Header="{local:Loc Settings.Nav.Combat}" Tag="combat" Click="OnOpenModuleClicked"/>
-                        <MenuItem Header="{local:Loc Main.MenuTools.Assist}" Tag="assist" Click="OnOpenModuleClicked"/>
-                        <Separator/>
-                        <MenuItem Header="{local:Loc Main.MenuTools.DummyTest}" Tag="dummy" Click="OnOpenModuleClicked"/>
-                        <MenuItem Header="{local:Loc Main.MenuTools.Analyzer}" Tag="analyzer" Click="OnOpenModuleClicked"/>
-                        <Separator/>
-                        <MenuItem Header="{local:Loc Settings.Nav.Timetable}" Tag="timetable" Click="OnOpenModuleClicked"/>
-                        <MenuItem Header="{local:Loc Settings.Nav.Boss}" Tag="boss" Click="OnOpenModuleClicked"/>
-                        <Separator/>
-                        <MenuItem Header="{local:Loc Main.MenuTools.ThemeEditor}" Tag="theme" Click="OnOpenModuleClicked"/>
-                        <MenuItem Header="{local:Loc Main.MenuTools.Stream}" Tag="stream" Click="OnOpenModuleClicked"/>
-                        <MenuItem Header="{local:Loc Settings.Nav.Network}" Tag="network" Click="OnOpenModuleClicked"/>
-                    </MenuItem>
-                    <MenuItem Header="{local:Loc Main.MenuSettings}">
-                        <MenuItem Header="{local:Loc Main.MenuSettings.AppSettings}" Click="OnSettingsClicked"/>
-                        <MenuItem x:Name="AlwaysOnTopMenuItem" Header="{local:Loc Main.MenuSettings.AlwaysOnTop}" IsCheckable="True" Click="OnAlwaysOnTopClicked"/>
-                        <MenuItem Header="{local:Loc Main.MenuSettings.Feedback}" Click="OnFeedbackClicked"/>
-                    </MenuItem>
-                </Menu>
-                    <Border DockPanel.Dock="Right" Background="#0AFFFFFF" BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1" CornerRadius="6" Padding="2"
-                            VerticalAlignment="Center" ToolTip="PvE: damage against monsters and bosses (default). PvP: damage against other players only - Arena, Abyss, legion fights.">
-                        <StackPanel Orientation="Horizontal">
-                            <ToggleButton x:Name="PveModeButton" Style="{StaticResource PvpModeToggleLeft}"
-                                      Content="{local:Loc Main.ModePve}" IsChecked="True" Click="OnPvpModeToggleClicked"/>
-                            <ToggleButton x:Name="PvpModeButton" Style="{StaticResource PvpModeToggleRight}"
-                                      Content="{local:Loc Main.ModePvp}" Click="OnPvpModeToggleClicked"/>
-                        </StackPanel>
-                    </Border>
-                </DockPanel>
-                <!-- What the list shows (a segmented switch), the extras, and Upload. Wraps when the window is narrow. -->
-                <WrapPanel DockPanel.Dock="Top" Margin="12,10,12,0" Orientation="Horizontal">
-                    <Border Background="#0AFFFFFF" BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1" CornerRadius="10" Padding="3" Margin="0,0,10,6">
-                        <StackPanel Orientation="Horizontal">
-                            <Button x:Name="ModeDamageButton" Style="{StaticResource ModeTab}" Tag="Damage" ToolTip="{local:Loc Main.ModeDamage}" Click="OnModeButtonClicked">
-                            <Grid><Image x:Name="ModeDamageImage" Width="0" Height="0" Visibility="Collapsed"/><TextBlock Text="Damage" FontSize="13"/></Grid>
-                        </Button>
-                            <Button x:Name="ModeRaidButton" Style="{StaticResource ModeTab}" Tag="Raid" ToolTip="rDPS: each player's damage without other people's buffs, plus what their own party buffs added to the others (Chanter, Cleric, Gladiator and Templar party buffs, at the level they were cast)" Click="OnModeButtonClicked">
-                            <Grid><Image x:Name="ModeRaidImage" Width="0" Height="0" Visibility="Collapsed"/><TextBlock Text="rDPS" FontSize="13"/></Grid>
-                        </Button>
-                            <Button x:Name="ModeHealButton" Style="{StaticResource ModeTab}" Tag="Heal" ToolTip="{local:Loc Main.ModeHeal}" Click="OnModeButtonClicked">
-                            <Grid><Image x:Name="ModeHealImage" Width="0" Height="0" Visibility="Collapsed"/><TextBlock Text="Healing" FontSize="13"/></Grid>
-                        </Button>
-                            <Button x:Name="ModeTakenButton" Style="{StaticResource ModeTab}" Tag="Taken" ToolTip="{local:Loc Main.ModeTaken}" Click="OnModeButtonClicked">
-                            <Grid><Image x:Name="ModeTakenImage" Width="0" Height="0" Visibility="Collapsed"/><TextBlock Text="Taken" FontSize="13"/></Grid>
-                        </Button>
-                            <Button x:Name="ModeAllButton" Style="{StaticResource ModeTab}" Tag="All" ToolTip="{local:Loc Main.ModeAll}" Click="OnModeButtonClicked">
-                            <Grid><Image x:Name="ModeAllImage" Width="0" Height="0" Visibility="Collapsed"/><TextBlock Text="All" FontSize="13"/></Grid>
-                        </Button>
-                            <Button x:Name="ModeAllPlusButton" Style="{StaticResource ModeTab}" Tag="AllCompact" ToolTip="{local:Loc Main.ModeAllCompact}" Click="OnModeButtonClicked">
-                            <Grid><Image x:Name="ModeAllPlusImage" Width="0" Height="0" Visibility="Collapsed"/><TextBlock Text="All+" FontSize="13"/></Grid>
-                        </Button>
-                        </StackPanel>
-                    </Border>
-                    <StackPanel Orientation="Horizontal" Margin="0,0,0,6" VerticalAlignment="Center">
-                        <Button x:Name="CopyButton" Style="{StaticResource ToolbarIconButton}" Click="OnCopyClicked" Padding="6,5" Margin="1,0"
-                            ToolTip="Copy a one-line chat string - the damage ranking, or an Aion-chat loot summary if the Loot view is active.">
-                        <Grid Width="18" Height="16">
-                            <TextBlock Text="A" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource Brush.Text}"
-                                       VerticalAlignment="Center" HorizontalAlignment="Center"/>
-                        </Grid>
-                    </Button>
-                        <Button x:Name="CopyAllButton" Style="{StaticResource ToolbarIconButton}" Click="OnCopyAllClicked" Padding="6,5" Margin="1,0"
-                            ToolTip="Copy an ASCII table in a code block, ready to paste into Discord - damage, or loot if the Loot view is active.">
-                        <Grid Width="18" Height="16">
-                            
-                            <Path Data="M 20.317 4.3698a 19.7913 19.7913 0 0 0 -4.8851 -1.5152 0.0741 0.0741 0 0 0 -0.0785 0.0371c -0.211 0.3753 -0.4447 0.8648 -0.6083 1.2495 -1.8447 -0.2762 -3.68 -0.2762 -5.4868 0 -0.1636 -0.3933 -0.4058 -0.8742 -0.6177 -1.2495a 0.077 0.077 0 0 0 -0.0785 -0.037 19.7363 19.7363 0 0 0 -4.8852 1.515 0.0699 0.0699 0 0 0 -0.0321 0.0277C 0.5334 9.0458 -0.319 13.5799 0.0992 18.0578a 0.0824 0.0824 0 0 0 0.0312 0.0561c 2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a 0.0777 0.0777 0 0 0 0.0842 -0.0276c 0.4616 -0.6304 0.8731 -1.2952 1.226 -1.9942a 0.076 0.076 0 0 0 -0.0416 -0.1057c -0.6528 -0.2476 -1.2743 -0.5495 -1.8722 -0.8923a 0.077 0.077 0 0 1 -0.0076 -0.1277c 0.1258 -0.0943 0.2517 -0.1923 0.3718 -0.2914a 0.0743 0.0743 0 0 1 0.0776 -0.0105c 3.9278 1.7933 8.18 1.7933 12.0614 0a 0.0739 0.0739 0 0 1 0.0785 0.0095c 0.1202 0.099 0.246 0.1981 0.3728 0.2924a 0.077 0.077 0 0 1 -0.0066 0.1276 12.2986 12.2986 0 0 1 -1.873 0.8914 0.0766 0.0766 0 0 0 -0.0407 0.1067c 0.3604 0.698 0.7719 1.3628 1.225 1.9932a 0.076 0.076 0 0 0 0.0842 0.0286c 1.961 -0.6067 3.9495 -1.5219 6.0023 -3.0294a 0.077 0.077 0 0 0 0.0313 -0.0552c 0.5004 -5.177 -0.8382 -9.6739 -3.5485 -13.6604a 0.061 0.061 0 0 0 -0.0312 -0.0286zM 8.02 15.3312c -1.1825 0 -2.1569 -1.0857 -2.1569 -2.419 0 -1.3332 0.9555 -2.4189 2.157 -2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332 -0.9555 2.4189 -2.1569 2.4189zm 7.9748 0c -1.1825 0 -2.1569 -1.0857 -2.1569 -2.419 0 -1.3332 0.9554 -2.4189 2.1569 -2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332 -0.946 2.4189 -2.1568 2.4189Z"
-                                  Fill="{DynamicResource Brush.Text}" Stretch="Uniform" Width="16" Height="16"/>
-                        </Grid>
-                    </Button>
-                        <Button x:Name="CharacterNavButton" Style="{StaticResource ToolbarIconButton}" Padding="6,5" Margin="1,0" ToolTip="Open the character window (Aion 2): gear, skills, Daevanion" Click="OnShowCharacterView">
-                            <Grid Width="16" Height="16">
-                                <Ellipse Width="5.6" Height="5.6" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
-                                         StrokeThickness="1.5" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,1.2,0,0"/>
-                                <Path Data="M4,14.5 L4,11.8 Q4,8.6 8,8.6 Q12,8.6 12,11.8 L12,14.5"
-                                      Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
-                                      StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                                            <MenuItem x:Name="ToolsMenu" Header="{local:Loc Main.MenuTools}">
+                            <MenuItem Header="{local:Loc Main.MenuTools.Checklist}" Tag="checklist" Click="OnOpenModuleClicked"/>
+                            <MenuItem Header="{local:Loc Main.MenuTools.Attributes}" Tag="attributes" Click="OnOpenModuleClicked"/>
+                            <MenuItem Header="{local:Loc Main.MenuTools.StatCalc}" Tag="statcalc" Click="OnOpenModuleClicked"/>
+                            <Separator/>
+                            <MenuItem Header="{local:Loc Main.MenuTools.Loot}" Tag="loot" Click="OnOpenModuleClicked"/>
+                            <MenuItem Header="{local:Loc Main.MenuTools.Craft}" Tag="craft" Click="OnOpenModuleClicked"/>
+                            <MenuItem Header="{local:Loc Settings.Nav.PetMap}" Tag="petmap" Click="OnOpenModuleClicked"/>
+                            <Separator/>
+                            <MenuItem Header="{local:Loc Settings.Nav.Combat}" Tag="combat" Click="OnOpenModuleClicked"/>
+                            <MenuItem Header="{local:Loc Main.MenuTools.Assist}" Tag="assist" Click="OnOpenModuleClicked"/>
+                            <Separator/>
+                            <MenuItem Header="{local:Loc Main.MenuTools.DummyTest}" Tag="dummy" Click="OnOpenModuleClicked"/>
+                            <MenuItem Header="{local:Loc Main.MenuTools.Analyzer}" Tag="analyzer" Click="OnOpenModuleClicked"/>
+                            <Separator/>
+                            <MenuItem Header="{local:Loc Settings.Nav.Timetable}" Tag="timetable" Click="OnOpenModuleClicked"/>
+                            <MenuItem Header="{local:Loc Settings.Nav.Boss}" Tag="boss" Click="OnOpenModuleClicked"/>
+                            <Separator/>
+                            <MenuItem Header="{local:Loc Main.MenuTools.ThemeEditor}" Tag="theme" Click="OnOpenModuleClicked"/>
+                            <MenuItem Header="{local:Loc Main.MenuTools.Stream}" Tag="stream" Click="OnOpenModuleClicked"/>
+                            <MenuItem Header="{local:Loc Settings.Nav.Network}" Tag="network" Click="OnOpenModuleClicked"/>
+                        </MenuItem>
+                        <MenuItem Header="{local:Loc Main.MenuSettings}">
+                            <MenuItem Header="{local:Loc Main.MenuSettings.AppSettings}" Click="OnSettingsClicked"/>
+                            <MenuItem x:Name="AlwaysOnTopMenuItem" Header="{local:Loc Main.MenuSettings.AlwaysOnTop}" IsCheckable="True" Click="OnAlwaysOnTopClicked"/>
+                            <MenuItem Header="{local:Loc Main.MenuSettings.Feedback}" Click="OnFeedbackClicked"/>
+                        </MenuItem>
+                    </Menu>
+                        <Border DockPanel.Dock="Right" Background="#0AFFFFFF" BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1" CornerRadius="6" Padding="2"
+                                VerticalAlignment="Center" ToolTip="PvE: damage against monsters and bosses (default). PvP: damage against other players only - Arena, Abyss, legion fights.">
+                            <StackPanel Orientation="Horizontal">
+                                <ToggleButton x:Name="PveModeButton" Style="{StaticResource PvpModeToggleLeft}"
+                                          Content="{local:Loc Main.ModePve}" IsChecked="True" Click="OnPvpModeToggleClicked"/>
+                                <ToggleButton x:Name="PvpModeButton" Style="{StaticResource PvpModeToggleRight}"
+                                          Content="{local:Loc Main.ModePvp}" Click="OnPvpModeToggleClicked"/>
+                            </StackPanel>
+                        </Border>
+                    </DockPanel>
+                    <!-- What the list shows (a segmented switch), the extras, and Upload. Wraps when the window is narrow. -->
+                    <WrapPanel DockPanel.Dock="Top" Margin="12,10,12,0" Orientation="Horizontal">
+                        <Border Background="#0AFFFFFF" BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1" CornerRadius="10" Padding="3" Margin="0,0,10,6">
+                            <StackPanel Orientation="Horizontal">
+                                <Button x:Name="ModeDamageButton" Style="{StaticResource ModeTab}" Tag="Damage" ToolTip="{local:Loc Main.ModeDamage}" Click="OnModeButtonClicked">
+                                <Grid><Image x:Name="ModeDamageImage" Width="0" Height="0" Visibility="Collapsed"/><TextBlock Text="Damage" FontSize="13"/></Grid>
+                            </Button>
+                                <Button x:Name="ModeRaidButton" Style="{StaticResource ModeTab}" Tag="Raid" ToolTip="rDPS: each player's damage without other people's buffs, plus what their own party buffs added to the others (Chanter, Cleric, Gladiator and Templar party buffs, at the level they were cast)" Click="OnModeButtonClicked">
+                                <Grid><Image x:Name="ModeRaidImage" Width="0" Height="0" Visibility="Collapsed"/><TextBlock Text="rDPS" FontSize="13"/></Grid>
+                            </Button>
+                                <Button x:Name="ModeHealButton" Style="{StaticResource ModeTab}" Tag="Heal" ToolTip="{local:Loc Main.ModeHeal}" Click="OnModeButtonClicked">
+                                <Grid><Image x:Name="ModeHealImage" Width="0" Height="0" Visibility="Collapsed"/><TextBlock Text="Healing" FontSize="13"/></Grid>
+                            </Button>
+                                <Button x:Name="ModeTakenButton" Style="{StaticResource ModeTab}" Tag="Taken" ToolTip="{local:Loc Main.ModeTaken}" Click="OnModeButtonClicked">
+                                <Grid><Image x:Name="ModeTakenImage" Width="0" Height="0" Visibility="Collapsed"/><TextBlock Text="Taken" FontSize="13"/></Grid>
+                            </Button>
+                                <Button x:Name="ModeAllButton" Style="{StaticResource ModeTab}" Tag="All" ToolTip="{local:Loc Main.ModeAll}" Click="OnModeButtonClicked">
+                                <Grid><Image x:Name="ModeAllImage" Width="0" Height="0" Visibility="Collapsed"/><TextBlock Text="All" FontSize="13"/></Grid>
+                            </Button>
+                                <Button x:Name="ModeAllPlusButton" Style="{StaticResource ModeTab}" Tag="AllCompact" ToolTip="{local:Loc Main.ModeAllCompact}" Click="OnModeButtonClicked">
+                                <Grid><Image x:Name="ModeAllPlusImage" Width="0" Height="0" Visibility="Collapsed"/><TextBlock Text="All+" FontSize="13"/></Grid>
+                            </Button>
+                            </StackPanel>
+                        </Border>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,6" VerticalAlignment="Center">
+                            <Button x:Name="CopyButton" Style="{StaticResource ToolbarIconButton}" Click="OnCopyClicked" Padding="6,5" Margin="1,0"
+                                ToolTip="Copy a one-line chat string - the damage ranking, or an Aion-chat loot summary if the Loot view is active.">
+                            <Grid Width="18" Height="16">
+                                <TextBlock Text="A" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource Brush.Text}"
+                                           VerticalAlignment="Center" HorizontalAlignment="Center"/>
                             </Grid>
                         </Button>
-                        <Button x:Name="AnnouncementsButton" Style="{StaticResource ToolbarIconButton}" Click="OnAnnouncementsClicked" Padding="6,5" Margin="1,0"
-                                ToolTip="{local:Loc Main.Announcements.Tooltip}">
-                            <StackPanel Orientation="Horizontal">
-                                <Path Data="M3,9 L3,15 L7,15 L14,20 L14,4 L7,9 Z M17,8 C18.5,9.5 18.5,14.5 17,16 M19.5,5.5 C22.5,8.5 22.5,15.5 19.5,18.5"
-                                      Stroke="{DynamicResource Brush.Text}" StrokeThickness="1.6" StrokeLineJoin="Round" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
-                                      Width="18" Height="15" Stretch="Uniform"/>
-                                <Border x:Name="AnnouncementsNewBadge" Visibility="Collapsed" Margin="5,0,0,0" Padding="6,1" CornerRadius="8"
-                                        Background="#FFD24A" VerticalAlignment="Center">
-                                    <TextBlock Text="{local:Loc Main.Announcements.New}" FontSize="11" FontWeight="ExtraBold" Foreground="#1A1200"/>
-                                </Border>
-                            </StackPanel>
+                            <Button x:Name="CopyAllButton" Style="{StaticResource ToolbarIconButton}" Click="OnCopyAllClicked" Padding="6,5" Margin="1,0"
+                                ToolTip="Copy an ASCII table in a code block, ready to paste into Discord - damage, or loot if the Loot view is active.">
+                            <Grid Width="18" Height="16">
+                            
+                                <Path Data="M 20.317 4.3698a 19.7913 19.7913 0 0 0 -4.8851 -1.5152 0.0741 0.0741 0 0 0 -0.0785 0.0371c -0.211 0.3753 -0.4447 0.8648 -0.6083 1.2495 -1.8447 -0.2762 -3.68 -0.2762 -5.4868 0 -0.1636 -0.3933 -0.4058 -0.8742 -0.6177 -1.2495a 0.077 0.077 0 0 0 -0.0785 -0.037 19.7363 19.7363 0 0 0 -4.8852 1.515 0.0699 0.0699 0 0 0 -0.0321 0.0277C 0.5334 9.0458 -0.319 13.5799 0.0992 18.0578a 0.0824 0.0824 0 0 0 0.0312 0.0561c 2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a 0.0777 0.0777 0 0 0 0.0842 -0.0276c 0.4616 -0.6304 0.8731 -1.2952 1.226 -1.9942a 0.076 0.076 0 0 0 -0.0416 -0.1057c -0.6528 -0.2476 -1.2743 -0.5495 -1.8722 -0.8923a 0.077 0.077 0 0 1 -0.0076 -0.1277c 0.1258 -0.0943 0.2517 -0.1923 0.3718 -0.2914a 0.0743 0.0743 0 0 1 0.0776 -0.0105c 3.9278 1.7933 8.18 1.7933 12.0614 0a 0.0739 0.0739 0 0 1 0.0785 0.0095c 0.1202 0.099 0.246 0.1981 0.3728 0.2924a 0.077 0.077 0 0 1 -0.0066 0.1276 12.2986 12.2986 0 0 1 -1.873 0.8914 0.0766 0.0766 0 0 0 -0.0407 0.1067c 0.3604 0.698 0.7719 1.3628 1.225 1.9932a 0.076 0.076 0 0 0 0.0842 0.0286c 1.961 -0.6067 3.9495 -1.5219 6.0023 -3.0294a 0.077 0.077 0 0 0 0.0313 -0.0552c 0.5004 -5.177 -0.8382 -9.6739 -3.5485 -13.6604a 0.061 0.061 0 0 0 -0.0312 -0.0286zM 8.02 15.3312c -1.1825 0 -2.1569 -1.0857 -2.1569 -2.419 0 -1.3332 0.9555 -2.4189 2.157 -2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332 -0.9555 2.4189 -2.1569 2.4189zm 7.9748 0c -1.1825 0 -2.1569 -1.0857 -2.1569 -2.419 0 -1.3332 0.9554 -2.4189 2.1569 -2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332 -0.946 2.4189 -2.1568 2.4189Z"
+                                      Fill="{DynamicResource Brush.Text}" Stretch="Uniform" Width="16" Height="16"/>
+                            </Grid>
                         </Button>
-                        <Button x:Name="TwitchDropsButton" Style="{StaticResource ToolbarIconButton}" Click="OnTwitchDropsClicked" Padding="6,5" Margin="1,0"
-                                Visibility="Collapsed" ToolTip="{local:Loc Main.TwitchDrops.Tooltip}">
-                            <StackPanel Orientation="Horizontal">
-                                <Path Data="F1 M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z"
-                                      Fill="#A970FF" Width="15" Height="15" Stretch="Uniform"/>
-                                <Border x:Name="TwitchDropsNewBadge" Visibility="Collapsed" Margin="5,0,0,0" Padding="6,1" CornerRadius="8"
-                                        Background="#FFD24A" VerticalAlignment="Center">
-                                    <TextBlock Text="{local:Loc Main.TwitchDrops.New}" FontSize="11" FontWeight="ExtraBold" Foreground="#1A1200"/>
-                                </Border>
-                            </StackPanel>
-                        </Button>
-                        <!-- The fight report: the fight on screen (the picked target's, else all) on tabs - damage, healing, damage taken, shields, defense,
-                             effects, support, rotation, timeline. -->
-                        <Button x:Name="FightReportButton" Style="{StaticResource ToolbarIconButton}" Click="OnFightReportClicked" Padding="8,5" Margin="4,0,1,0"
-                                ToolTip="Fight report: this fight on tabs - damage, healing, damage taken, shields, defense, buffs, support, rotation and a timeline">
-                            <StackPanel Orientation="Horizontal">
-                                <Path Data="M2,14 L2,8 M6,14 L6,4 M10,14 L10,9 M14,14 L14,2" Stroke="{DynamicResource Brush.Accent}" StrokeThickness="2"
-                                      StrokeStartLineCap="Round" StrokeEndLineCap="Round" Width="16" Height="16" Stretch="None" Margin="0,0,6,0"/>
-                                <TextBlock Text="Report" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center" Foreground="{DynamicResource Brush.Text}"/>
-                            </StackPanel>
-                        </Button>
-                        <!-- The history: every run, boss fight, dummy parse and arena stay saved on its own. -->
-                        <Button x:Name="HistoryButton" Style="{StaticResource ToolbarIconButton}" Click="OnHistoryClicked" Padding="8,5" Margin="1,0"
-                                ToolTip="History: every dungeon run, boss fight, training dummy parse and PvP fight saved on this PC, each on its own">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="&#xE81C;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="14" Foreground="{DynamicResource Brush.Accent}" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                                <TextBlock Text="History" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center" Foreground="{DynamicResource Brush.Text}"/>
-                            </StackPanel>
-                        </Button>
-                        <Button x:Name="UploadReplayButton" Style="{StaticResource ToolbarIconButton}" Click="OnUploadReplayClicked" Padding="6,5" Margin="1,0"
-                                Visibility="Collapsed"
-                                ToolTip="{local:Loc Main.UploadReplay.Tooltip}">
-                            <Canvas Width="20" Height="20">
-                                <Path Data="M10,3 A7,7 0 1 0 15.6,5.6 M10,0.6 L10,5.4 L14.2,3 Z"
-                                      Stroke="{DynamicResource Brush.Text}" StrokeThickness="1.6" StrokeLineJoin="Round" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
-                                <Path Data="M8,7 L13.2,10 L8,13 Z" Fill="{DynamicResource Brush.Text}"/>
-                            </Canvas>
-                        </Button>
-                        <Button x:Name="UploadBossButton" Style="{StaticResource GoldButton}" Click="OnUploadCurrentBossClicked" Margin="8,0,0,0" Visibility="Collapsed"
-                                ToolTip="Uploads this boss fight to aion2helper.com.">
-                            <StackPanel Orientation="Horizontal">
-                                <Path Data="M9,2 L9,10 M4,7 L9,2 L14,7 M3,13 L15,13" Stroke="#1A140B" StrokeThickness="1.8" StrokeLineJoin="Round"
-                                      StrokeStartLineCap="Round" StrokeEndLineCap="Round" Width="14" Height="12" Stretch="Uniform" Margin="0,0,7,0"/>
-                                <TextBlock Text="Upload" FontWeight="SemiBold" FontSize="13" Foreground="#1A140B" VerticalAlignment="Center"/>
-                            </StackPanel>
-                        </Button>
-                    </StackPanel>
-                </WrapPanel>
-                <!-- The fight shown (a search box in its list), whose damage (groups) and which classes. -->
-                <WrapPanel DockPanel.Dock="Top" Margin="12,2,12,8" Orientation="Horizontal">
-                    <ComboBox x:Name="MobBossFilter" Style="{StaticResource SearchableComboBox}"
-                              SelectedIndex="0" SelectionChanged="OnMobBossFilterChanged" Margin="0,0,8,0" MinWidth="0" MaxWidth="180"
-                              ToolTip="Filter by target. 'All' sums damage across every target seen. Type in the dropdown to search.">
-                        <ComboBoxItem Content="{local:Loc Main.FilterAllTargets}"/>
-                    </ComboBox>
-                    <!-- Whose rows: the overlay's All / Group / Corps switch, here too while the overlay is on (both show the same list). -->
-                    <Border x:Name="ClientScopeBox" Background="#0AFFFFFF" BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1" CornerRadius="6" Padding="2"
-                            Margin="0,0,8,0" VerticalAlignment="Center" Visibility="Collapsed" ToolTip="Whose damage is listed here and on the overlay: everybody, your group, or your corps (two groups).">
-                        <StackPanel x:Name="ClientScopeSwitch" Orientation="Horizontal">
-                            <Border Tag="Me" Padding="10,3" CornerRadius="4" Cursor="Hand" MouseLeftButtonDown="OnOverlayScopeClicked">
-                                <TextBlock FontSize="12" FontWeight="SemiBold" Text="Me"/>
-                            </Border>
-                            <Border Tag="Group" Padding="10,3" CornerRadius="4" Cursor="Hand" MouseLeftButtonDown="OnOverlayScopeClicked">
-                                <TextBlock FontSize="12" FontWeight="SemiBold" Text="{local:Loc Main.Scope.Group}"/>
-                            </Border>
-                            <Border Tag="Corps" Padding="10,3" CornerRadius="4" Cursor="Hand" MouseLeftButtonDown="OnOverlayScopeClicked">
-                                <TextBlock FontSize="12" FontWeight="SemiBold" Text="{local:Loc Main.Scope.Corps}"/>
-                            </Border>
-                            <Border Tag="All" Padding="10,3" CornerRadius="4" Cursor="Hand" MouseLeftButtonDown="OnOverlayScopeClicked">
-                                <TextBlock FontSize="12" FontWeight="SemiBold" Text="{local:Loc Main.Scope.All}"/>
-                            </Border>
-                        </StackPanel>
-                    </Border>
-                    <ComboBox x:Name="SourceFilter" SelectedIndex="0" Margin="0,0,8,0" MinWidth="0"
-                              ToolTip="Not wired up yet (display filter only).">
-                        <ComboBoxItem Content="{local:Loc Main.FilterAllGroups}"/>
-                        <ComboBoxItem Content="{local:Loc Main.FilterSelf}"/>
-                        <ComboBoxItem Content="{local:Loc Main.FilterGroup}"/>
-                        <ComboBoxItem Content="{local:Loc Main.Scope.Corps}"/>
-                        <ComboBoxItem Content="{local:Loc Main.FilterLegion}"/>
-                        <ComboBoxItem Content="{local:Loc Main.FilterElyos}"/>
-                        <ComboBoxItem Content="{local:Loc Main.FilterAsmodian}"/>
-                    </ComboBox>
-                    <ComboBox x:Name="ClassFilter" SelectedIndex="0" Margin="0,0,8,0" MinWidth="0" SelectionChanged="OnClassFilterChanged">
-                        <ComboBoxItem Content="{local:Loc Main.FilterAllClasses}"/>
-                        <ComboBoxItem Tag="Aethertech" AutomationProperties.Name="Aethertech"><StackPanel Orientation="Horizontal"><Image Source="pack://siteoforigin:,,,/assets/classes/icons/Aethertech.png" Height="18" Margin="0,0,4,0"/><TextBlock Text="Aethertech" VerticalAlignment="Center"/></StackPanel></ComboBoxItem>
-                        <ComboBoxItem Tag="Assassin" AutomationProperties.Name="Assassin"><StackPanel Orientation="Horizontal"><Image Source="pack://siteoforigin:,,,/assets/classes/icons/Assassin.png" Height="18" Margin="0,0,4,0"/><TextBlock Text="Assassin" VerticalAlignment="Center"/></StackPanel></ComboBoxItem>
-                        <ComboBoxItem Tag="Bard" AutomationProperties.Name="Bard"><StackPanel Orientation="Horizontal"><Image Source="pack://siteoforigin:,,,/assets/classes/icons/Bard.png" Height="18" Margin="0,0,4,0"/><TextBlock Text="Bard" VerticalAlignment="Center"/></StackPanel></ComboBoxItem>
-                        <ComboBoxItem Tag="Chanter" AutomationProperties.Name="Chanter"><StackPanel Orientation="Horizontal"><Image Source="pack://siteoforigin:,,,/assets/classes/icons/Chanter.png" Height="18" Margin="0,0,4,0"/><TextBlock Text="Chanter" VerticalAlignment="Center"/></StackPanel></ComboBoxItem>
-                        <ComboBoxItem Tag="Cleric" AutomationProperties.Name="Cleric"><StackPanel Orientation="Horizontal"><Image Source="pack://siteoforigin:,,,/assets/classes/icons/Cleric.png" Height="18" Margin="0,0,4,0"/><TextBlock Text="Cleric" VerticalAlignment="Center"/></StackPanel></ComboBoxItem>
-                        <ComboBoxItem Tag="Gladiator" AutomationProperties.Name="Gladiator"><StackPanel Orientation="Horizontal"><Image Source="pack://siteoforigin:,,,/assets/classes/icons/Gladiator.png" Height="18" Margin="0,0,4,0"/><TextBlock Text="Gladiator" VerticalAlignment="Center"/></StackPanel></ComboBoxItem>
-                        <ComboBoxItem Tag="Gunner" AutomationProperties.Name="Gunner"><StackPanel Orientation="Horizontal"><Image Source="pack://siteoforigin:,,,/assets/classes/icons/Gunner.png" Height="18" Margin="0,0,4,0"/><TextBlock Text="Gunner" VerticalAlignment="Center"/></StackPanel></ComboBoxItem>
-                        
-                        <ComboBoxItem Tag="Painter" AutomationProperties.Name="Painter"><StackPanel Orientation="Horizontal"><Image Source="pack://siteoforigin:,,,/assets/classes/icons/Painter.png" Height="18" Margin="0,0,4,0"/><TextBlock Text="Painter" VerticalAlignment="Center"/></StackPanel></ComboBoxItem>
-                        <ComboBoxItem Tag="Ranger" AutomationProperties.Name="Ranger"><StackPanel Orientation="Horizontal"><Image Source="pack://siteoforigin:,,,/assets/classes/icons/Ranger.png" Height="18" Margin="0,0,4,0"/><TextBlock Text="Ranger" VerticalAlignment="Center"/></StackPanel></ComboBoxItem>
-                        <ComboBoxItem Tag="Sorcerer" AutomationProperties.Name="Sorcerer"><StackPanel Orientation="Horizontal"><Image Source="pack://siteoforigin:,,,/assets/classes/icons/Sorcerer.png" Height="18" Margin="0,0,4,0"/><TextBlock Text="Sorcerer" VerticalAlignment="Center"/></StackPanel></ComboBoxItem>
-                        <ComboBoxItem Tag="Spiritmaster" AutomationProperties.Name="Spiritmaster"><StackPanel Orientation="Horizontal"><Image Source="pack://siteoforigin:,,,/assets/classes/icons/Spiritmaster.png" Height="18" Margin="0,0,4,0"/><TextBlock Text="Spiritmaster" VerticalAlignment="Center"/></StackPanel></ComboBoxItem>
-                        <ComboBoxItem Tag="Templar" AutomationProperties.Name="Templar"><StackPanel Orientation="Horizontal"><Image Source="pack://siteoforigin:,,,/assets/classes/icons/Templar.png" Height="18" Margin="0,0,4,0"/><TextBlock Text="Templar" VerticalAlignment="Center"/></StackPanel></ComboBoxItem>
-                    </ComboBox>
-                </WrapPanel>
-                <StackPanel DockPanel.Dock="Bottom" Background="{DynamicResource Brush.TitleBar}">
-                    <Border Height="1" Background="{DynamicResource Brush.Border}"/>
-                    <StackPanel Orientation="Horizontal" Height="30" Margin="6,0,0,0">
-
-                        <!-- Update notice. Deliberately a quiet line in the status row and NOT a
-                             popup: the meter sits on top of a running game, and a modal dialog
-                             appearing mid-boss because a background timer fired would steal focus
-                             from the fight. It only becomes visible when there is something to say,
-                             and clicking it is what starts anything. -->
-                        <TextBlock x:Name="UpdateNotice" Visibility="Collapsed" VerticalAlignment="Center"
-                                   Margin="8,0,8,0" Foreground="{DynamicResource Brush.Accent}" Cursor="Hand"
-                                   MouseLeftButtonUp="OnUpdateNoticeClicked"
-                                   TextDecorations="Underline"
-                                   ToolTip="A newer version is available - click to download and install it."/>
-
-                        <!-- Quiet result line for the two upload actions (Session menu + the Damage
-                             view's Upload button) - same reasoning as UpdateNotice above: this window
-                             sits on top of a running fight, so a result never pops a modal dialog. -->
-                        <!-- Guard against wrong totals (Aion 2): the selected target's damage held
-                             against the hit points the server says it lost - see UpdateHpCheck. -->
-                        <TextBlock x:Name="HpCheckText" Visibility="Collapsed" VerticalAlignment="Center"
-                                   Margin="8,0,8,0" Foreground="{DynamicResource Brush.TextMuted}"
-                                   ToolTip="{local:Loc Main.HpCheck.Tooltip}"/>
-
-                        <TextBlock x:Name="UploadStatusText" Visibility="Collapsed" VerticalAlignment="Center"
-                                   Margin="8,0,8,0" Foreground="{DynamicResource Brush.TextMuted}"
-                                   MouseLeftButtonUp="OnUploadStatusClicked"/>
-
-                        <!-- Shown while a past fight from the history is loaded instead of the live
-                             session (see EnterHistoryMode); clicking it returns to live. -->
-                        <TextBlock x:Name="HistoryBanner" Visibility="Collapsed" VerticalAlignment="Center"
-                                   Margin="8,0,8,0" Foreground="{DynamicResource Brush.Warning}" FontWeight="Bold" Cursor="Hand"
-                                   MouseLeftButtonUp="OnHistoryBannerClicked"
-                                   ToolTip="A stored fight is shown. Click to return to the live session."/>
-                    </StackPanel>
-                </StackPanel>
-
-
-                <!-- GridLinesVisibility="None", not "Horizontal" - per the user, the bright
-                     Border-colored separator line between rows contrasted very differently
-                     against RowAlt (dark) than against Panel (lighter), which read as the lighter
-                     rows extending past their real edge ("heller Hintergrund wirkt höher"). The
-                     alternating RowBackground/AlternatingRowBackground colors already separate one
-                     player's row from the next without it. -->
-                <local:QuietDataGrid x:Name="PlayersGrid" AutoGenerateColumns="False" IsReadOnly="True" MouseDoubleClick="OnPlayersGridDoubleClick"
-                          Background="{DynamicResource Brush.Window}" Foreground="{DynamicResource Brush.Text}" RowBackground="Transparent" AlternatingRowBackground="Transparent" Margin="10,0,10,4" BorderThickness="0"
-                          BorderBrush="{DynamicResource Brush.Border}"
-                          GridLinesVisibility="None" HeadersVisibility="None" CanUserAddRows="False" Grid.IsSharedSizeScope="True">
-                    <!-- Enemy rows get a dark red ground. A trigger rather than a converter so it
-                         overrides RowBackground AND AlternatingRowBackground above: those are set
-                         on the DataGrid itself and would otherwise win on every second row, which
-                         would make the marking look like it came and went at random. -->
-                    <!-- Right-click menu per row. Faction is correctable by hand because the log
-                         cannot always answer it: in an arena the opponent is frequently the SAME
-                         faction, and fighting someone only ever proves hostility, never which
-                         banner they fight under. -->
-                    <DataGrid.ContextMenu>
-                        <ContextMenu Background="{DynamicResource Brush.Panel}" Foreground="{DynamicResource Brush.Text}">
-                            <MenuItem Header="Details anzeigen" Click="OnShowPlayerDetailsClicked"/>
-                        </ContextMenu>
-                    </DataGrid.ContextMenu>
-                    <DataGrid.RowStyle>
-                        <Style TargetType="DataGridRow">
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding IsEnemy}" Value="True">
-                                    <Setter Property="Background" Value="{DynamicResource Brush.RowEnemy}"/>
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </DataGrid.RowStyle>
-                    <!-- Found by terminal_windows measuring rendered pixels: clicking a row lit it
-                         up #F0F0F0 - the default DataGridCell template pulls its selected-state
-                         colors from SystemColors.Highlight*, which ignores the window's own
-                         Background/Foreground entirely. Overriding those brush keys, scoped to
-                         just this DataGrid rather than the whole window, recolors the built-in
-                         selection visuals without touching anything else that might reference the
-                         same system keys (e.g. a MenuItem's own highlight). -->
-                    <DataGrid.Resources>
-                        <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="{DynamicResource Color.ControlHover}"/>
-                        <SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}" Color="{DynamicResource Color.Text}"/>
-                        <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}" Color="{DynamicResource Color.ControlHover}"/>
-                        <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightTextBrushKey}" Color="{DynamicResource Color.Text}"/>
-                    </DataGrid.Resources>
-                    <DataGrid.Columns>
-                        <!-- Column widths trimmed slightly (Level 50->40) after terminal_windows
-                             measured the grid at only 1px of clearance from the window edge - zero
-                             margin for a different DPI scaling or a future column, now ~30px of
-                             buffer instead. -->
-                        <!-- Class no longer has its own column, per the user: the icon sits right
-                             before the name in this single column instead (StackPanel, icon then
-                             TextBlock) - one less column to fit, and class/name read as one unit
-                             the way a character actually presents. Icon falls back to nothing (no
-                             icon, no crash) for "?" or any class name without a matching
-                             assets/classes/icons/*.png - see ClassIconConverter. -->
-                        <!-- Name and Damage/DPS used to be two independently-resizable columns
-                             (NameColumn/DpsColumn, widths persisted via MeterSettings) - merged into
-                             one Width="*" column per the user's reference layout, so the ShareBar
-                             below can span the row's full remaining width instead of being boxed
-                             into the old 124px Damage column. That's the one real trade-off: the two
-                             columns' independent drag-resize/persistence is gone (RestoreWindowGeometry/
-                             SaveWindowGeometry no longer touch it), replaced by the column simply
-                             always filling whatever the (now much wider, still itself persisted)
-                             window leaves available. -->
-                        <DataGridTemplateColumn x:Name="PlayerColumn" Width="*">
-                            <!-- A literal UIElement, not a HeaderTemplate/DataTemplate - it is built
-                                 once, not per row, so it lives in the window's own NameScope and
-                                 DpsHeaderText below is a real code-behind field, the same as any
-                                 other x:Name (see OnMobBossFilterChanged/RefreshRows, which used to
-                                 write DpsColumn.Header and now write DpsHeaderText.Text instead). -->
-                            <!-- Two real columns, not two overlaid TextBlocks kept apart only by
-                                 alignment - per the user, "Name" and "Damage / DPS" visually
-                                 overlapped/garbled into each other once the window was narrow
-                                 enough that the left-aligned "Name" text ran into the right-aligned
-                                 DPS label with nothing actually reserving space between them. -->
-                            <DataGridTemplateColumn.Header>
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Grid.Column="0" Text="{local:Loc Main.ColumnName}"/>
-                                    <TextBlock Grid.Column="1" x:Name="DpsHeaderText" Text="{local:Loc Main.ColumnDamageDps}"
-                                               Margin="0,0,8,0"/>
+                            <Button x:Name="CharacterNavButton" Style="{StaticResource ToolbarIconButton}" Padding="6,5" Margin="1,0" ToolTip="Open the character window (Aion 2): gear, skills, Daevanion" Click="OnShowCharacterView">
+                                <Grid Width="16" Height="16">
+                                    <Ellipse Width="5.6" Height="5.6" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                             StrokeThickness="1.5" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,1.2,0,0"/>
+                                    <Path Data="M4,14.5 L4,11.8 Q4,8.6 8,8.6 Q12,8.6 12,11.8 L12,14.5"
+                                          Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                          StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
                                 </Grid>
-                            </DataGridTemplateColumn.Header>
-                            <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate>
-                                    <!-- One fixed-column row (rank, class icon, name, damage taken, DPS, damage):
-                                         the number columns share their width across all rows
-                                         (Grid.IsSharedSizeScope on the grid), so every figure sits in the
-                                         same column whatever its length, and a column that is empty
-                                         everywhere (damage taken switched off) takes no room. The class
-                                         colour bar fills the whole row height. Opt-in extras (relic AP,
-                                         avoided attacks, PVP) get a second line only when there are any. -->
-                                    <Grid MinHeight="38">
-                                        <Border Background="#08FFFFFF" CornerRadius="9" Margin="0,2"/>
-                                        <ProgressBar Style="{StaticResource RowFillBar}" Value="{Binding AbsorbedFillPercent, Mode=OneWay}" Margin="0,2"
-                                                     Foreground="#993AA0FF"
-                                                     Visibility="{Binding ShowShareBar, Converter={StaticResource BoolToVis}}"/>
-                                        <ProgressBar Template="{StaticResource GlowBarTemplate}" Minimum="0" Maximum="100" IsHitTestVisible="False" Value="{Binding FillPercent, Mode=OneWay}"
-                                                     Foreground="{Binding ClassGlowBrush}" BorderBrush="{Binding ClassLineBrush}" Background="Transparent" Margin="0,2"
-                                                     Visibility="{Binding ShowShareBar, Converter={StaticResource BoolToVis}}"/>
-                                        <StackPanel VerticalAlignment="Center" Margin="8,3,8,3">
-                                            <Grid>
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="18"/>
-                                                    <ColumnDefinition Width="Auto"/>
-                                                    <ColumnDefinition Width="*"/>
-                                                    <ColumnDefinition Width="Auto" SharedSizeGroup="Taken"/>
-                                                    <ColumnDefinition Width="Auto" SharedSizeGroup="Dps"/>
-                                                    <ColumnDefinition Width="Auto" SharedSizeGroup="Damage"/>
-                                                </Grid.ColumnDefinitions>
-                                                <!-- the faction emblem replaces the rank number (the number only shows while the faction is unknown) -->
-                                                <Grid Grid.Column="0" VerticalAlignment="Center" HorizontalAlignment="Center">
-                                                    <Image Source="{Binding Faction, Converter={StaticResource RaceIconConverter}}" Width="15" Height="15" ToolTip="{Binding Faction}"/>
-                                                    <TextBlock Text="{Binding RankDisplay}" Foreground="{DynamicResource Brush.TextMuted}" FontSize="11" Visibility="Collapsed">
-                                                        <TextBlock.Style>
-                                                            <Style TargetType="TextBlock">
-                                                                <Setter Property="Visibility" Value="Collapsed"/>
-                                                                <Style.Triggers>
-                                                                    <DataTrigger Binding="{Binding Faction}" Value="">
-                                                                        <Setter Property="Visibility" Value="Visible"/>
-                                                                    </DataTrigger>
-                                                                </Style.Triggers>
-                                                            </Style>
-                                                        </TextBlock.Style>
-                                                    </TextBlock>
-                                                </Grid>
-                                                <Image Grid.Column="1" Source="{Binding ClassName, Converter={StaticResource ClassIconConverter}}"
-                                                       Height="24" Width="24" Margin="4,0,8,0" ToolTip="{Binding Faction}"/>
-                                                <StackPanel Grid.Column="2" VerticalAlignment="Center">
-                                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="14" TextTrimming="CharacterEllipsis"/>
-                                                    <TextBlock Text="{Binding BuffLine}" FontSize="11" Foreground="#E6C88F" Opacity="0.85" TextTrimming="CharacterEllipsis"
-                                                   Visibility="{Binding HasBuffLine, Converter={StaticResource BoolToVis}}"/>
-                                                    <local:AllLine FontSize="10.5" TextElement.Foreground="{DynamicResource Brush.Text}" Opacity="0.85"/>
-                                                </StackPanel>
-                                                <Grid Grid.Column="3" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="10,0,0,0" ToolTip="Damage this player received in the shown window">
-                                                    <Grid.ColumnDefinitions>
-                                                        <ColumnDefinition Width="Auto" SharedSizeGroup="TakenRed"/>
-                                                        <ColumnDefinition Width="Auto" SharedSizeGroup="TakenBlue"/>
-                                                    </Grid.ColumnDefinitions>
-                                                    <TextBlock Grid.Column="0" Text="{Binding TakenDisplay}" Style="{StaticResource AllTakenMuted}" FontSize="11" HorizontalAlignment="Right"/>
-                                                    <TextBlock Grid.Column="1" Text="{Binding AbsorbedDisplay}" Foreground="#3AA0FF" FontSize="11" Margin="8,0,0,0" HorizontalAlignment="Right"
-                                                               ToolTip="Damage the group shield absorbed on this player"/>
-                                                </Grid>
-                                                <TextBlock Grid.Column="4" Text="{Binding RateOrHealDisplay}" Style="{StaticResource AllHealMuted}" FontSize="13"
-                                                           Typography.NumeralAlignment="Tabular" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="12,0,0,0"/>
-                                                <TextBlock Grid.Column="5" Text="{Binding DamageDisplay}" FontWeight="Bold" FontSize="14.5"
-                                                           Typography.NumeralAlignment="Tabular" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="14,0,4,0"/>
-                                            </Grid>
-                                            <StackPanel Orientation="Horizontal" Margin="50,0,0,0"
-                                                        Visibility="{Binding HasExtraInfo, Converter={StaticResource BoolToVis}}">
-                                                <TextBlock Text="{Binding ApDisplay}" Foreground="{DynamicResource Brush.TextMuted}" FontSize="11"/>
-                                                <TextBlock Text="{Binding DefenseDisplay}" Foreground="{DynamicResource Brush.TextMuted}" FontSize="11" Margin="6,0,0,0"
-                                                           ToolTip="Avoided incoming attacks: D dodged, P parried, B blocked, R resisted (share of all incoming attacks)"/>
-                                                <TextBlock Text="{Binding PvpDisplay}" Foreground="{DynamicResource Brush.Accent}" FontSize="11" Margin="6,0,0,0"
-                                                           ToolTip="PVP: kills / deaths and the biggest hit landed on a player"/>
-                                            </StackPanel>
-                                        </StackPanel>
-                                    </Grid>
-                                </DataTemplate>
-                            </DataGridTemplateColumn.CellTemplate>
-                        </DataGridTemplateColumn>
-                    </DataGrid.Columns>
-                </local:QuietDataGrid>
+                            </Button>
+                            <Button x:Name="AnnouncementsButton" Style="{StaticResource ToolbarIconButton}" Click="OnAnnouncementsClicked" Padding="6,5" Margin="1,0"
+                                    ToolTip="{local:Loc Main.Announcements.Tooltip}">
+                                <StackPanel Orientation="Horizontal">
+                                    <Path Data="M3,9 L3,15 L7,15 L14,20 L14,4 L7,9 Z M17,8 C18.5,9.5 18.5,14.5 17,16 M19.5,5.5 C22.5,8.5 22.5,15.5 19.5,18.5"
+                                          Stroke="{DynamicResource Brush.Text}" StrokeThickness="1.6" StrokeLineJoin="Round" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                          Width="18" Height="15" Stretch="Uniform"/>
+                                    <Border x:Name="AnnouncementsNewBadge" Visibility="Collapsed" Margin="5,0,0,0" Padding="6,1" CornerRadius="8"
+                                            Background="#FFD24A" VerticalAlignment="Center">
+                                        <TextBlock Text="{local:Loc Main.Announcements.New}" FontSize="11" FontWeight="ExtraBold" Foreground="#1A1200"/>
+                                    </Border>
+                                </StackPanel>
+                            </Button>
+                            <Button x:Name="TwitchDropsButton" Style="{StaticResource ToolbarIconButton}" Click="OnTwitchDropsClicked" Padding="6,5" Margin="1,0"
+                                    Visibility="Collapsed" ToolTip="{local:Loc Main.TwitchDrops.Tooltip}">
+                                <StackPanel Orientation="Horizontal">
+                                    <Path Data="F1 M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z"
+                                          Fill="#A970FF" Width="15" Height="15" Stretch="Uniform"/>
+                                    <Border x:Name="TwitchDropsNewBadge" Visibility="Collapsed" Margin="5,0,0,0" Padding="6,1" CornerRadius="8"
+                                            Background="#FFD24A" VerticalAlignment="Center">
+                                        <TextBlock Text="{local:Loc Main.TwitchDrops.New}" FontSize="11" FontWeight="ExtraBold" Foreground="#1A1200"/>
+                                    </Border>
+                                </StackPanel>
+                            </Button>
+                            <!-- The fight report: the fight on screen (the picked target's, else all) on tabs - damage, healing, damage taken, shields, defense,
+                                 effects, support, rotation, timeline. -->
+                            <Button x:Name="FightReportButton" Style="{StaticResource ToolbarIconButton}" Click="OnFightReportClicked" Padding="8,5" Margin="4,0,1,0"
+                                    ToolTip="Fight report: this fight on tabs - damage, healing, damage taken, shields, defense, buffs, support, rotation and a timeline">
+                                <StackPanel Orientation="Horizontal">
+                                    <Path Data="M2,14 L2,8 M6,14 L6,4 M10,14 L10,9 M14,14 L14,2" Stroke="{DynamicResource Brush.Accent}" StrokeThickness="2"
+                                          StrokeStartLineCap="Round" StrokeEndLineCap="Round" Width="16" Height="16" Stretch="None" Margin="0,0,6,0"/>
+                                    <TextBlock Text="Report" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center" Foreground="{DynamicResource Brush.Text}"/>
+                                </StackPanel>
+                            </Button>
+                            <!-- The history: every run, boss fight, dummy parse and arena stay saved on its own. -->
+                            <Button x:Name="HistoryButton" Style="{StaticResource ToolbarIconButton}" Click="OnHistoryClicked" Padding="8,5" Margin="1,0"
+                                    ToolTip="History: every dungeon run, boss fight, training dummy parse and PvP fight saved on this PC, each on its own">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="&#xE81C;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="14" Foreground="{DynamicResource Brush.Accent}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                    <TextBlock Text="History" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center" Foreground="{DynamicResource Brush.Text}"/>
+                                </StackPanel>
+                            </Button>
+                            <Button x:Name="UploadReplayButton" Style="{StaticResource ToolbarIconButton}" Click="OnUploadReplayClicked" Padding="6,5" Margin="1,0"
+                                    Visibility="Collapsed"
+                                    ToolTip="{local:Loc Main.UploadReplay.Tooltip}">
+                                <Canvas Width="20" Height="20">
+                                    <Path Data="M10,3 A7,7 0 1 0 15.6,5.6 M10,0.6 L10,5.4 L14.2,3 Z"
+                                          Stroke="{DynamicResource Brush.Text}" StrokeThickness="1.6" StrokeLineJoin="Round" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                                    <Path Data="M8,7 L13.2,10 L8,13 Z" Fill="{DynamicResource Brush.Text}"/>
+                                </Canvas>
+                            </Button>
+                            <Button x:Name="UploadBossButton" Style="{StaticResource GoldButton}" Click="OnUploadCurrentBossClicked" Margin="8,0,0,0" Visibility="Collapsed"
+                                    ToolTip="Uploads this boss fight to aion2helper.com.">
+                                <StackPanel Orientation="Horizontal">
+                                    <Path Data="M9,2 L9,10 M4,7 L9,2 L14,7 M3,13 L15,13" Stroke="#1A140B" StrokeThickness="1.8" StrokeLineJoin="Round"
+                                          StrokeStartLineCap="Round" StrokeEndLineCap="Round" Width="14" Height="12" Stretch="Uniform" Margin="0,0,7,0"/>
+                                    <TextBlock Text="Upload" FontWeight="SemiBold" FontSize="13" Foreground="#1A140B" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                    </WrapPanel>
+                    <!-- The fight shown (a search box in its list), whose damage (groups) and which classes. -->
+                    <WrapPanel DockPanel.Dock="Top" Margin="12,2,12,8" Orientation="Horizontal">
+                        <ComboBox x:Name="MobBossFilter" Style="{StaticResource SearchableComboBox}"
+                                  SelectedIndex="0" SelectionChanged="OnMobBossFilterChanged" Margin="0,0,8,0" MinWidth="0" MaxWidth="180"
+                                  ToolTip="Filter by target. 'All' sums damage across every target seen. Type in the dropdown to search.">
+                            <ComboBoxItem Content="{local:Loc Main.FilterAllTargets}"/>
+                        </ComboBox>
+                        <!-- Whose rows: the overlay's All / Group / Corps switch, here too while the overlay is on (both show the same list). -->
+                        <Border x:Name="ClientScopeBox" Background="#0AFFFFFF" BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1" CornerRadius="6" Padding="2"
+                                Margin="0,0,8,0" VerticalAlignment="Center" Visibility="Collapsed" ToolTip="Whose damage is listed here and on the overlay: everybody, your group, or your corps (two groups).">
+                            <StackPanel x:Name="ClientScopeSwitch" Orientation="Horizontal">
+                                <Border Tag="Me" Padding="10,3" CornerRadius="4" Cursor="Hand" MouseLeftButtonDown="OnOverlayScopeClicked">
+                                    <TextBlock FontSize="12" FontWeight="SemiBold" Text="Me"/>
+                                </Border>
+                                <Border Tag="Group" Padding="10,3" CornerRadius="4" Cursor="Hand" MouseLeftButtonDown="OnOverlayScopeClicked">
+                                    <TextBlock FontSize="12" FontWeight="SemiBold" Text="{local:Loc Main.Scope.Group}"/>
+                                </Border>
+                                <Border Tag="Corps" Padding="10,3" CornerRadius="4" Cursor="Hand" MouseLeftButtonDown="OnOverlayScopeClicked">
+                                    <TextBlock FontSize="12" FontWeight="SemiBold" Text="{local:Loc Main.Scope.Corps}"/>
+                                </Border>
+                                <Border Tag="All" Padding="10,3" CornerRadius="4" Cursor="Hand" MouseLeftButtonDown="OnOverlayScopeClicked">
+                                    <TextBlock FontSize="12" FontWeight="SemiBold" Text="{local:Loc Main.Scope.All}"/>
+                                </Border>
+                            </StackPanel>
+                        </Border>
+                        <ComboBox x:Name="SourceFilter" SelectedIndex="0" Margin="0,0,8,0" MinWidth="0"
+                                  ToolTip="Not wired up yet (display filter only).">
+                            <ComboBoxItem Content="{local:Loc Main.FilterAllGroups}"/>
+                            <ComboBoxItem Content="{local:Loc Main.FilterSelf}"/>
+                            <ComboBoxItem Content="{local:Loc Main.FilterGroup}"/>
+                            <ComboBoxItem Content="{local:Loc Main.Scope.Corps}"/>
+                            <ComboBoxItem Content="{local:Loc Main.FilterLegion}"/>
+                            <ComboBoxItem Content="{local:Loc Main.FilterElyos}"/>
+                            <ComboBoxItem Content="{local:Loc Main.FilterAsmodian}"/>
+                        </ComboBox>
+                        <ComboBox x:Name="ClassFilter" SelectedIndex="0" Margin="0,0,8,0" MinWidth="0" SelectionChanged="OnClassFilterChanged">
+                            <ComboBoxItem Content="{local:Loc Main.FilterAllClasses}"/>
+                            <ComboBoxItem Tag="Aethertech" AutomationProperties.Name="Aethertech"><StackPanel Orientation="Horizontal"><Image Source="pack://siteoforigin:,,,/assets/classes/icons/Aethertech.png" Height="18" Margin="0,0,4,0"/><TextBlock Text="Aethertech" VerticalAlignment="Center"/></StackPanel></ComboBoxItem>
+                            <ComboBoxItem Tag="Assassin" AutomationProperties.Name="Assassin"><StackPanel Orientation="Horizontal"><Image Source="pack://siteoforigin:,,,/assets/classes/icons/Assassin.png" Height="18" Margin="0,0,4,0"/><TextBlock Text="Assassin" VerticalAlignment="Center"/></StackPanel></ComboBoxItem>
+                            <ComboBoxItem Tag="Bard" AutomationProperties.Name="Bard"><StackPanel Orientation="Horizontal"><Image Source="pack://siteoforigin:,,,/assets/classes/icons/Bard.png" Height="18" Margin="0,0,4,0"/><TextBlock Text="Bard" VerticalAlignment="Center"/></StackPanel></ComboBoxItem>
+                            <ComboBoxItem Tag="Chanter" AutomationProperties.Name="Chanter"><StackPanel Orientation="Horizontal"><Image Source="pack://siteoforigin:,,,/assets/classes/icons/Chanter.png" Height="18" Margin="0,0,4,0"/><TextBlock Text="Chanter" VerticalAlignment="Center"/></StackPanel></ComboBoxItem>
+                            <ComboBoxItem Tag="Cleric" AutomationProperties.Name="Cleric"><StackPanel Orientation="Horizontal"><Image Source="pack://siteoforigin:,,,/assets/classes/icons/Cleric.png" Height="18" Margin="0,0,4,0"/><TextBlock Text="Cleric" VerticalAlignment="Center"/></StackPanel></ComboBoxItem>
+                            <ComboBoxItem Tag="Gladiator" AutomationProperties.Name="Gladiator"><StackPanel Orientation="Horizontal"><Image Source="pack://siteoforigin:,,,/assets/classes/icons/Gladiator.png" Height="18" Margin="0,0,4,0"/><TextBlock Text="Gladiator" VerticalAlignment="Center"/></StackPanel></ComboBoxItem>
+                            <ComboBoxItem Tag="Gunner" AutomationProperties.Name="Gunner"><StackPanel Orientation="Horizontal"><Image Source="pack://siteoforigin:,,,/assets/classes/icons/Gunner.png" Height="18" Margin="0,0,4,0"/><TextBlock Text="Gunner" VerticalAlignment="Center"/></StackPanel></ComboBoxItem>
+                        
+                            <ComboBoxItem Tag="Painter" AutomationProperties.Name="Painter"><StackPanel Orientation="Horizontal"><Image Source="pack://siteoforigin:,,,/assets/classes/icons/Painter.png" Height="18" Margin="0,0,4,0"/><TextBlock Text="Painter" VerticalAlignment="Center"/></StackPanel></ComboBoxItem>
+                            <ComboBoxItem Tag="Ranger" AutomationProperties.Name="Ranger"><StackPanel Orientation="Horizontal"><Image Source="pack://siteoforigin:,,,/assets/classes/icons/Ranger.png" Height="18" Margin="0,0,4,0"/><TextBlock Text="Ranger" VerticalAlignment="Center"/></StackPanel></ComboBoxItem>
+                            <ComboBoxItem Tag="Sorcerer" AutomationProperties.Name="Sorcerer"><StackPanel Orientation="Horizontal"><Image Source="pack://siteoforigin:,,,/assets/classes/icons/Sorcerer.png" Height="18" Margin="0,0,4,0"/><TextBlock Text="Sorcerer" VerticalAlignment="Center"/></StackPanel></ComboBoxItem>
+                            <ComboBoxItem Tag="Spiritmaster" AutomationProperties.Name="Spiritmaster"><StackPanel Orientation="Horizontal"><Image Source="pack://siteoforigin:,,,/assets/classes/icons/Spiritmaster.png" Height="18" Margin="0,0,4,0"/><TextBlock Text="Spiritmaster" VerticalAlignment="Center"/></StackPanel></ComboBoxItem>
+                            <ComboBoxItem Tag="Templar" AutomationProperties.Name="Templar"><StackPanel Orientation="Horizontal"><Image Source="pack://siteoforigin:,,,/assets/classes/icons/Templar.png" Height="18" Margin="0,0,4,0"/><TextBlock Text="Templar" VerticalAlignment="Center"/></StackPanel></ComboBoxItem>
+                        </ComboBox>
+                    </WrapPanel>
+                    <StackPanel DockPanel.Dock="Bottom" Background="{DynamicResource Brush.TitleBar}">
+                        <Border Height="1" Background="{DynamicResource Brush.Border}"/>
+                        <StackPanel Orientation="Horizontal" Height="30" Margin="6,0,0,0">
 
+                            <!-- Update notice. Deliberately a quiet line in the status row and NOT a
+                                 popup: the meter sits on top of a running game, and a modal dialog
+                                 appearing mid-boss because a background timer fired would steal focus
+                                 from the fight. It only becomes visible when there is something to say,
+                                 and clicking it is what starts anything. -->
+                            <TextBlock x:Name="UpdateNotice" Visibility="Collapsed" VerticalAlignment="Center"
+                                       Margin="8,0,8,0" Foreground="{DynamicResource Brush.Accent}" Cursor="Hand"
+                                       MouseLeftButtonUp="OnUpdateNoticeClicked"
+                                       TextDecorations="Underline"
+                                       ToolTip="A newer version is available - click to download and install it."/>
+
+                            <!-- Quiet result line for the two upload actions (Session menu + the Damage
+                                 view's Upload button) - same reasoning as UpdateNotice above: this window
+                                 sits on top of a running fight, so a result never pops a modal dialog. -->
+                            <!-- Guard against wrong totals (Aion 2): the selected target's damage held
+                                 against the hit points the server says it lost - see UpdateHpCheck. -->
+                            <TextBlock x:Name="HpCheckText" Visibility="Collapsed" VerticalAlignment="Center"
+                                       Margin="8,0,8,0" Foreground="{DynamicResource Brush.TextMuted}"
+                                       ToolTip="{local:Loc Main.HpCheck.Tooltip}"/>
+
+                            <TextBlock x:Name="UploadStatusText" Visibility="Collapsed" VerticalAlignment="Center"
+                                       Margin="8,0,8,0" Foreground="{DynamicResource Brush.TextMuted}"
+                                       MouseLeftButtonUp="OnUploadStatusClicked"/>
+
+                            <!-- Shown while a past fight from the history is loaded instead of the live
+                                 session (see EnterHistoryMode); clicking it returns to live. -->
+                            <TextBlock x:Name="HistoryBanner" Visibility="Collapsed" VerticalAlignment="Center"
+                                       Margin="8,0,8,0" Foreground="{DynamicResource Brush.Warning}" FontWeight="Bold" Cursor="Hand"
+                                       MouseLeftButtonUp="OnHistoryBannerClicked"
+                                       ToolTip="A stored fight is shown. Click to return to the live session."/>
+                        </StackPanel>
+                    </StackPanel>
+
+
+                    <!-- GridLinesVisibility="None", not "Horizontal" - per the user, the bright
+                         Border-colored separator line between rows contrasted very differently
+                         against RowAlt (dark) than against Panel (lighter), which read as the lighter
+                         rows extending past their real edge ("heller Hintergrund wirkt höher"). The
+                         alternating RowBackground/AlternatingRowBackground colors already separate one
+                         player's row from the next without it. -->
+                    <local:QuietDataGrid x:Name="PlayersGrid" AutoGenerateColumns="False" IsReadOnly="True" MouseDoubleClick="OnPlayersGridDoubleClick"
+                              Background="{DynamicResource Brush.Window}" Foreground="{DynamicResource Brush.Text}" RowBackground="Transparent" AlternatingRowBackground="Transparent" Margin="10,0,10,4" BorderThickness="0"
+                              BorderBrush="{DynamicResource Brush.Border}"
+                              GridLinesVisibility="None" HeadersVisibility="None" CanUserAddRows="False" Grid.IsSharedSizeScope="True">
+                        <!-- Enemy rows get a dark red ground. A trigger rather than a converter so it
+                             overrides RowBackground AND AlternatingRowBackground above: those are set
+                             on the DataGrid itself and would otherwise win on every second row, which
+                             would make the marking look like it came and went at random. -->
+                        <!-- Right-click menu per row. Faction is correctable by hand because the log
+                             cannot always answer it: in an arena the opponent is frequently the SAME
+                             faction, and fighting someone only ever proves hostility, never which
+                             banner they fight under. -->
+                        <DataGrid.ContextMenu>
+                            <ContextMenu Background="{DynamicResource Brush.Panel}" Foreground="{DynamicResource Brush.Text}">
+                                <MenuItem Header="Details anzeigen" Click="OnShowPlayerDetailsClicked"/>
+                            </ContextMenu>
+                        </DataGrid.ContextMenu>
+                        <DataGrid.RowStyle>
+                            <Style TargetType="DataGridRow">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsEnemy}" Value="True">
+                                        <Setter Property="Background" Value="{DynamicResource Brush.RowEnemy}"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </DataGrid.RowStyle>
+                        <!-- Found by terminal_windows measuring rendered pixels: clicking a row lit it
+                             up #F0F0F0 - the default DataGridCell template pulls its selected-state
+                             colors from SystemColors.Highlight*, which ignores the window's own
+                             Background/Foreground entirely. Overriding those brush keys, scoped to
+                             just this DataGrid rather than the whole window, recolors the built-in
+                             selection visuals without touching anything else that might reference the
+                             same system keys (e.g. a MenuItem's own highlight). -->
+                        <DataGrid.Resources>
+                            <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="{DynamicResource Color.ControlHover}"/>
+                            <SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}" Color="{DynamicResource Color.Text}"/>
+                            <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}" Color="{DynamicResource Color.ControlHover}"/>
+                            <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightTextBrushKey}" Color="{DynamicResource Color.Text}"/>
+                        </DataGrid.Resources>
+                        <DataGrid.Columns>
+                            <!-- Column widths trimmed slightly (Level 50->40) after terminal_windows
+                                 measured the grid at only 1px of clearance from the window edge - zero
+                                 margin for a different DPI scaling or a future column, now ~30px of
+                                 buffer instead. -->
+                            <!-- Class no longer has its own column, per the user: the icon sits right
+                                 before the name in this single column instead (StackPanel, icon then
+                                 TextBlock) - one less column to fit, and class/name read as one unit
+                                 the way a character actually presents. Icon falls back to nothing (no
+                                 icon, no crash) for "?" or any class name without a matching
+                                 assets/classes/icons/*.png - see ClassIconConverter. -->
+                            <!-- Name and Damage/DPS used to be two independently-resizable columns
+                                 (NameColumn/DpsColumn, widths persisted via MeterSettings) - merged into
+                                 one Width="*" column per the user's reference layout, so the ShareBar
+                                 below can span the row's full remaining width instead of being boxed
+                                 into the old 124px Damage column. That's the one real trade-off: the two
+                                 columns' independent drag-resize/persistence is gone (RestoreWindowGeometry/
+                                 SaveWindowGeometry no longer touch it), replaced by the column simply
+                                 always filling whatever the (now much wider, still itself persisted)
+                                 window leaves available. -->
+                            <DataGridTemplateColumn x:Name="PlayerColumn" Width="*">
+                                <!-- A literal UIElement, not a HeaderTemplate/DataTemplate - it is built
+                                     once, not per row, so it lives in the window's own NameScope and
+                                     DpsHeaderText below is a real code-behind field, the same as any
+                                     other x:Name (see OnMobBossFilterChanged/RefreshRows, which used to
+                                     write DpsColumn.Header and now write DpsHeaderText.Text instead). -->
+                                <!-- Two real columns, not two overlaid TextBlocks kept apart only by
+                                     alignment - per the user, "Name" and "Damage / DPS" visually
+                                     overlapped/garbled into each other once the window was narrow
+                                     enough that the left-aligned "Name" text ran into the right-aligned
+                                     DPS label with nothing actually reserving space between them. -->
+                                <DataGridTemplateColumn.Header>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="{local:Loc Main.ColumnName}"/>
+                                        <TextBlock Grid.Column="1" x:Name="DpsHeaderText" Text="{local:Loc Main.ColumnDamageDps}"
+                                                   Margin="0,0,8,0"/>
+                                    </Grid>
+                                </DataGridTemplateColumn.Header>
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <!-- One fixed-column row (rank, class icon, name, damage taken, DPS, damage):
+                                             the number columns share their width across all rows
+                                             (Grid.IsSharedSizeScope on the grid), so every figure sits in the
+                                             same column whatever its length, and a column that is empty
+                                             everywhere (damage taken switched off) takes no room. The class
+                                             colour bar fills the whole row height. Opt-in extras (relic AP,
+                                             avoided attacks, PVP) get a second line only when there are any. -->
+                                        <Grid MinHeight="38">
+                                            <Border Background="#08FFFFFF" CornerRadius="9" Margin="0,2"/>
+                                            <ProgressBar Style="{StaticResource RowFillBar}" Value="{Binding AbsorbedFillPercent, Mode=OneWay}" Margin="0,2"
+                                                         Foreground="#993AA0FF"
+                                                         Visibility="{Binding ShowShareBar, Converter={StaticResource BoolToVis}}"/>
+                                            <ProgressBar Template="{StaticResource GlowBarTemplate}" Minimum="0" Maximum="100" IsHitTestVisible="False" Value="{Binding FillPercent, Mode=OneWay}"
+                                                         Foreground="{Binding ClassGlowBrush}" BorderBrush="{Binding ClassLineBrush}" Background="Transparent" Margin="0,2"
+                                                         Visibility="{Binding ShowShareBar, Converter={StaticResource BoolToVis}}"/>
+                                            <StackPanel VerticalAlignment="Center" Margin="8,3,8,3">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="18"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="Auto" SharedSizeGroup="Taken"/>
+                                                        <ColumnDefinition Width="Auto" SharedSizeGroup="Dps"/>
+                                                        <ColumnDefinition Width="Auto" SharedSizeGroup="Damage"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <!-- the faction emblem replaces the rank number (the number only shows while the faction is unknown) -->
+                                                    <Grid Grid.Column="0" VerticalAlignment="Center" HorizontalAlignment="Center">
+                                                        <Image Source="{Binding Faction, Converter={StaticResource RaceIconConverter}}" Width="15" Height="15" ToolTip="{Binding Faction}"/>
+                                                        <TextBlock Text="{Binding RankDisplay}" Foreground="{DynamicResource Brush.TextMuted}" FontSize="11" Visibility="Collapsed">
+                                                            <TextBlock.Style>
+                                                                <Style TargetType="TextBlock">
+                                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                                    <Style.Triggers>
+                                                                        <DataTrigger Binding="{Binding Faction}" Value="">
+                                                                            <Setter Property="Visibility" Value="Visible"/>
+                                                                        </DataTrigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </TextBlock.Style>
+                                                        </TextBlock>
+                                                    </Grid>
+                                                    <Image Grid.Column="1" Source="{Binding ClassName, Converter={StaticResource ClassIconConverter}}"
+                                                           Height="24" Width="24" Margin="4,0,8,0" ToolTip="{Binding Faction}"/>
+                                                    <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                                                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="14" TextTrimming="CharacterEllipsis"/>
+                                                        <TextBlock Text="{Binding BuffLine}" FontSize="11" Foreground="#E6C88F" Opacity="0.85" TextTrimming="CharacterEllipsis"
+                                                       Visibility="{Binding HasBuffLine, Converter={StaticResource BoolToVis}}"/>
+                                                        <local:AllLine FontSize="10.5" TextElement.Foreground="{DynamicResource Brush.Text}" Opacity="0.85"/>
+                                                    </StackPanel>
+                                                    <Grid Grid.Column="3" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="10,0,0,0" ToolTip="Damage this player received in the shown window">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="Auto" SharedSizeGroup="TakenRed"/>
+                                                            <ColumnDefinition Width="Auto" SharedSizeGroup="TakenBlue"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <TextBlock Grid.Column="0" Text="{Binding TakenDisplay}" Style="{StaticResource AllTakenMuted}" FontSize="11" HorizontalAlignment="Right"/>
+                                                        <TextBlock Grid.Column="1" Text="{Binding AbsorbedDisplay}" Foreground="#3AA0FF" FontSize="11" Margin="8,0,0,0" HorizontalAlignment="Right"
+                                                                   ToolTip="Damage the group shield absorbed on this player"/>
+                                                    </Grid>
+                                                    <TextBlock Grid.Column="4" Text="{Binding RateOrHealDisplay}" Style="{StaticResource AllHealMuted}" FontSize="13"
+                                                               Typography.NumeralAlignment="Tabular" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="12,0,0,0"/>
+                                                    <TextBlock Grid.Column="5" Text="{Binding DamageDisplay}" FontWeight="Bold" FontSize="14.5"
+                                                               Typography.NumeralAlignment="Tabular" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="14,0,4,0"/>
+                                                </Grid>
+                                                <StackPanel Orientation="Horizontal" Margin="50,0,0,0"
+                                                            Visibility="{Binding HasExtraInfo, Converter={StaticResource BoolToVis}}">
+                                                    <TextBlock Text="{Binding ApDisplay}" Foreground="{DynamicResource Brush.TextMuted}" FontSize="11"/>
+                                                    <TextBlock Text="{Binding DefenseDisplay}" Foreground="{DynamicResource Brush.TextMuted}" FontSize="11" Margin="6,0,0,0"
+                                                               ToolTip="Avoided incoming attacks: D dodged, P parried, B blocked, R resisted (share of all incoming attacks)"/>
+                                                    <TextBlock Text="{Binding PvpDisplay}" Foreground="{DynamicResource Brush.Accent}" FontSize="11" Margin="6,0,0,0"
+                                                               ToolTip="PVP: kills / deaths and the biggest hit landed on a player"/>
+                                                </StackPanel>
+                                            </StackPanel>
+                                        </Grid>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                        </DataGrid.Columns>
+                    </local:QuietDataGrid>
+
+                </DockPanel>
+                <DockPanel x:Name="AppPageHost" Visibility="Collapsed" Background="{DynamicResource Brush.Window}"/>
+                </Grid>
             </DockPanel>
 
             <!-- Update-ready confirmation, in-app and app-themed. WindowStyle="None" above means

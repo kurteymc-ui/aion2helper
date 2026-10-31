@@ -252,7 +252,8 @@ public sealed class HistoryWindow : Window
                 return;
             }
 
-            new FightReportWindow(report) { Owner = this }.Show();
+            // hosted in the app (this window is never shown then): the app's window owns the report
+            new FightReportWindow(report) { Owner = IsVisible ? this : Application.Current?.MainWindow }.Show();
         }
         finally
         {

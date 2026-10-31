@@ -252,6 +252,12 @@ internal static class Program
             return;
         }
 
+        if (args.Length > 0 && args[0] == "render-app")
+        {
+            RunRenderAppMode(args.Length > 1 ? args[1] : "app.png", args.Length > 2 ? args[2] : "home");
+            return;
+        }
+
         if (args.Length > 0 && args[0] == "render-history")
         {
             RunRenderHistoryMode(args.Length > 1 ? args[1] : "history.png", args.Length > 2 ? args[2] : "Dungeon runs");
@@ -1079,6 +1085,79 @@ internal static class Program
     }
 
     /// <summary>The sample fight moved in time (every event, effect and cast), for the history picture's other days.</summary>
+    /// <summary>Draws the app window (its sections on the left, a section on the right: home, overlays, characters, history, meter) with made-up fights and
+    /// characters into a picture; no window is ever shown.</summary>
+    private static void RunRenderAppMode(string path, string page)
+    {
+        Environment.SetEnvironmentVariable("AIONDPS_DATA_DIR", Path.Combine(Path.GetTempPath(), "aiondps-render-app"));
+        var app = new System.Windows.Application();
+        var settings = Ui.MeterSettings.Load();
+        Ui.ThemeManager.Apply(app, settings);
+        Ui.MainWindow.Headless = true;
+        app.Resources.MergedDictionaries.Add(
+            (System.Windows.ResourceDictionary)System.Windows.Application.LoadComponent(new Uri("/Ui/Styles/Shared.xaml", UriKind.Relative)));
+        try
+        {
+            string folder = Path.Combine(Path.GetTempPath(), "a2h-render-app");
+            if (Directory.Exists(folder))
+            {
+                Directory.Delete(folder, true);
+            }
+
+            History.FightLog.Folder = folder;
+            History.FightLog.Reload();
+            Combat.ReportInput sample = Ui.FightReportSample.Input();
+            for (int k = 0; k < 4; k++)
+            {
+                Combat.ReportInput moved = Shift(sample, TimeSpan.FromMinutes(-50 * k - 20));
+                History.FightLog.Save(k == 2 ? History.FightLogKind.Dummy : History.FightLogKind.Boss, k == 2 ? moved with { Title = "Training Scarecrow" } : moved with { Killed = k != 3 }, k == 2 ? "2:00 parse" : null);
+            }
+
+            // characters: the checklist's real login list, three characters, one of them full of Odyle Energy
+            Aion2.Aion2Tickets.Reset();
+            Aion2.Aion2Tickets.TryParseList(Convert.FromHexString(Combat.SelfCheckTickets.SampleLogin), out var entries);
+            var t0 = DateTime.Now;
+            foreach (var (name, odyle, at) in new[] { ("Ichigo", 520, 0), ("Goku", 840, 10), ("Naruto", 300, 20) })
+            {
+                Aion2.Aion2Tickets.ReceiveList(entries, t0.AddSeconds(at));
+                Aion2.Aion2Tickets.NoteCharacter(name, 2302, t0.AddSeconds(at + 4), level: 45);
+                Aion2.Aion2Tickets.ReceiveUpdate(new Aion2.TicketReading(Aion2.Aion2Tickets.OdyleId, new Aion2.TicketValue(odyle, 0, 0)), t0.AddSeconds(at + 6));
+                Aion2.Aion2Tickets.ReceiveUpdate(new Aion2.TicketReading(Aion2.Aion2Tickets.PremiumId, new Aion2.TicketValue(0, 0, DateTimeOffset.UtcNow.AddDays(20).ToUnixTimeMilliseconds())), t0.AddSeconds(at + 6));
+            }
+
+            var window = new Ui.MainWindow { Title = Brand.AppName };
+            window.BuildShell();
+            window.ShowShellPage(page);
+            const int w = 1180, h = 760;
+            var content = (System.Windows.FrameworkElement)window.Content;
+            for (int pass = 0; pass < 3; pass++)
+            {
+                content.Measure(new System.Windows.Size(w, h));
+                content.Arrange(new System.Windows.Rect(0, 0, w, h));
+                content.UpdateLayout();
+                System.Windows.Threading.Dispatcher.CurrentDispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.ContextIdle);
+            }
+
+            var bitmap = new System.Windows.Media.Imaging.RenderTargetBitmap(w, h, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
+            bitmap.Render(content);
+            var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
+            encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bitmap));
+            using (var file = File.Create(path))
+            {
+                encoder.Save(file);
+            }
+
+            Console.WriteLine("render-app: wrote " + path);
+        }
+        catch (Exception ex)
+        {
+            File.WriteAllText(Path.ChangeExtension(path, ".error.txt"), ex.ToString());
+            Environment.Exit(1);
+        }
+
+        Environment.Exit(0);
+    }
+
     private static Combat.ReportInput Shift(Combat.ReportInput input, TimeSpan by)
     {
         Combat.FightExtras x = input.Extras;

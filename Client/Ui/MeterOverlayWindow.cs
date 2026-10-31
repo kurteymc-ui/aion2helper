@@ -123,7 +123,7 @@ public sealed class MeterOverlayWindow : Window
     }
 
     /// <summary>Where it was put, if that is still on a monitor; else at the right of the main monitor, below its top.</summary>
-    private void PlaceFromSettings()
+    internal void PlaceFromSettings()
     {
         var settings = MeterSettings.Load();
         Rect area = WindowPlacement.Primary();
