@@ -618,7 +618,7 @@ public sealed class FightReportWindow : Window
             bool on = p.Player.Id == _selected;
             var pill = new Border
             {
-                CornerRadius = new CornerRadius(999), BorderThickness = new Thickness(1), Padding = new Thickness(10, 4, 12, 4), Margin = new Thickness(6, 0, 0, 6), Cursor = Cursors.Hand,
+                CornerRadius = new CornerRadius(5), BorderThickness = new Thickness(1), Padding = new Thickness(10, 4, 12, 4), Margin = new Thickness(6, 0, 0, 6), Cursor = Cursors.Hand,
                 Background = on ? SelectedBrush : ReportPalette.Brush(Colors.White, 0x06),
                 BorderBrush = on ? ReportPalette.Brush(Color.FromRgb(0xDC, 0xB8, 0x77), 0xB0) : ReportPalette.Brush(Colors.White, 0x18),
                 Child = NameCell(p.Player, 12.5, small: true),

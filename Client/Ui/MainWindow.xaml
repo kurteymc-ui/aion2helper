@@ -188,7 +188,7 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ToggleButton">
-                        <Border x:Name="Bd" Background="Transparent" CornerRadius="999" Padding="{TemplateBinding Padding}">
+                        <Border x:Name="Bd" Background="Transparent" CornerRadius="4" Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
@@ -753,7 +753,7 @@
                         <MenuItem Header="{local:Loc Main.MenuSettings.Feedback}" Click="OnFeedbackClicked"/>
                     </MenuItem>
                 </Menu>
-                    <Border DockPanel.Dock="Right" Background="#0AFFFFFF" BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1" CornerRadius="999" Padding="2"
+                    <Border DockPanel.Dock="Right" Background="#0AFFFFFF" BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1" CornerRadius="6" Padding="2"
                             VerticalAlignment="Center" ToolTip="PvE: damage against monsters and bosses (default). PvP: damage against other players only - Arena, Abyss, legion fights.">
                         <StackPanel Orientation="Horizontal">
                             <ToggleButton x:Name="PveModeButton" Style="{StaticResource PvpModeToggleLeft}"
@@ -872,16 +872,16 @@
                         <ComboBoxItem Content="{local:Loc Main.FilterAllTargets}"/>
                     </ComboBox>
                     <!-- Whose rows: the overlay's All / Group / Corps switch, here too while the overlay is on (both show the same list). -->
-                    <Border x:Name="ClientScopeBox" Background="#0AFFFFFF" BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1" CornerRadius="999" Padding="2"
+                    <Border x:Name="ClientScopeBox" Background="#0AFFFFFF" BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1" CornerRadius="6" Padding="2"
                             Margin="0,0,8,0" VerticalAlignment="Center" Visibility="Collapsed" ToolTip="Whose damage is listed here and on the overlay: everybody, your group, or your corps (two groups).">
                         <StackPanel x:Name="ClientScopeSwitch" Orientation="Horizontal">
-                            <Border Tag="All" Padding="10,3" CornerRadius="999" Cursor="Hand" MouseLeftButtonDown="OnOverlayScopeClicked">
+                            <Border Tag="All" Padding="10,3" CornerRadius="4" Cursor="Hand" MouseLeftButtonDown="OnOverlayScopeClicked">
                                 <TextBlock FontSize="12" FontWeight="SemiBold" Text="{local:Loc Main.Scope.All}"/>
                             </Border>
-                            <Border Tag="Group" Padding="10,3" CornerRadius="999" Cursor="Hand" MouseLeftButtonDown="OnOverlayScopeClicked">
+                            <Border Tag="Group" Padding="10,3" CornerRadius="4" Cursor="Hand" MouseLeftButtonDown="OnOverlayScopeClicked">
                                 <TextBlock FontSize="12" FontWeight="SemiBold" Text="{local:Loc Main.Scope.Group}"/>
                             </Border>
-                            <Border Tag="Corps" Padding="10,3" CornerRadius="999" Cursor="Hand" MouseLeftButtonDown="OnOverlayScopeClicked">
+                            <Border Tag="Corps" Padding="10,3" CornerRadius="4" Cursor="Hand" MouseLeftButtonDown="OnOverlayScopeClicked">
                                 <TextBlock FontSize="12" FontWeight="SemiBold" Text="{local:Loc Main.Scope.Corps}"/>
                             </Border>
                         </StackPanel>
@@ -1260,15 +1260,15 @@
                 </DockPanel>
                 <!-- The group's total rate, the dummy countdown when one runs, and whose rows are shown. -->
                 <DockPanel Margin="12,1,10,5">
-                    <Border DockPanel.Dock="Right" Background="#0AFFFFFF" BorderBrush="#1FFFFFFF" BorderThickness="1" CornerRadius="999" Padding="2" VerticalAlignment="Center">
+                    <Border DockPanel.Dock="Right" Background="#0AFFFFFF" BorderBrush="#1FFFFFFF" BorderThickness="1" CornerRadius="6" Padding="2" VerticalAlignment="Center">
                         <StackPanel x:Name="OverlayScopeSwitch" Orientation="Horizontal">
-                            <Border x:Name="OverlayScopeAll" Tag="All" Padding="8,0" CornerRadius="999" Cursor="Hand" MouseLeftButtonDown="OnOverlayScopeClicked">
+                            <Border x:Name="OverlayScopeAll" Tag="All" Padding="8,0" CornerRadius="4" Cursor="Hand" MouseLeftButtonDown="OnOverlayScopeClicked">
                                 <TextBlock FontSize="11" FontWeight="SemiBold" Text="{local:Loc Main.Scope.All}"/>
                             </Border>
-                            <Border x:Name="OverlayScopeGroup" Tag="Group" Padding="8,0" CornerRadius="999" Cursor="Hand" MouseLeftButtonDown="OnOverlayScopeClicked">
+                            <Border x:Name="OverlayScopeGroup" Tag="Group" Padding="8,0" CornerRadius="4" Cursor="Hand" MouseLeftButtonDown="OnOverlayScopeClicked">
                                 <TextBlock FontSize="11" FontWeight="SemiBold" Text="{local:Loc Main.Scope.Group}"/>
                             </Border>
-                            <Border x:Name="OverlayScopeCorps" Tag="Corps" Padding="8,0" CornerRadius="999" Cursor="Hand" MouseLeftButtonDown="OnOverlayScopeClicked">
+                            <Border x:Name="OverlayScopeCorps" Tag="Corps" Padding="8,0" CornerRadius="4" Cursor="Hand" MouseLeftButtonDown="OnOverlayScopeClicked">
                                 <TextBlock FontSize="11" FontWeight="SemiBold" Text="{local:Loc Main.Scope.Corps}"/>
                             </Border>
                         </StackPanel>
@@ -1386,7 +1386,7 @@
                     <Border x:Name="OverlayModeSwitch" DockPanel.Dock="Right" Visibility="Collapsed" MouseLeftButtonDown="OnOverlayModeClicked">
                         <TextBlock x:Name="OverlayModeText"/>
                     </Border>
-                    <Ellipse x:Name="OverlayStateDot" Width="6" Height="6" Fill="Gray" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                    <Rectangle x:Name="OverlayStateDot" Width="6" Height="6" RadiusX="1" RadiusY="1" Fill="Gray" VerticalAlignment="Center" Margin="0,0,6,0"/>
                     <TextBlock x:Name="OverlayStateText" FontSize="10.5" Foreground="{DynamicResource Brush.TextMuted}" VerticalAlignment="Center"
                                TextTrimming="CharacterEllipsis"/>
                 </DockPanel>
