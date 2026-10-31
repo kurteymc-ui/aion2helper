@@ -107,7 +107,7 @@ public static class Aion2Tickets
         {
             int ticks = clock is { } c ? Slot(c, utcNow) - Slot(c, seen) : (int)((utcNow - seen).Ticks / OdyleTickEvery.Ticks);
             count = Math.Min(cap, count + Math.Max(0, ticks) * per);
-            estimated = true;
+            estimated = ticks > 0 || clock is null; // exact while no tick came on a known clock; without a clock a tick may have come already
         }
 
         DateTime? next = null, full = null;

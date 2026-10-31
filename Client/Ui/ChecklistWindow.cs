@@ -44,7 +44,7 @@ public sealed class ChecklistWindow : Window
     {
         LocalizationManager loc = LocalizationManager.Instance;
         Title = loc["Checklist.Title"];
-        Width = 1000; // the roster of all characters is a wide table
+        Width = 1080; // the roster of all characters is a wide table
         SizeToContent = SizeToContent.Height;
         MaxHeight = SystemParameters.WorkArea.Height - 40;
         MinWidth = 640;
@@ -369,7 +369,7 @@ public sealed class ChecklistWindow : Window
 
         // the resets and the energy of the whole roster
         var head = new StackPanel();
-        var resets = new WrapPanel();
+        var resets = new StackPanel { Orientation = Orientation.Horizontal };
         if (Aion2Tickets.Find(4) is { } daily && Aion2Tickets.NextReset(daily, now) is { } nextDaily)
         {
             resets.Children.Add(Pill(loc["Checklist.DailyReset"], InText(nextDaily - now) + "  ·  " + nextDaily.ToString("t", CultureInfo.CurrentCulture)));
@@ -395,12 +395,12 @@ public sealed class ChecklistWindow : Window
         TicketDef?[] defs = RosterTickets.Select(Aion2Tickets.Find).ToArray();
         var grid = new Grid();
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star), MinWidth = 150 }); // character
-        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(132) }); // Odyle
-        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(92) });  // full in
-        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(62) });  // daily tasks
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(128) }); // Odyle
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(88) });  // full in
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(58) });  // daily tasks
         foreach (TicketDef? _ in defs)
         {
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(70) });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(80) });
         }
 
         var headers = new List<(string Text, string? Tip)>
@@ -412,7 +412,7 @@ public sealed class ChecklistWindow : Window
         grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         for (int k = 0; k < headers.Count; k++)
         {
-            TextBlock h = Label(headers[k].Text, "Brush.TextMuted", 11, bold: true);
+            TextBlock h = Label(headers[k].Text, "Brush.TextMuted", 10.5, bold: true);
             h.TextWrapping = TextWrapping.Wrap;
             h.Margin = new Thickness(k == 0 ? 0 : 6, 0, 4, 6);
             h.VerticalAlignment = VerticalAlignment.Bottom;
