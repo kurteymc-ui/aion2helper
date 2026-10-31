@@ -113,7 +113,7 @@ public sealed class DummyTestController : IDisposable
     public DummyTest Model { get; } = new();
 
     /// <summary>The meter overlay shows the run's countdown itself: this window of its own then stays away.</summary>
-    public bool ShownInMeter { get; set; }
+    public bool ShownInMeter { get; set; } = true;
 
     public DummyTestController(Func<Aion2EntityDirectory?> directory)
     {

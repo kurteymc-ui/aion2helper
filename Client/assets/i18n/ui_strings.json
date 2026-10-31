@@ -13281,7 +13281,7 @@
     "en": "Show the meter overlay over the game"
   },
   "Settings.MeterOverlayAutoHide": {
-    "en": "Only in dungeons and while you fight (it hides itself between fights)"
+    "en": "Only in dungeons, during boss fights and at training dummies (it hides itself otherwise)"
   },
   "Settings.MeterOverlayHide": {
     "en": "Hide it after this long without a fight"

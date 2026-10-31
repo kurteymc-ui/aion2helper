@@ -169,7 +169,7 @@ public partial class MainWindow : Window
 
     /// <summary>The All / Group / Corps filter belongs to the compact overlay (its header carries the switch, the client's toolbar a copy of it):
     /// while the overlay is on, the client lists the same players; the chip overlay always lists everybody whose damage arrives.</summary>
-    private bool ScopeActive => ((_hideUiActive || MeterOverlayActive) && _compactOverlay) || (_autoScope && _scopeContext == ScopeContext.Dummy && _scopeManual is null);
+    private bool ScopeActive => (_hideUiActive && _compactOverlay) || MeterOverlayActive || (_autoScope && _scopeContext == ScopeContext.Dummy && _scopeManual is null);
 
     // ---- the meter overlay: the compact panel in a window of its own over the game, the main window being the client beside it ----
     private MeterOverlayWindow? _meterOverlay;
@@ -184,6 +184,12 @@ public partial class MainWindow : Window
     private DateTime _overlayPeekUntil = DateTime.MinValue;
 
     private bool _overlayClear;
+
+    /// <summary>A dummy parse waits, runs or just ended: the header shows its countdown instead of the fight's time.</summary>
+    private bool _dummyHeader;
+
+    /// <summary>The last moment anyone nearby fought a boss (a catalog boss: dungeon or field): the meter shows itself for that, not for every mob.</summary>
+    private DateTime _lastBossFight = DateTime.MinValue;
     private bool _overlayMenuOpen;
     private bool _meterOverlayLocked;
 
@@ -195,7 +201,7 @@ public partial class MainWindow : Window
     private DateTime _overlayPowerAt = DateTime.MinValue;
 
     /// <summary>The compact panel lives in its own overlay window and Settings have it on.</summary>
-    private bool MeterOverlayActive => _meterOverlay is not null && _meterOverlayOn && _compactOverlay;
+    private bool MeterOverlayActive => _meterOverlay is not null && _meterOverlayOn;
 
     private MeterScope _scope = MeterScope.Group;
 
@@ -1095,7 +1101,7 @@ public partial class MainWindow : Window
 
             RefreshRows();
             // nobody picks a target on the overlay: it follows the newest fight, unless the player is working in the client
-            if (events.Count > 0 && _compactOverlay && (_hideUiActive || (MeterOverlayActive && !IsActive)))
+            if (events.Count > 0 && ((_hideUiActive && _compactOverlay) || (MeterOverlayActive && !IsActive)))
             {
                 FollowNewestRun();
             }
@@ -1391,7 +1397,9 @@ public partial class MainWindow : Window
         }
 
         DateTime now = DateTime.Now;
-        bool inFight = !_meterOverlayAutoHide || InInstanceNow() || now - _lastOwnCombat < _meterOverlayHideAfter || now < _overlayPeekUntil
+        // not for every mob: in a dungeon or arena from the entry on, while a boss is fought nearby, and at a training dummy once you hit it
+        bool inFight = !_meterOverlayAutoHide || InInstanceNow() || now - _lastBossFight < _meterOverlayHideAfter || now - _lastDummyHit < _meterOverlayHideAfter
+            || now < _overlayPeekUntil
             || _meterOverlay.IsMouseOver || _overlayMenuOpen || _dummy?.Model.State is DummyState.Armed or DummyState.Running or DummyState.Finished;
         _meterOverlay.ShowOverlay(MeterOverlayActive && _gameGateOpen && inFight);
     }
@@ -1464,6 +1472,16 @@ public partial class MainWindow : Window
             }
         }
 
+        // a boss fought by anyone nearby (the group, or another party starting it): the meter comes up for it
+        foreach (DamageEvent ev in events)
+        {
+            if (!ev.IsHeal && (directory.BossNpcIdOf(ev.TargetObjectId) is not null || directory.BossNpcIdOf(ev.SourceObjectId) is not null))
+            {
+                _lastBossFight = DateTime.Now;
+                break;
+            }
+        }
+
         local = directory.LocalPlayerId;
         foreach (DamageEvent ev in events)
         {
@@ -1488,7 +1506,7 @@ public partial class MainWindow : Window
     /// fight's time would be over); on screen it goes off. In the chip look the window itself turns into the overlay, as before.</summary>
     private void ToggleOverlay()
     {
-        if (_meterOverlay is null || !_compactOverlay)
+        if (_meterOverlay is null)
         {
             SetHideUi();
             return;
@@ -7054,7 +7072,7 @@ public partial class MainWindow : Window
 
     private void OnHideUiClicked(object sender, RoutedEventArgs e)
     {
-        if (_meterOverlay is not null && _compactOverlay)
+        if (_meterOverlay is not null)
         {
             ToggleOverlay();
             return;
@@ -7495,7 +7513,7 @@ public partial class MainWindow : Window
         string? small = _clientOutdated ? loc["Overlay.OutdatedBadgeShort"] : null;
         bool show = full is not null && (_hideUiActive || MeterOverlayActive) && _gameGateOpen;
         var brush = (Brush)FindResource(_clientOutdated ? "Brush.Warning" : "Brush.Accent");
-        CompactUpdateBadge.Visibility = show && _compactOverlay ? Visibility.Visible : Visibility.Collapsed;
+        CompactUpdateBadge.Visibility = show && (_compactOverlay || MeterOverlayActive) ? Visibility.Visible : Visibility.Collapsed;
         OverlayUpdateBadge.Visibility = show && !_compactOverlay && _hideUiActive ? Visibility.Visible : Visibility.Collapsed;
         OverlayUpdateBadge.Background = brush;
         CompactUpdateBadge.Background = brush;
@@ -7715,7 +7733,7 @@ public partial class MainWindow : Window
             OverlayItem("See-through", () => ChangeOverlaySetting(s => s.OverlayLook = "Clear"), _overlayClear),
             opacity,
             new Separator(),
-            OverlayItem("Only in dungeons and fights", () => ChangeOverlaySetting(s => s.MeterOverlayAutoHide = !s.MeterOverlayAutoHide), settings.MeterOverlayAutoHide),
+            OverlayItem("Only in dungeons, boss fights and at dummies", () => ChangeOverlaySetting(s => s.MeterOverlayAutoHide = !s.MeterOverlayAutoHide), settings.MeterOverlayAutoHide),
             OverlayItem("Everyone in dungeons, only me at dummies", () => ChangeOverlaySetting(s => s.AutoScope = !s.AutoScope), settings.AutoScope),
             OverlayItem("Party buffs under the names", () => ChangeOverlaySetting(s => s.ShowPartyBuffs = !s.ShowPartyBuffs), settings.ShowPartyBuffs),
             OverlayItem("Click-through (turn off in Settings)", () => ChangeOverlaySetting(s => s.CompactClickThrough = !s.CompactClickThrough), settings.CompactClickThrough),
@@ -7838,14 +7856,18 @@ public partial class MainWindow : Window
     /// fight has run, and whether the capture is running.</summary>
     private void UpdateCompactOverlay(IReadOnlyList<DamageEvent> shownHits, (int Count, DateTime First, DateTime Last)? summary = null)
     {
-        if (!_compactOverlay)
+        if (!_compactOverlay && !MeterOverlayActive)
         {
             return;
         }
 
-        OverlayTargetText.Text = _pvpOnly ? "PvP"
-            : _selectedTargetId is int targetId ? ResolveDisplayName(targetId)
-            : LocalizationManager.Instance["Main.FilterAllTargets"];
+        // a dummy parse owns the header's time and name (its countdown, see UpdateOverlayDummy)
+        if (!_dummyHeader)
+        {
+            OverlayTargetText.Text = _pvpOnly ? "PvP"
+                : _selectedTargetId is int targetId ? ResolveDisplayName(targetId)
+                : LocalizationManager.Instance["Main.FilterAllTargets"];
+        }
         var strings = LocalizationManager.Instance;
         OverlayModeText.Text = _mode == MeterMode.Raid && !_pvpOnly ? "rDPS"
             : strings[_healMode ? "Main.Overlay.ModeHeal" : _takenMode ? "Main.Overlay.ModeTaken" : _allMode ? "Main.Overlay.ModeAll" : _allCompactMode ? "Main.Overlay.ModeAllCompact" : "Main.Overlay.ModeDamage"];
@@ -7861,9 +7883,12 @@ public partial class MainWindow : Window
             double? ping = capturing && !Headless ? Aion2.Capture.NetworkStats.Snapshot().PingMs : null;
             OverlayPingText.Text = ping is double ms ? $"{ms:0} ms" : "";
         }
-        OverlayTimeText.Text = summary is { Count: > 1 } sum ? (sum.Last - sum.First).ToString(@"m\:ss")
-            : summary is null && shownHits.Count > 1 ? (shownHits.Max(h => h.Timestamp) - shownHits.Min(h => h.Timestamp)).ToString(@"m\:ss")
-            : "";
+        if (!_dummyHeader)
+        {
+            OverlayTimeText.Text = summary is { Count: > 1 } sum ? (sum.Last - sum.First).ToString(@"m\:ss")
+                : summary is null && shownHits.Count > 1 ? (shownHits.Max(h => h.Timestamp) - shownHits.Min(h => h.Timestamp)).ToString(@"m\:ss")
+                : "";
+        }
         _lastShownHits = shownHits;
         OverlayHpBlock.Visibility = Visibility.Collapsed; // the boss's health is a window of its own now (CombatOverlayWindow.Part.Hp)
 
@@ -7942,28 +7967,53 @@ public partial class MainWindow : Window
             return;
         }
 
-        _dummy.ShownInMeter = MeterOverlayActive;
+        // the countdown lives in the meter's header only: the old window of its own never comes up while the meter exists
+        _dummy.ShownInMeter = _meterOverlay is not null;
         DummyTest model = _dummy.Model;
         DateTime now = DateTime.Now;
-        string? text = null;
+        string? clock = null, label = null;
         double? fraction = null;
         switch (model.State)
         {
             case DummyState.Armed:
-                text = "Dummy · waiting for your first hit";
+                TimeSpan planned = model.Planned;
+                clock = $"{(int)planned.TotalMinutes}:{planned.Seconds:00}";
+                label = "Dummy parse · hit to start";
                 break;
             case DummyState.Running when model.Current is not null:
                 TimeSpan left = model.Remaining(now);
-                text = $"Dummy {(int)left.TotalMinutes}:{left.Seconds:00}";
+                clock = $"{(int)left.TotalMinutes}:{left.Seconds:00}";
+                label = "Dummy parse";
                 fraction = model.Planned.TotalSeconds > 0 ? left.TotalSeconds / model.Planned.TotalSeconds : 0;
                 break;
             case DummyState.Finished when model.Current is { } done:
-                text = $"Dummy run {done.Number} saved";
+                clock = "0:00";
+                label = $"Parse {done.Number} saved to History";
                 break;
         }
 
-        OverlayDummyChip.Visibility = text is null ? Visibility.Collapsed : Visibility.Visible;
-        OverlayDummyText.Text = text ?? "";
+        bool active = clock is not null;
+        if (active)
+        {
+            OverlayTimeText.Text = clock;
+            OverlayTargetText.Text = label;
+        }
+
+        if (active != _dummyHeader)
+        {
+            _dummyHeader = active;
+            if (active)
+            {
+                OverlayTimeText.SetResourceReference(TextBlock.ForegroundProperty, "Brush.Accent");
+            }
+            else
+            {
+                OverlayTimeText.SetResourceReference(TextBlock.ForegroundProperty, "Brush.OverlayText");
+                RefreshRows(); // the fight's own time and name come back
+            }
+        }
+
+        OverlayDummyChip.Visibility = Visibility.Collapsed;
         OverlayDummyBar.Visibility = fraction is null ? Visibility.Collapsed : Visibility.Visible;
         OverlayDummyBar.Value = fraction ?? 0;
     }
