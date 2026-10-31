@@ -7304,6 +7304,7 @@ public partial class MainWindow : Window
         }
 
         UpdateOverlayDummy();
+        UpdateOverlayBossCallout();
         UpdateMeterOverlay();
 
         if ((DateTime.UtcNow - _gateSettingsAt).TotalSeconds >= 1)
@@ -7781,6 +7782,7 @@ public partial class MainWindow : Window
         var settings = MeterSettings.Load();
         change(settings);
         settings.Save();
+        _gateSettingsAt = DateTime.MinValue;
         RefreshCharacterSettings(settings);
         RefreshRows();
         UpdateMeterOverlay();
@@ -7829,6 +7831,7 @@ public partial class MainWindow : Window
             OverlayItem("Only in dungeons, boss fights and at dummies", () => ChangeOverlaySetting(s => s.MeterOverlayAutoHide = !s.MeterOverlayAutoHide), settings.MeterOverlayAutoHide),
             OverlayItem("Everyone in dungeons, only me at dummies", () => ChangeOverlaySetting(s => s.AutoScope = !s.AutoScope), settings.AutoScope),
             OverlayItem("Party buffs under the names", () => ChangeOverlaySetting(s => s.ShowPartyBuffs = !s.ShowPartyBuffs), settings.ShowPartyBuffs),
+            OverlayItem("Boss timers: the next casts and the enrage", () => ChangeOverlaySetting(s => s.OverlayBossTimers = !s.OverlayBossTimers), settings.OverlayBossTimers),
             OverlayItem("Click-through (turn off in Settings)", () => ChangeOverlaySetting(s => s.CompactClickThrough = !s.CompactClickThrough), settings.CompactClickThrough),
             new Separator(),
             OverlayItem("Copy to chat", CopyRowsToClipboard),
@@ -8158,6 +8161,75 @@ public partial class MainWindow : Window
         OverlayDummyChip.Visibility = Visibility.Collapsed;
         OverlayDummyBar.Visibility = fraction is null ? Visibility.Collapsed : Visibility.Visible;
         OverlayDummyBar.Value = fraction ?? 0;
+    }
+
+    private DateTime _calloutAt = DateTime.MinValue;
+
+    /// <summary>The meter overlay's boss timers line (<see cref="BossTimers"/>): the boss's next two casts as everyone's uploads learnt them, red within 5 s
+    /// and while cast, and the time to its rage where the game data knows it (amber the last minute, red the last 20 s). Hidden without a boss or anything known.</summary>
+    private void UpdateOverlayBossCallout()
+    {
+        if (!_compactOverlay && !MeterOverlayActive)
+        {
+            return;
+        }
+
+        DateTime now = DateTime.Now;
+        if (now - _calloutAt < TimeSpan.FromMilliseconds(240))
+        {
+            return;
+        }
+
+        _calloutAt = now;
+        BossCalloutFrame? frame = _gateSettings.OverlayBossTimers && !_historyMode && !_pvpOnly && _source?.Entities is Aion2.Aion2EntityDirectory dir
+            ? BossTimers.Now(dir, now, LocalizationManager.Instance.Language) : null;
+        if (frame is null || (frame.Next.Count == 0 && frame.Rage is null))
+        {
+            OverlayBossCallout.Visibility = Visibility.Collapsed;
+            return;
+        }
+
+        ShowBossCallout(OverlayBossCalloutText, frame);
+        OverlayBossCallout.ToolTip = frame.Fights > 0
+            ? $"{frame.Boss}: the next casts as {frame.Fights} uploaded fight{(frame.Fights == 1 ? "" : "s")} of it show them" + (frame.Rage is null ? "" : "; the enrage from the game's data")
+            : $"{frame.Boss}: the enrage from the game's data (no uploaded fights of it yet)";
+        OverlayBossCallout.Visibility = Visibility.Visible;
+    }
+
+    internal static void ShowBossCallout(TextBlock text, BossCalloutFrame frame)
+    {
+        text.Inlines.Clear();
+        bool first = true;
+        void Gap()
+        {
+            if (!first)
+            {
+                text.Inlines.Add(new System.Windows.Documents.Run("   ·   ") { Foreground = OverlayPictures.Muted });
+            }
+
+            first = false;
+        }
+
+        foreach (BossCallout c in frame.Next.Take(2))
+        {
+            Gap();
+            text.Inlines.Add(new System.Windows.Documents.Run(c.Name) { FontWeight = FontWeights.SemiBold });
+            text.Inlines.Add(new System.Windows.Documents.Run(c.Casting ? "  now" : $"  {Math.Ceiling(c.In):0} s")
+            {
+                Foreground = c.Casting || c.In <= 5 ? OverlayPictures.Red : c.In <= 15 ? OverlayPictures.Amber : OverlayPictures.Muted,
+                FontWeight = FontWeights.SemiBold,
+            });
+        }
+
+        if (frame.Rage is TimeSpan rage)
+        {
+            Gap();
+            text.Inlines.Add(new System.Windows.Documents.Run(rage > TimeSpan.Zero ? $"Enrage {(int)rage.TotalMinutes}:{rage.Seconds:00}" : "Enraged")
+            {
+                Foreground = rage <= HpBarView.RageSoonBefore ? OverlayPictures.Red : rage <= HpBarView.RageWarnBefore ? OverlayPictures.Amber : OverlayPictures.Muted,
+                FontWeight = FontWeights.SemiBold,
+            });
+        }
     }
 
     /// <summary>The fought boss's health in the compact overlay, with the HP check's verdict on the

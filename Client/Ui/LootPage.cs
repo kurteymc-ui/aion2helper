@@ -3,18 +3,21 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Threading;
 using AionDPS.Aion2;
+using AionDPS.Upload;
 
 namespace AionDPS.Ui;
 
 /// <summary>
 /// The page of the loot tool: on the left the sessions (a session ends after half an hour without a pickup, or when the meter starts anew), on the right what was picked up in the chosen
 /// one, map by map, the items in the colour of their grade. A button deletes one session or the whole log. The log lives only on this computer.
+/// What it is worth: the market prices of the own server (<see cref="MarketPrices"/>, the site's price service), in all and per hour of the session.
 /// </summary>
 public sealed class LootPage : Grid
 {
     private readonly StackPanel _sessions = new();
     private readonly StackPanel _items = new();
-    private readonly TextBlock _summary = new() { FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 6) };
+    private readonly TextBlock _summary = new() { FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 2) };
+    private readonly TextBlock _worth = new() { Margin = new Thickness(0, 0, 0, 6), TextWrapping = TextWrapping.Wrap };
     private readonly Button _deleteOne = new() { Padding = new Thickness(10, 2, 10, 2), Margin = new Thickness(0, 0, 8, 0) };
     private readonly DispatcherTimer _refresh = new() { Interval = TimeSpan.FromMilliseconds(700) };
     private List<LootSession> _list = new();
@@ -63,6 +66,9 @@ public sealed class LootPage : Grid
         _summary.SetResourceReference(TextBlock.ForegroundProperty, "Brush.Text");
         DockPanel.SetDock(_summary, Dock.Top);
         right.Children.Add(_summary);
+        _worth.SetResourceReference(TextBlock.ForegroundProperty, "Brush.TextMuted");
+        DockPanel.SetDock(_worth, Dock.Top);
+        right.Children.Add(_worth);
         right.Children.Add(new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Content = _items });
         SetColumn(right, 1);
         Children.Add(right);
@@ -84,7 +90,10 @@ public sealed class LootPage : Grid
     {
         var loc = LocalizationManager.Instance;
         _list = Aion2Loot.Sessions.ToList();
-        string key = string.Join("|", _list.Select(s => $"{s.Start.Ticks}:{s.End.Ticks}:{s.Maps.Sum(m => m.Items.Sum(i => i.Picks))}")) + "/" + _selectedStart?.Ticks + "/" + loc.Language;
+        int server = OwnServer();
+        MarketBook? book = MarketPrices.For(server);
+        string key = string.Join("|", _list.Select(s => $"{s.Start.Ticks}:{s.End.Ticks}:{s.Maps.Sum(m => m.Items.Sum(i => i.Picks))}")) + "/" + _selectedStart?.Ticks + "/" + loc.Language
+            + "/" + server + ":" + MarketPrices.Version;
         if (key == _shown)
         {
             return;
@@ -127,6 +136,7 @@ public sealed class LootPage : Grid
         if (Selected() is not { } session)
         {
             _summary.Text = "";
+            _worth.Text = "";
             var empty = new TextBlock { Text = loc["Loot.Empty"], TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 6, 0, 0) };
             empty.SetResourceReference(TextBlock.ForegroundProperty, "Brush.TextMuted");
             _items.Children.Add(empty);
@@ -135,6 +145,7 @@ public sealed class LootPage : Grid
 
         long total = session.Maps.Sum(m => m.Items.Sum(i => i.Count));
         _summary.Text = string.Format(loc["Loot.Summary"], total, LootText.Merge(session.Maps).Count);
+        ShowWorth(session, book, server);
         foreach (LootMap map in session.Maps.OrderByDescending(m => m.Items.Max(i => i.Last)))
         {
             var head = new TextBlock { Text = LootText.MapName(map.Zone), FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 8, 0, 3) };
@@ -147,6 +158,15 @@ public sealed class LootPage : Grid
                 count.SetResourceReference(TextBlock.ForegroundProperty, "Brush.TextMuted");
                 DockPanel.SetDock(count, Dock.Right);
                 row.Children.Add(count);
+                if (book is not null && book.Items.TryGetValue(item.ItemId, out MarketPrice? price) && price.Value is long each)
+                {
+                    var value = new TextBlock { Text = Short(each * item.Count), Margin = new Thickness(12, 0, 0, 0), MinWidth = 56, TextAlignment = TextAlignment.Right,
+                        ToolTip = string.Format(loc["Loot.ItemWorth"], each.ToString("N0"), (each * item.Count).ToString("N0")) };
+                    value.SetResourceReference(TextBlock.ForegroundProperty, "Brush.Accent");
+                    DockPanel.SetDock(value, Dock.Right);
+                    row.Children.Add(value);
+                }
+
                 row.Children.Add(new TextBlock
                 {
                     Text = LootText.ItemName(item.ItemId), Foreground = new SolidColorBrush(LootText.GradeColor(item.ItemId)), TextTrimming = TextTrimming.CharacterEllipsis,
@@ -156,4 +176,55 @@ public sealed class LootPage : Grid
             }
         }
     }
+
+    /// <summary>The server whose prices count: the character logged in now, else the one played last.</summary>
+    private static int OwnServer()
+    {
+        var characters = Aion2Tickets.Snapshot();
+        string? now = Aion2Tickets.CurrentName;
+        return (characters.FirstOrDefault(c => c.Name == now && c.ServerId > 0) ?? characters.Where(c => c.ServerId > 0).OrderByDescending(c => c.SavedAt).FirstOrDefault())?.ServerId ?? 0;
+    }
+
+    private void ShowWorth(LootSession session, MarketBook? book, int server)
+    {
+        var loc = LocalizationManager.Instance;
+        _worth.Inlines.Clear();
+        _worth.ToolTip = null;
+        if (server <= 0)
+        {
+            return;
+        }
+
+        if (book is null)
+        {
+            _worth.Text = MarketPrices.IsLoading(server) ? loc["Loot.WorthLoading"] : loc["Loot.WorthNone"];
+            return;
+        }
+
+        var (worth, priced, unpriced) = MarketPrices.Worth(LootText.Merge(session.Maps).Select(i => (i.ItemId, i.Count)), book);
+        var main = new System.Windows.Documents.Run(string.Format(loc["Loot.Worth"], worth.ToString("N0"), book.Name)) { FontWeight = FontWeights.SemiBold };
+        main.SetResourceReference(System.Windows.Documents.TextElement.ForegroundProperty, "Brush.Accent");
+        _worth.Inlines.Add(main);
+        TimeSpan span = session.End - session.Start;
+        if (span >= TimeSpan.FromMinutes(5) && worth > 0)
+        {
+            _worth.Inlines.Add(new System.Windows.Documents.Run("  ·  " + string.Format(loc["Loot.WorthHour"], ((long)(worth / span.TotalHours)).ToString("N0"))));
+        }
+
+        if (unpriced > 0)
+        {
+            _worth.Inlines.Add(new System.Windows.Documents.Run("  ·  " + string.Format(loc["Loot.WorthUnpriced"], unpriced)));
+        }
+
+        _worth.ToolTip = string.Format(loc["Loot.WorthTip"], book.Name) + (book.Captured is DateTime at ? " " + at.ToLocalTime().ToString("g") : "");
+    }
+
+    /// <summary>1,234 / 12.3k / 1.23M: short enough for the item's line.</summary>
+    internal static string Short(long kinah) => kinah switch
+    {
+        >= 1_000_000_000 => (kinah / 1e9).ToString("0.##") + "B",
+        >= 1_000_000 => (kinah / 1e6).ToString("0.##") + "M",
+        >= 10_000 => (kinah / 1e3).ToString("0.#") + "k",
+        _ => kinah.ToString("N0"),
+    };
 }

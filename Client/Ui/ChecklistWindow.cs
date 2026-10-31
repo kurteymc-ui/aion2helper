@@ -359,6 +359,9 @@ public sealed class ChecklistWindow : Window
     /// Every character on one page: the Odyle energy now (with the recharges since the meter last saw it), when it is full, the daily tasks, Shugo Festival,
     /// Dimensional Invasion, Nightmare, Ascension Trial and the daily dungeon, with the next daily and weekly reset on top. A line opens the character.
     /// </summary>
+    /// <summary>What a reward cube costs in most level-45 content (the site's Odyle Energy guide: 20 to 80 elsewhere).</summary>
+    private const int OdyleClaim = 40;
+
     private void RenderRoster(string language)
     {
         LocalizationManager loc = LocalizationManager.Instance;
@@ -388,7 +391,41 @@ public sealed class ChecklistWindow : Window
                 + (full > 0 ? "  ·  " + string.Format(CultureInfo.CurrentCulture, loc[full == 1 ? "Checklist.RosterFullOne" : "Checklist.RosterFullMany"], full) : ""), full > 0 ? "Brush.Warning" : "Brush.Accent"));
         }
 
+        if (known.Count > 0)
+        {
+            resets.Children.Add(Pill(loc["Checklist.RosterClaims"], known.Sum(o => (o.Count + o.Bonus) / OdyleClaim).ToString("N0", CultureInfo.CurrentCulture), "Brush.Accent"));
+        }
+
         head.Children.Add(resets);
+
+        // the plan: whom to play next so no recharge is lost (the full ones first, then the one full soonest)
+        var order = all.Where(c => odyle[c.Name] is not null).Select(c => (c.Name, O: odyle[c.Name]!))
+            .OrderByDescending(x => x.O.Full).ThenBy(x => x.O.FullAt ?? DateTime.MaxValue).Take(3).ToList();
+        if (order.Count > 0)
+        {
+            var plan = new TextBlock { TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 8, 0, 0), FontSize = 12.5, ToolTip = loc["Checklist.RosterPlanTip"] };
+            plan.SetResourceReference(TextBlock.ForegroundProperty, "Brush.TextMuted");
+            plan.Inlines.Add(new System.Windows.Documents.Run(loc["Checklist.RosterPlan"] + " "));
+            for (int k = 0; k < order.Count; k++)
+            {
+                var (name, o) = order[k];
+                if (k > 0)
+                {
+                    plan.Inlines.Add(new System.Windows.Documents.Run("   →   "));
+                }
+
+                var who = new System.Windows.Documents.Run(name) { FontWeight = FontWeights.SemiBold };
+                who.SetResourceReference(System.Windows.Documents.TextElement.ForegroundProperty, o.Full ? "Brush.Warning" : "Brush.Text");
+                plan.Inlines.Add(who);
+                int claims = (o.Count + o.Bonus) / OdyleClaim;
+                plan.Inlines.Add(new System.Windows.Documents.Run(" (" + (o.Full ? loc["Checklist.RosterPlanFull"]
+                    : o.FullAt is { } at ? string.Format(CultureInfo.CurrentCulture, loc["Checklist.RosterPlanIn"], InText(at - utcNow)) : "–")
+                    + (claims > 0 ? $", {claims} × 40" : "") + ")"));
+            }
+
+            head.Children.Add(plan);
+        }
+
         _body.Children.Add(Card(head));
 
         // the table: the same columns for every character

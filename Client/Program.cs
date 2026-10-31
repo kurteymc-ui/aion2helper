@@ -1404,6 +1404,13 @@ internal static class Program
         {
             window.CompactOverlayPanel.Visibility = System.Windows.Visibility.Visible;
             panel = window.CompactOverlayPanel;
+            if (kind == "callout")
+            {
+                // the boss timers line: one cast coming now, the next in 12 s, the enrage in 48 s
+                Ui.MainWindow.ShowBossCallout(window.OverlayBossCalloutText, new Upload.BossCalloutFrame("Brigade General Vasharti",
+                    new[] { new Upload.BossCallout("Earth Shatter", 0, true), new Upload.BossCallout("Flame Breath", 11.4, false) }, TimeSpan.FromSeconds(48), 37));
+                window.OverlayBossCallout.Visibility = System.Windows.Visibility.Visible;
+            }
         }
 
         if (kind is not ("window" or "window-open"))

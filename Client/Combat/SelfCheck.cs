@@ -43,6 +43,7 @@ public static class SelfCheck
         ok &= SelfCheckHitKinds.Run();
         ok &= SelfCheckProtocolHealth.Run();
         ok &= SelfCheckTickets.Run();
+        ok &= SelfCheckBossTimers.Run();
         ok &= SelfCheckInstanceTimer.Run();
         ok &= SelfCheckCubesGuards.Run();
         ok &= SelfCheckMaps.Run();

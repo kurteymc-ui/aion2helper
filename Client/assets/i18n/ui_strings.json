@@ -9419,6 +9419,34 @@
     "ja": "{0} 個拾得、{1} 種類",
     "ko": "{0}개 획득, {1}종"
   },
+  "Loot.Worth": {
+    "en": "Worth about {0} Kinah at the market prices of {1}",
+    "de": "Wert etwa {0} Kinah zu den Marktpreisen von {1}"
+  },
+  "Loot.WorthHour": {
+    "en": "{0} Kinah per hour",
+    "de": "{0} Kinah pro Stunde"
+  },
+  "Loot.WorthUnpriced": {
+    "en": "{0} kinds without a market price",
+    "de": "{0} Sorten ohne Marktpreis"
+  },
+  "Loot.WorthLoading": {
+    "en": "Loading the market prices…",
+    "de": "Marktpreise werden geladen…"
+  },
+  "Loot.WorthNone": {
+    "en": "The market prices couldn’t be loaded right now.",
+    "de": "Die Marktpreise konnten gerade nicht geladen werden."
+  },
+  "Loot.WorthTip": {
+    "en": "Each item at its average sale of the last 28 days (else its cheapest listing), before the market's fee. Prices of {0}.",
+    "de": "Jeder Gegenstand zu seinem Durchschnittsverkauf der letzten 28 Tage (sonst zum günstigsten Angebot), vor der Marktgebühr. Preise von {0}."
+  },
+  "Loot.ItemWorth": {
+    "en": "{0} each · {1} in all",
+    "de": "{0} je Stück · {1} insgesamt"
+  },
   "Loot.ItemTip": {
     "en": "{0} pickups, first at {1}, last at {2}",
     "de": "{0} Aufnahmen, erste um {1}, letzte um {2}",
@@ -13336,6 +13364,26 @@
   "Checklist.RosterOdyle": {
     "en": "Odyle Energy of all characters",
     "de": "Odenergie aller Charaktere"
+  },
+  "Checklist.RosterClaims": {
+    "en": "Claims ready (40 each)",
+    "de": "Abholungen bereit (je 40)"
+  },
+  "Checklist.RosterPlan": {
+    "en": "Play next:",
+    "de": "Als Nächstes spielen:"
+  },
+  "Checklist.RosterPlanFull": {
+    "en": "full, its recharge is being lost",
+    "de": "voll, die Aufladung geht verloren"
+  },
+  "Checklist.RosterPlanIn": {
+    "en": "full in {0}",
+    "de": "voll in {0}"
+  },
+  "Checklist.RosterPlanTip": {
+    "en": "So no Odyle Energy is lost: the full characters first, then the one full soonest. A claim is a reward cube: 40 Odyle Energy in most level-45 content (20 to 80 elsewhere); clearing is free and charged energy pays for claims too.",
+    "de": "Damit keine Odenergie verloren geht: zuerst die vollen Charaktere, dann der, der als Nächstes voll ist. Eine Abholung ist ein Belohnungswürfel: 40 Odenergie in den meisten Inhalten auf Stufe 45 (20 bis 80 anderswo); das Abschließen ist kostenlos, und aufgeladene Energie zahlt auch."
   },
   "Checklist.RosterFullOne": {
     "en": "1 full: its recharge is wasted",

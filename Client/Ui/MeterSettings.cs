@@ -293,6 +293,10 @@ public sealed class MeterSettings
     /// the player's own Discord account only (to check them on the phone). On until switched off (the checklist's roster page).</summary>
     public bool SyncRoster { get; set; } = true;
 
+    /// <summary>The meter overlay's boss timers line: the boss's next casts as everyone's uploads learnt them, and the time to its rage where the game data
+    /// knows it (Upload/BossTimers.cs). On until switched off (the overlay's menu).</summary>
+    public bool OverlayBossTimers { get; set; } = true;
+
     /// <summary>The app's column of sections shows only its pictures (MainWindow.Shell.cs).</summary>
     public bool AppNavCollapsed { get; set; }
 

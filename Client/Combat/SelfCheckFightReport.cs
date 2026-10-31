@@ -26,7 +26,7 @@ public static class SelfCheckFightReport
             && r.PlayerOf(5)!.Deaths.Count == 1 && r.Deaths == 1 && r.PartyDeaths.Count == 1 && you.TakenBy.Count == 1 && you.Taken > 0;
         Console.WriteLine($"  -> shields, avoided attacks, damage taken by source and the death are on the right players: {defense}");
 
-        bool boss = r.BossTargets.Count == 3 && r.BossTargets[0].Start == 0 && r.BossTargets[0].End == 24 && r.BossTargets[0].Target == 3 && r.BossTargets[1].Target == 1 && r.CastBars.Count == 5
+        bool boss = r.BossTargets.Count == 3 && r.BossTargets[0].Start == 0 && r.BossTargets[0].End == 24 && r.BossTargets[0].Target == 3 && r.BossTargets[1].Target == 1 && r.CastBars.Count == 5 && r.CastBarIds.Count == 5 && r.CastBarIds.All(i => i > 0)
             && Math.Abs(r.CastBars[3].End - 41) < 0.01 && r.BossCasts.Count == 5;
         Console.WriteLine($"  -> whom the boss aimed at, its casts and cast bars: {boss}");
 

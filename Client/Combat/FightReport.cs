@@ -135,6 +135,9 @@ public sealed class FightReport
     /// <summary>The boss's wind-ups (the cast bars): start, end and the skill.</summary>
     public IReadOnlyList<(double Start, double End, string Name)> CastBars { get; init; } = Array.Empty<(double, double, string)>();
 
+    /// <summary>The skill id of each of <see cref="CastBars"/> (the same order): the website learns the boss's timers from them, in any language.</summary>
+    public IReadOnlyList<int> CastBarIds { get; init; } = Array.Empty<int>();
+
     /// <summary>The players' deaths over the fight.</summary>
     public IReadOnlyList<(double At, int Player)> PartyDeaths { get; init; } = Array.Empty<(double, int)>();
 
@@ -379,6 +382,7 @@ public sealed class FightReport
         IReadOnlyList<StaggerPhase> staggers = Array.Empty<StaggerPhase>();
         var bossCasts = new List<(double, string)>();
         var castBars = new List<(double, double, string)>();
+        var castBarIds = new List<int>();
         var bossTargets = new List<(double, double, int)>();
         if (input.BossId is int bossId)
         {
@@ -394,6 +398,7 @@ public sealed class FightReport
             {
                 double s = (w.At - start).TotalSeconds;
                 castBars.Add((s, Math.Min(seconds, s + w.DurationMs / 1000.0), Aion2SkillNames.NameOf(w.SkillId)));
+                castBarIds.Add(w.SkillId);
             }
 
             var changes = (input.Extras.Targets ?? Array.Empty<TargetChange>()).Where(t => t.Actor == bossId && t.At <= end).OrderBy(t => t.At).ToList();
@@ -444,6 +449,7 @@ public sealed class FightReport
             BossTargets = bossTargets,
             BossCasts = bossCasts,
             CastBars = castBars,
+            CastBarIds = castBarIds,
             PartyDeaths = deaths.Select(d => ((d.At - start).TotalSeconds, d.Entity)).ToList(),
         };
     }

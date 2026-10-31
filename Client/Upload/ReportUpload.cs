@@ -19,7 +19,7 @@ public sealed record ReportSupportItemUpload(string N, int Id, bool T, int Up, l
 
 public sealed record ReportSupportUpload(int P, double Given, IReadOnlyList<ReportSupportItemUpload> Items);
 
-public sealed record ReportCastUpload(int S, int E, string N);
+public sealed record ReportCastUpload(int S, int E, string N, int? I = null);
 
 public sealed record ReportDeathUpload(int At, string? By, long? Hit);
 
@@ -87,7 +87,7 @@ public sealed record ReportUpload(
             r.Staggers.SelectMany(s => new[] { Tenths(s.Start), Tenths(s.End) }).ToList(),
             r.BossTargets.Where(t => Of(t.Target) >= 0).SelectMany(t => new[] { Tenths(t.Start), Tenths(t.End), Of(t.Target) }).ToList(),
             r.BossCasts.Select(c => Tenths(c.At)).Take(MaxCasts).ToList(),
-            r.CastBars.Take(MaxCasts).Select(c => new ReportCastUpload(Tenths(c.Start), Tenths(c.End), Cut(c.Name, 60))).ToList(),
+            r.CastBars.Take(MaxCasts).Select((c, k) => new ReportCastUpload(Tenths(c.Start), Tenths(c.End), Cut(c.Name, 60), k < r.CastBarIds.Count && r.CastBarIds[k] > 0 ? r.CastBarIds[k] : null)).ToList(),
             r.PartyDeaths.Where(d => Of(d.Player) >= 0).SelectMany(d => new[] { Tenths(d.At), Of(d.Player) }).ToList());
     }
 

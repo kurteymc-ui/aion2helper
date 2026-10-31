@@ -16,6 +16,9 @@ public static class Aion2BossRage
 
     public static int SecondsFor(int? npcId) => npcId is int id && Load().TryGetValue(id, out int seconds) ? seconds : DefaultSeconds;
 
+    /// <summary>Whether the table names this boss's time (else <see cref="SecondsFor"/> is only the usual five minutes, too unsure to count down to).</summary>
+    public static bool Known(int? npcId) => npcId is int id && Load().ContainsKey(id);
+
     private static IReadOnlyDictionary<int, int> Load()
     {
         if (_cache is { } cached)

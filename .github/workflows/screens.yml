@@ -35,6 +35,7 @@ jobs:
             @('render-overlay', 'chips.png', 'chips'),
             @('render-overlay', 'menu.png', 'menu'),
             @('render-overlay', 'menu-dummy.png', 'menu-dummy'),
+            @('render-overlay', 'callout.png', 'callout'),
             @('render-checklist', 'roster.png', 'roster'),
             @('render-app', 'app-home.png', 'home'),
             @('render-app', 'app-overlays.png', 'overlays'),
