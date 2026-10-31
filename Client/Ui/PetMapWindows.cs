@@ -374,6 +374,126 @@ public sealed class PetMapWindow : MovableOverlay
     public double MeHeading { get; set; }
     private readonly TextBlock _meUnknown;
 
+    /// <summary>Round instead of square (to lay over the game's minimap): the view is cut to a circle and the edge arrows sit on it.</summary>
+    public bool Round { get; set; }
+
+    private IReadOnlyList<(double X, double Y, double Radius, int Step)> _route = Array.Empty<(double, double, double, int)>();
+    private readonly List<UIElement> _routeParts = new();
+    private static readonly Brush RouteGold = PetMapPalette.BrushOf(Color.FromRgb(0xE8, 0xC3, 0x5A));
+    private static readonly Brush RouteGoldSoft = PetMapPalette.BrushOf(Color.FromArgb(0x26, 0xE8, 0xC3, 0x5A));
+    private static readonly Brush RouteDark = PetMapPalette.BrushOf(Color.FromArgb(0xE6, 0x10, 0x14, 0x1A));
+
+    /// <summary>The pet route to draw (world units): the stop being farmed first, then the next ones. Empty: no route.</summary>
+    public void SetRoute(IReadOnlyList<(double X, double Y, double Radius, int Step)> stops) => _route = stops;
+
+    /// <summary>Where a ray from the middle towards (dx, dy) leaves the view, a little inside it: on the square's edge, or on the circle when round.</summary>
+    private (double X, double Y) EdgeOf(double cx, double cy, double dx, double dy)
+    {
+        if (Round)
+        {
+            double r = Math.Min(cx, cy) - 13, len = Math.Max(Math.Sqrt(dx * dx + dy * dy), 1e-6);
+            return (cx + dx / len * r, cy + dy / len * r);
+        }
+
+        double t = Math.Min((cx - 13) / Math.Max(Math.Abs(dx), 1e-6), (cy - 13) / Math.Max(Math.Abs(dy), 1e-6));
+        return (cx + dx * t, cy + dy * t);
+    }
+
+    /// <summary>
+    /// The route: a dashed path from the player through the next stops, the stop being farmed with its reach and its number in gold, the next
+    /// ones numbered, and, when the stop is out of view, a gold arrow on the edge towards it with its number and distance.
+    /// </summary>
+    private void DrawRoute(double worldX, double worldY, double ppu, double cx, double cy, double vw, double vh)
+    {
+        foreach (UIElement part in _routeParts)
+        {
+            _canvas.Children.Remove(part);
+        }
+
+        _routeParts.Clear();
+        if (_route.Count == 0)
+        {
+            return;
+        }
+
+        void Add(UIElement e, int z)
+        {
+            Panel.SetZIndex(e, z);
+            _canvas.Children.Add(e);
+            _routeParts.Add(e);
+        }
+
+        bool Inside(double x, double y, double margin) => Round
+            ? (x - cx) * (x - cx) + (y - cy) * (y - cy) <= (Math.Min(cx, cy) - margin) * (Math.Min(cx, cy) - margin)
+            : x >= margin && y >= margin && x <= vw - margin && y <= vh - margin;
+        var shown = _route.Take(6).Select(s => (Stop: s, X: cx + (s.X - worldX) * ppu, Y: cy + (s.Y - worldY) * ppu)).ToList();
+        var path = new Polyline { Stroke = RouteGold, StrokeThickness = 2.2, Opacity = 0.75, StrokeDashArray = new DoubleCollection { 3, 2.5 }, IsHitTestVisible = false };
+        path.Points.Add(new Point(cx, cy));
+        foreach (var (_, x, y) in shown)
+        {
+            path.Points.Add(new Point(x, y));
+        }
+
+        Add(path, 3);
+        for (int i = shown.Count - 1; i >= 0; i--)
+        {
+            var (stop, x, y) = shown[i];
+            if (!Inside(x, y, 6))
+            {
+                continue;
+            }
+
+            if (i == 0)
+            {
+                double reach = Math.Max(12, stop.Radius * 100 * ppu);
+                var ring = new Ellipse { Width = 2 * reach, Height = 2 * reach, Stroke = RouteGold, StrokeThickness = 1.6, StrokeDashArray = new DoubleCollection { 4, 3 }, Fill = RouteGoldSoft, IsHitTestVisible = false };
+                Canvas.SetLeft(ring, x - reach);
+                Canvas.SetTop(ring, y - reach);
+                Add(ring, 2);
+            }
+
+            double size = i == 0 ? 22 : 17;
+            var badge = new Border
+            {
+                Width = size, Height = size, CornerRadius = new CornerRadius(size / 2), Background = i == 0 ? RouteGold : RouteDark, BorderBrush = RouteGold, BorderThickness = new Thickness(1.6),
+                IsHitTestVisible = false,
+                Child = new TextBlock { Text = stop.Step.ToString(System.Globalization.CultureInfo.InvariantCulture), FontSize = i == 0 ? 12 : 10.5, FontWeight = FontWeights.Bold, Foreground = i == 0 ? RouteDark : RouteGold, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center },
+                Effect = new System.Windows.Media.Effects.DropShadowEffect { BlurRadius = 4, ShadowDepth = 0, Color = Colors.Black, Opacity = 0.9 },
+            };
+            Canvas.SetLeft(badge, x - size / 2);
+            Canvas.SetTop(badge, y - size / 2);
+            Add(badge, 7);
+        }
+
+        // the stop being farmed out of view: a gold arrow on the edge, its number and how far
+        var (first, fx, fy) = shown[0];
+        if (!Inside(fx, fy, 6))
+        {
+            double dx = fx - cx, dy = fy - cy, angle = Math.Atan2(dy, dx);
+            var (tipX, tipY) = EdgeOf(cx, cy, dx, dy);
+            var arrow = new Polygon
+            {
+                Points = new PointCollection { new Point(13, 0), new Point(-9, -9), new Point(-4, 0), new Point(-9, 9) }, Fill = RouteGold, Stroke = RouteDark, StrokeThickness = 1.4,
+                RenderTransform = new RotateTransform(angle * 180 / Math.PI), IsHitTestVisible = false,
+                Effect = new System.Windows.Media.Effects.DropShadowEffect { BlurRadius = 4, ShadowDepth = 0, Color = Colors.Black, Opacity = 0.9 },
+            };
+            Canvas.SetLeft(arrow, tipX);
+            Canvas.SetTop(arrow, tipY);
+            Add(arrow, 8);
+            double metres = Math.Sqrt((first.X - worldX) * (first.X - worldX) + (first.Y - worldY) * (first.Y - worldY)) / 100.0;
+            var label = new Border
+            {
+                Background = RouteDark, BorderBrush = RouteGold, BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4), Padding = new Thickness(5, 1, 5, 1), IsHitTestVisible = false,
+                Child = new TextBlock { Text = string.Format(System.Globalization.CultureInfo.CurrentCulture, "{0} · {1:0} m", first.Step, metres), FontSize = 11, FontWeight = FontWeights.SemiBold, Foreground = RouteGold },
+            };
+            label.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            Size sz = label.DesiredSize;
+            Canvas.SetLeft(label, Math.Clamp(tipX - 30 * Math.Cos(angle) - sz.Width / 2, 3, Math.Max(3, vw - sz.Width - 3)));
+            Canvas.SetTop(label, Math.Clamp(tipY - 30 * Math.Sin(angle) - sz.Height / 2, 3, Math.Max(3, vh - sz.Height - 3)));
+            Add(label, 8);
+        }
+    }
+
     public PetMapWindow() : base("Aion DPS Pet Map", new Border { Child = null }, Load, Save, SystemParameters.WorkArea.Right - ViewSize - 40, 120, LoadSize, SaveSize, OverlayEdgeMode.CropAnchored)
     {
         _me = new Polygon
@@ -593,7 +713,7 @@ public sealed class PetMapWindow : MovableOverlay
 
         // a chosen pet with nothing in view: an arrow on the edge, in its colour, towards its nearest spawn point
         int arrow = 0;
-        double halfX = cx, halfY = cy, reachX = halfX - 13, reachY = halfY - 13;
+        double halfX = cx, halfY = cy;
         // one pass over all points (not one pass per pet): per pet whether one is in view, and the nearest one out of view
         var seen = new Dictionary<int, (bool Visible, double BestSq, double Bx, double By)>();
         void Consider(int id, float x, float y)
@@ -643,7 +763,7 @@ public sealed class PetMapWindow : MovableOverlay
 
         void PlaceArrow(Color color, double bx, double by)
         {
-            double t = Math.Min(reachX / Math.Max(Math.Abs(bx), 1e-6), reachY / Math.Max(Math.Abs(by), 1e-6)); // where the ray to the point meets the square
+            var (edgeX, edgeY) = EdgeOf(halfX, halfY, bx, by); // where the ray to the point meets the edge (the square, or the circle when round)
             if (arrow >= _edgeArrows.Count)
             {
                 var a = new Polygon { Points = new PointCollection { new Point(11, 0), new Point(-8, -8), new Point(-4, 0), new Point(-8, 8) }, Stroke = Brushes.White, StrokeThickness = 1.6, IsHitTestVisible = false, Effect = new System.Windows.Media.Effects.DropShadowEffect { BlurRadius = 4, ShadowDepth = 0, Color = Colors.Black, Opacity = 0.9 } };
@@ -654,8 +774,8 @@ public sealed class PetMapWindow : MovableOverlay
             var ar = _edgeArrows[arrow++];
             ar.Fill = PetMapPalette.BrushOf(color);
             ar.RenderTransform = new RotateTransform(Math.Atan2(by, bx) * 180 / Math.PI);
-            Canvas.SetLeft(ar, halfX + bx * t);
-            Canvas.SetTop(ar, halfY + by * t);
+            Canvas.SetLeft(ar, edgeX);
+            Canvas.SetTop(ar, edgeY);
             ar.Visibility = Visibility.Visible;
         }
 
@@ -720,6 +840,9 @@ public sealed class PetMapWindow : MovableOverlay
         }
 
         DrawGuards(guards, worldX, worldY, ppu, cx, cy, vw, vh);
+        DrawRoute(worldX, worldY, ppu, cx, cy, vw, vh);
+        // round: the view is a circle (the minimap's shape)
+        _canvas.Clip = Round ? new EllipseGeometry(new Point(cx, cy), cx, cy) : null;
 
         Canvas.SetLeft(_me, cx);
         Canvas.SetTop(_me, cy);
@@ -815,10 +938,8 @@ public sealed class PetMapWindow : MovableOverlay
             }
 
             // out of view: the arrow on the edge, the distance beside it (towards the middle)
-            double reachX = cx - 13, reachY = cy - 13;
-            double t = Math.Min(reachX / Math.Max(Math.Abs(dx), 1e-6), reachY / Math.Max(Math.Abs(dy), 1e-6));
             double angle = Math.Atan2(dy, dx);
-            double tipX = cx + dx * t, tipY = cy + dy * t;
+            var (tipX, tipY) = EdgeOf(cx, cy, dx, dy);
             mark.Arrow.RenderTransform = new RotateTransform(angle * 180 / Math.PI);
             Canvas.SetLeft(mark.Arrow, tipX);
             Canvas.SetTop(mark.Arrow, tipY);
@@ -850,14 +971,35 @@ public sealed class PetListWindow : MovableOverlay
     /// <summary>How many rows the player can see at most (a row is about 19 units high), plus a reserve: more are not worth building.</summary>
     public int RowCapacity => (int)Math.Ceiling(HeightLimit / 19.0) + 10;
 
+    private readonly TextBlock _headTitle = new() { FontWeight = FontWeights.Bold, FontSize = 13, Foreground = new SolidColorBrush(Color.FromRgb(0xE8, 0xC3, 0x5A)), TextWrapping = TextWrapping.Wrap };
+    private readonly TextBlock _headDetail = new() { FontSize = 11.5, Foreground = new SolidColorBrush(Color.FromRgb(0x9D, 0xB3, 0xC2)), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 1, 0, 0) };
+    private readonly Border _head = new() { Visibility = Visibility.Collapsed, BorderThickness = new Thickness(0, 0, 0, 1), Padding = new Thickness(0, 0, 0, 5), Margin = new Thickness(0, 0, 0, 4), MaxWidth = 380 };
+
     public PetListWindow() : base("Aion DPS Pet List", new Border { Child = null }, Load, Save, SystemParameters.WorkArea.Right - 300, 580, LoadSize, SaveSize)
     {
+        _head.BorderBrush = new SolidColorBrush(Color.FromArgb(0x66, 0xE8, 0xC3, 0x5A));
+        var head = new StackPanel();
+        head.Children.Add(_headTitle);
+        head.Children.Add(_headDetail);
+        _head.Child = head;
+        var stack = new StackPanel();
+        stack.Children.Add(_head);
+        stack.Children.Add(_rows);
         var panel = new Border
         {
             Background = new SolidColorBrush(Color.FromArgb(0x99, 0x0E, 0x18, 0x20)), BorderBrush = new SolidColorBrush(Color.FromArgb(0x99, 0x29, 0x45, 0x57)),
-            BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(6), Padding = new Thickness(10, 6, 10, 6), Child = _rows,
+            BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(6), Padding = new Thickness(10, 6, 10, 6), Child = stack,
         };
         Body = panel;
+    }
+
+    /// <summary>The route's head over the rows: the stop being farmed and how far (gold), what comes after; null: no head.</summary>
+    public void RenderHead(string? title, string? detail)
+    {
+        _head.Visibility = title is null ? Visibility.Collapsed : Visibility.Visible;
+        _headTitle.Text = title ?? "";
+        _headDetail.Text = detail ?? "";
+        _headDetail.Visibility = string.IsNullOrEmpty(detail) ? Visibility.Collapsed : Visibility.Visible;
     }
 
     private static (double?, double?) LoadSize()

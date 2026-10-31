@@ -6766,6 +6766,9 @@ public partial class MainWindow : Window
                 _petMapController ??= new PetMapController(() => _source?.Entities as Aion2EntityDirectory);
                 var (map, list) = _petMapController.CreateViews();
                 var stack = new StackPanel();
+                // the pet route (the website's), which the map guides along
+                var (routeCard, routeRefresh) = PetRouteControls();
+                stack.Children.Add(routeCard);
                 stack.Children.Add(ModulePage.Caption(loc["Settings.PetMap.CardMap"]));
                 // why the map is empty (no game read yet, no position, nothing picked) or what it shows, as the controller sees it
                 var mapStatus = new TextBlock { TextWrapping = TextWrapping.Wrap, FontSize = 12.5, Margin = new Thickness(0, 0, 0, 8), MaxWidth = 560, HorizontalAlignment = HorizontalAlignment.Left };
@@ -6773,6 +6776,7 @@ public partial class MainWindow : Window
                 var statusTimer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(700) };
                 statusTimer.Tick += (_, _) =>
                 {
+                    routeRefresh();
                     string text = _petMapController?.Status ?? "";
                     mapStatus.Text = text;
                     mapStatus.Visibility = text.Length > 0 ? Visibility.Visible : Visibility.Collapsed;

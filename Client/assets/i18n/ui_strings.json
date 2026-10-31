@@ -14441,5 +14441,115 @@
     "en": "What the player’s buffs added to the others’ damage per second (rDPS minus nDPS).",
     "de": "Was die Buffs des Spielers dem Schaden pro Sekunde der anderen hinzufügten (rDPS minus nDPS).",
     "fr": "Ce que les buffs du joueur ont ajouté aux dégâts par seconde des autres (rDPS moins nDPS)."
+  },
+  "PetRoute.Title": {
+    "en": "Pet route",
+    "de": "Haustier-Route",
+    "fr": "Itinéraire des familiers"
+  },
+  "PetRoute.Lede": {
+    "en": "The farming route of the Pet Soul Map Atlas on aion2helper.com, planned the same way here: each pet at one of its densest spots, stops where several pets are close together, teleports where they save time. The map overlay leads you to the next stop and moves on by itself when your collection says its pets are done.",
+    "de": "Die Farm-Route des Pet Soul Map Atlas auf aion2helper.com, hier genauso geplant: jedes Haustier an einer seiner dichtesten Stellen, Stopps wo mehrere Haustiere nah beieinander sind, Teleports wo sie Zeit sparen. Die Karte führt dich zum nächsten Stopp und geht von selbst weiter, wenn deine Sammlung sagt, dass seine Haustiere fertig sind.",
+    "fr": "L’itinéraire de farm du Pet Soul Map Atlas sur aion2helper.com, planifié de la même façon ici : chaque familier à l’un de ses endroits les plus denses, des arrêts là où plusieurs familiers sont proches, des téléportations quand elles font gagner du temps. La carte te guide vers l’arrêt suivant et passe au prochain toute seule quand ta collection dit que ses familiers sont faits."
+  },
+  "PetRoute.On": {
+    "en": "Guide me along the route on the map",
+    "de": "Mich auf der Karte die Route entlang führen",
+    "fr": "Me guider sur la carte le long de l’itinéraire"
+  },
+  "PetRoute.Genera": {
+    "en": "Genera",
+    "de": "Gattungen",
+    "fr": "Genres"
+  },
+  "PetRoute.FromHere": {
+    "en": "Start near me",
+    "de": "In meiner Nähe beginnen",
+    "fr": "Commencer près de moi"
+  },
+  "PetRoute.FromHereTip": {
+    "en": "Off: the route starts at your faction’s start camp, as on the website.",
+    "de": "Aus: Die Route beginnt am Startlager deiner Fraktion, wie auf der Website.",
+    "fr": "Désactivé : l’itinéraire commence au camp de départ de ta faction, comme sur le site."
+  },
+  "PetRoute.Next": {
+    "en": "Next stop",
+    "de": "Nächster Stopp",
+    "fr": "Arrêt suivant"
+  },
+  "PetRoute.NextTip": {
+    "en": "Pass over this stop for now and go on from where you are.",
+    "de": "Diesen Stopp vorerst überspringen und von hier aus weitermachen.",
+    "fr": "Passer cet arrêt pour l’instant et continuer depuis ta position."
+  },
+  "PetRoute.Again": {
+    "en": "Plan again from here",
+    "de": "Von hier neu planen",
+    "fr": "Replanifier d’ici"
+  },
+  "PetRoute.AgainTip": {
+    "en": "Plans the whole route again from where you stand (stops you passed over come back).",
+    "de": "Plant die ganze Route neu von deinem Standort (übersprungene Stopps kommen zurück).",
+    "fr": "Replanifie tout l’itinéraire depuis ta position (les arrêts passés reviennent)."
+  },
+  "PetRoute.Round": {
+    "en": "Round map",
+    "de": "Runde Karte",
+    "fr": "Carte ronde"
+  },
+  "PetRoute.MarksOnly": {
+    "en": "Only the marks, no map picture",
+    "de": "Nur die Markierungen, kein Kartenbild",
+    "fr": "Seulement les repères, sans image de carte"
+  },
+  "PetRoute.MarksOnlyTip": {
+    "en": "To lay the map over the game’s minimap: make it round, place it on the minimap (Overlays page or unlock it) and set its range to the minimap’s.",
+    "de": "Um die Karte über die Minikarte des Spiels zu legen: rund machen, auf die Minikarte setzen (Seite Overlays oder entsperren) und ihre Reichweite an die der Minikarte anpassen.",
+    "fr": "Pour poser la carte sur la mini-carte du jeu : rends-la ronde, place-la sur la mini-carte (page Overlays ou déverrouille-la) et règle sa portée sur celle de la mini-carte."
+  },
+  "PetRoute.Off": {
+    "en": "The route guide is off.",
+    "de": "Die Routenführung ist aus.",
+    "fr": "Le guidage est désactivé."
+  },
+  "PetRoute.NoRoute": {
+    "en": "No route here: it covers Verteron, Altgard and Lower Reshanta. It starts once the meter knows where you are.",
+    "de": "Hier keine Route: Sie deckt Verteron, Altgard und das untere Reshanta ab. Sie beginnt, sobald der Meter weiß, wo du bist.",
+    "fr": "Pas d’itinéraire ici : il couvre Verteron, Altgard et le Reshanta inférieur. Il commence dès que le meter sait où tu es."
+  },
+  "PetRoute.Done": {
+    "en": "Route done: no pet of these genera left to farm here",
+    "de": "Route fertig: Hier ist kein Haustier dieser Gattungen mehr zu farmen",
+    "fr": "Itinéraire terminé : plus aucun familier de ces genres à farmer ici"
+  },
+  "PetRoute.DoneHow": {
+    "en": "Pick more genera on the Interactive map page.",
+    "de": "Wähle weitere Gattungen auf der Seite Interaktive Karte.",
+    "fr": "Choisis d’autres genres sur la page Carte interactive."
+  },
+  "PetRoute.Stop": {
+    "en": "Stop {0} of {1} · {2}",
+    "de": "Stopp {0} von {1} · {2}",
+    "fr": "Arrêt {0} sur {1} · {2}"
+  },
+  "PetRoute.Wind": {
+    "en": "Teleport to {0}, then the windstream to {1}",
+    "de": "Teleport nach {0}, dann der Windstrom nach {1}",
+    "fr": "Téléporte-toi à {0}, puis le courant aérien vers {1}"
+  },
+  "PetRoute.Leave": {
+    "en": "Back to the mainland first (teleport)",
+    "de": "Zuerst zurück aufs Festland (Teleport)",
+    "fr": "D’abord retour sur le continent (téléportation)"
+  },
+  "PetRoute.Teleport": {
+    "en": "Quicker: teleport to {0}, then {1} m",
+    "de": "Schneller: Teleport nach {0}, dann {1} m",
+    "fr": "Plus rapide : téléporte-toi à {0}, puis {1} m"
+  },
+  "PetRoute.Then": {
+    "en": "Then stop {0} · {1}",
+    "de": "Danach Stopp {0} · {1}",
+    "fr": "Ensuite l’arrêt {0} · {1}"
   }
 }

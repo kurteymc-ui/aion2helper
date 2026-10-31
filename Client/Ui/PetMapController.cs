@@ -484,6 +484,17 @@ public sealed class PetMapController : IDisposable
         }
 
         ShowLiveGather(gatherKinds, known, tx, ty);
+        UpdateRoute(settings, maxPets, known, tx, ty);
+        var routeStops = settings.PetRouteOn && _plan is { } routePlan
+            ? routePlan.Stops.Take(6).Select(st => (st.X * 100, st.Z * 100, st.Radius, st.Step)).ToList()
+            : new List<(double, double, double, int)>();
+        _map.Round = settings.PetMapRound;
+        _map.SetRoute(routeStops);
+        foreach (var view in _mapViews)
+        {
+            view.Round = settings.PetMapRound;
+            view.SetRoute(routeStops);
+        }
 
         // Glide to the reported position
         if (!_haveView || !known || Math.Abs(_x - tx) + Math.Abs(_y - ty) > 8000)
@@ -500,6 +511,8 @@ public sealed class PetMapController : IDisposable
 
         // without a known map the list names everything chosen (no distances; not the whole collection); with one, only what stands on it
         var petsHere = _current is null ? (auto ? new List<int>() : chosen.OrderBy(i => i).ToList()) : _points.Select(p => p.PetId).Distinct().OrderBy(i => i).ToList();
+        // on the route: the pets of the stop being farmed lead the list
+        var stopPets = settings.PetRouteOn && _plan?.Stops.FirstOrDefault() is { } farming ? farming.Pets.Where(chosen.Contains).ToList() : new List<int>();
         var colors = petsHere.Select((id, i) => (id, i)).ToDictionary(t => t.id, t => PetMapPalette.Of(t.i));
         var live = known
             ? directory!.LiveMobs().SelectMany(m => Aion2Pets.PetsOfNpc(m.NpcId).Where(chosen.Contains).Select(pet => (pet, m.X, m.Y))).ToList()
@@ -520,7 +533,9 @@ public sealed class PetMapController : IDisposable
             var guards = settings.ShowGuards && known && Aion2Guards.IsHostileMap(_current.Table, _faction) ? directory!.LiveGuards() : null;
             if (!nothing)
             {
-                _map.Render(_current, _x, _y, Math.Clamp(settings.PetMapRadius, 50, 500), Math.Clamp(settings.PetMapOpacity, 0.0, 1.0), _pointsShown, live, colors, _gather, known, settings.ShowPetArrows, settings.ShowGatherArrows, guards);
+                // only the marks (the map laid over the game's minimap): no picture
+                double tiles = settings.PetMapMarkersOnly ? 0.0 : Math.Clamp(settings.PetMapOpacity, 0.0, 1.0);
+                _map.Render(_current, _x, _y, Math.Clamp(settings.PetMapRadius, 50, 500), tiles, _pointsShown, live, colors, _gather, known, settings.ShowPetArrows, settings.ShowGatherArrows, guards);
             }
 
             foreach (var view in _mapViews)
@@ -546,7 +561,14 @@ public sealed class PetMapController : IDisposable
             _lastTarget = (tx, ty);
             _lastKnownFlag = known;
             // a game menu is open: the list stays only for the shop's pets (no chosen pets, no collectibles), the map steps aside
-            var rows = InMenu ? shopRows : shopRows.Concat(Rows(petsHere, colors, tx, ty, states, live, known, gatherKinds)).ToList();
+            var ordered = stopPets.Concat(petsHere.Where(id => !stopPets.Contains(id))).ToList();
+            var rows = InMenu ? shopRows : shopRows.Concat(Rows(ordered, colors, tx, ty, states, live, known, gatherKinds)).ToList();
+            var (headTitle, headDetail) = InMenu ? (null, null) : RouteHead(settings, known, tx, ty);
+            _list.RenderHead(headTitle, headDetail);
+            foreach (var view in _listViews)
+            {
+                view.RenderHead(headTitle, headDetail);
+            }
             if (nothing && rows.Count == 0)
             {
                 // nothing picked: samples on the overlay while it is placed, a word on the tool page why the list is empty
@@ -567,6 +589,139 @@ public sealed class PetMapController : IDisposable
         }
 
         ShowList(nothing && shopRows.Count == 0 ? !listLocked && !InMenu : (!InMenu || shopRows.Count > 0) && !_listUseless);
+    }
+
+    // ---- the pet route (Aion2/PetRoute.cs: the website's route) ----
+
+    private PetRoutePlan? _plan;
+    private string _planKey = "";
+    private PetRouteStop? _pin;
+    private readonly HashSet<int> _skipped = new();
+    private bool _replanHere;
+    private DateTime _routeAt = DateTime.MinValue;
+
+    /// <summary>The route now: the stop being farmed first. Null without a route (switched off, or a map without one).</summary>
+    public PetRoutePlan? Route => _plan;
+
+    /// <summary>The stop being farmed is passed over (its pets are left out for this session); the route goes on from where the player is.</summary>
+    public void NextStop()
+    {
+        if (_plan?.Stops.FirstOrDefault() is { } stop)
+        {
+            _skipped.UnionWith(stop.Pets);
+        }
+
+        ReplanHere();
+    }
+
+    /// <summary>The route is planned again from where the player is (and the passed-over pets come back).</summary>
+    public void ReplanHere(bool keepSkipped = true)
+    {
+        if (!keepSkipped)
+        {
+            _skipped.Clear();
+        }
+
+        _pin = null;
+        _planKey = "";
+        _replanHere = true;
+        _routeAt = DateTime.MinValue;
+    }
+
+    /// <summary>The faction whose camp the route starts at: the saved character's, else the map's own side.</summary>
+    private string RouteFaction() => _faction ?? (_current?.Key == "verteron" ? "Elyos" : "Asmodian");
+
+    /// <summary>
+    /// Once a second: the route of the map the player is on, for the pets still needed (not at the top level, of the genera picked), planned as the
+    /// website plans it. The first stop stays the stop being farmed while it has pets left (as on the site, a stop being farmed stays step 1); when its
+    /// pets are done (the game's collection says so, by itself) the route is planned again from where the player is, or from that stop.
+    /// </summary>
+    private void UpdateRoute(MeterSettings settings, HashSet<int> maxPets, bool known, float tx, float ty)
+    {
+        if (!settings.PetRouteOn || _current is null || !PetRoute.Covers(_current.Key))
+        {
+            _plan = null;
+            _pin = null;
+            _planKey = "";
+            return;
+        }
+
+        if ((DateTime.UtcNow - _routeAt).TotalSeconds < 1)
+        {
+            return;
+        }
+
+        _routeAt = DateTime.UtcNow;
+        var genera = (settings.PetRouteGenera is { Count: > 0 } picked ? picked : PetRoute.Genera.ToList()).ToHashSet();
+        bool Needed(int id) => !maxPets.Contains(id) && !_skipped.Contains(id);
+        var needed = Aion2Pets.AllPetIds.Where(id => PetRoute.GenusOf(id) is { } g && genera.Contains(g) && Needed(id)).OrderBy(id => id);
+        string faction = RouteFaction();
+        string key = $"{_current.Key}|{faction}|{string.Join(",", genera.OrderBy(g => g))}|{string.Join(",", needed)}|{settings.PetRouteFromHere}";
+        if (key == _planKey && !_replanHere)
+        {
+            return;
+        }
+
+        (double X, double Z, string Zone)? here = known ? (tx / 100.0, ty / 100.0, PetRoute.ZoneNear(_current.Key, tx / 100.0, ty / 100.0)) : null;
+        PetRouteStop? pin = _pin is { } p && p.Pets.Any(Needed) ? p : null;
+        (double X, double Z, string Zone)? from = null;
+        if (pin is null && (settings.PetRouteFromHere || _replanHere || _pin is not null))
+        {
+            // a new route near the player (else at the camp, as on the site), or the stop being farmed is done: on from where the player is now
+            if (here is not null)
+            {
+                from = here;
+            }
+            else if (_pin is { } done)
+            {
+                from = (done.X, done.Z, done.Zone);
+            }
+        }
+
+        _plan = PetRoute.Plan(_current.Key, faction, genera, Needed, from, pin);
+        _pin = _plan?.Stops.FirstOrDefault();
+        _planKey = key;
+        _replanHere = false;
+    }
+
+    /// <summary>The list's head on the route: the stop being farmed, its area and how far; its pets, the teleport or windstream to take, and the stop after it.</summary>
+    private (string? Title, string? Detail) RouteHead(MeterSettings settings, bool known, float tx, float ty)
+    {
+        if (!settings.PetRouteOn || _current is null || !PetRoute.Covers(_current.Key))
+        {
+            return (null, null);
+        }
+
+        var loc = LocalizationManager.Instance;
+        if (_plan is not { Stops.Count: > 0 } plan)
+        {
+            return (loc["PetRoute.Done"], loc["PetRoute.DoneHow"]);
+        }
+
+        PetRouteStop stop = plan.Stops[0];
+        double metres = known ? Math.Sqrt((stop.X * 100 - tx) * (stop.X * 100 - tx) + (stop.Z * 100 - ty) * (stop.Z * 100 - ty)) / 100.0 : double.NaN;
+        string title = string.Format(System.Globalization.CultureInfo.CurrentCulture, loc["PetRoute.Stop"], stop.Step, plan.Stops.Count, stop.Zone)
+            + (double.IsNaN(metres) ? "" : $" · {metres:0} m");
+        var lines = new List<string> { string.Join(", ", stop.Pets.Select(id => Aion2Pets.PetName(id, loc.Language) ?? PetRoute.NameOf(id) ?? $"#{id}")) };
+        if (stop.Via is { Kind: "wind" } via)
+        {
+            lines.Add(string.Format(loc["PetRoute.Wind"], via.Teleport ?? "", via.Island));
+        }
+        else if (stop.Via is { Kind: "leave" })
+        {
+            lines.Add(loc["PetRoute.Leave"]);
+        }
+        else if (stop.Teleport is { } hop && (double.IsNaN(metres) || metres > 200 + hop.Distance))
+        {
+            lines.Add(string.Format(loc["PetRoute.Teleport"], hop.Name, hop.Distance));
+        }
+
+        if (plan.Stops.Count > 1)
+        {
+            lines.Add(string.Format(loc["PetRoute.Then"], plan.Stops[1].Step, plan.Stops[1].Zone));
+        }
+
+        return (title, string.Join("\n", lines));
     }
 
     /// <summary>What the tool page says above its map: why it is empty, or what it shows (updated with every tick; empty while the map shows what was picked).</summary>

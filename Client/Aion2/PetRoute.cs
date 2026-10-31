@@ -108,6 +108,33 @@ public static class PetRoute
     /// <summary>Whether a map (Aion2MapInfo key: verteron, altgard, abyss) has a route.</summary>
     public static bool Covers(string mapKey) => Load().Maps.ContainsKey(mapKey);
 
+    /// <summary>The area a place is in (metres), as the route names them: the area of the nearest dense spawn spot within 400 m, else empty
+    /// (the islands are told apart by it).</summary>
+    public static string ZoneNear(string mapKey, double x, double z)
+    {
+        if (!Load().Maps.TryGetValue(mapKey, out MapData? m))
+        {
+            return "";
+        }
+
+        string zone = "";
+        double best = 400;
+        foreach (var (_, _, spots) in m.Clusters)
+        {
+            foreach (PetRouteSpot q in spots)
+            {
+                double d = Dist((x, z), (q.X, q.Z));
+                if (d < best)
+                {
+                    best = d;
+                    zone = q.Zone;
+                }
+            }
+        }
+
+        return zone;
+    }
+
     /// <summary>The site's English name of a pet on the route (the order of the pets of a stop follows it).</summary>
     public static string? NameOf(int petId) => Load().Maps.Values.SelectMany(m => m.Clusters).FirstOrDefault(c => c.Id == petId).Name;
 
@@ -123,7 +150,44 @@ public static class PetRoute
     internal static PetRoutePlan? PlanFrom(string path, string mapKey, string? faction, IReadOnlySet<string> genera, Func<int, bool> needed, (double X, double Z, string Zone)? from = null) =>
         PlanWith(Load(path), mapKey, faction, genera, needed, from, null);
 
-    private static double Dist((double X, double Z) a, (double X, double Z) b) => Math.Sqrt((a.X - b.X) * (a.X - b.X) + (a.Z - b.Z) * (a.Z - b.Z));
+    private static double Dist((double X, double Z) a, (double X, double Z) b) => Hypot(a.X - b.X, a.Z - b.Z);
+
+    /// <summary>
+    /// The distance as JavaScript's Math.hypot works it out (V8: scaled by the larger value, the squares added with Kahan's compensation): the plain
+    /// square root differs from it in the last digit now and then, and where two orders of the stops cost the same to the last digit (teleports cost
+    /// the same 200 m), that decided between them. With this the meter plans exactly the site's route.
+    /// </summary>
+    private static double Hypot(double x, double y)
+    {
+        x = Math.Abs(x);
+        y = Math.Abs(y);
+        double max = Math.Max(x, y);
+        if (double.IsInfinity(max))
+        {
+            return double.PositiveInfinity;
+        }
+
+        if (double.IsNaN(x) || double.IsNaN(y))
+        {
+            return double.NaN;
+        }
+
+        if (max == 0)
+        {
+            return 0;
+        }
+
+        double sum = 0, compensation = 0;
+        foreach (double v in new[] { x / max, y / max })
+        {
+            double summand = v * v - compensation;
+            double preliminary = sum + summand;
+            compensation = (preliminary - sum) - summand;
+            sum = preliminary;
+        }
+
+        return Math.Sqrt(sum) * max;
+    }
 
     private static double Dist((double X, double Z)? a, (double X, double Z) b) => a is { } p ? Dist(p, b) : double.NaN;
 

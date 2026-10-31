@@ -648,6 +648,21 @@ public sealed class MeterSettings
     /// <summary>The pets whose monsters the pet map shows (pet ids). Empty until the player picks some.</summary>
     public List<int> PetMapPets { get; set; } = new();
 
+    /// <summary>The interactive map guides along the pet route (Aion2/PetRoute.cs, the website's): the next stop, a line to it and its pets. On by default.</summary>
+    public bool PetRouteOn { get; set; } = true;
+
+    /// <summary>The genera on the route (Cogni, Natura, Fera, Varian); null: all four.</summary>
+    public List<string>? PetRouteGenera { get; set; }
+
+    /// <summary>The route starts near the player (true) or at the faction's start camp, as on the website (false).</summary>
+    public bool PetRouteFromHere { get; set; } = true;
+
+    /// <summary>The interactive map round (to lay over the game's minimap) instead of square.</summary>
+    public bool PetMapRound { get; set; }
+
+    /// <summary>The interactive map shows only its marks and the route, no map picture (to lay over the game's minimap).</summary>
+    public bool PetMapMarkersOnly { get; set; }
+
     /// <summary>The map shows every pet the player still needs (all but those at the top level, from the collection the game sends) instead of
     /// <see cref="PetMapPets"/>. Null (never switched): on while no pet was picked by hand.</summary>
     public bool? PetMapAutoPets { get; set; }

@@ -46,6 +46,8 @@ jobs:
             @('render-app', 'app-history.png', 'history'),
             @('render-app', 'app-meter.png', 'meter'),
             @('render-app', 'app-cubes.png', 'cubes'),
+            @('render-petmap', 'petmap-route.png', 'altgard', '20000', '30000', 'route'),
+            @('render-petmap', 'petmap-route-round.png', 'altgard', '20000', '30000', 'route-round'),
             @('render-app', 'app-meterlook.png', 'meterlook'),
             @('render-app', 'app-petmap.png', 'petmap'),
             @('render-app', 'app-pets.png', 'petmap.pets'),
@@ -67,7 +69,7 @@ jobs:
           )
           foreach ($s in $shots) {
             $out = Join-Path (Resolve-Path screens).Path $s[1]
-            $p = Start-Process -FilePath $exe -ArgumentList @($s[0], "`"$out`"", $s[2]) -WorkingDirectory (Resolve-Path out).Path -Wait -PassThru
+            $p = Start-Process -FilePath $exe -ArgumentList (@($s[0], "`"$out`"") + $s[2..($s.Count - 1)]) -WorkingDirectory (Resolve-Path out).Path -Wait -PassThru
             "$($s[0]) $($s[2]): exit $($p.ExitCode), $(if (Test-Path $out) { (Get-Item $out).Length } else { 'no picture' })"
           }
           # The app's own checks (recorded game frames, no game or Npcap needed): the result goes up with the pictures.
