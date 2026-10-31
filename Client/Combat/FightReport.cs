@@ -229,7 +229,7 @@ public sealed class FightReport
             }).ToList();
 
             // the effects on the player: helpful ones and harmful ones, the passives apart
-            var onMe = effects.Where(kv => kv.Key.Target == p.Id).Select(kv => kv.Value.ToEffect(kv.Key.Name, seconds, playerIds, onBoss: false)).ToList();
+            var onMe = effects.Where(kv => kv.Key.Target == p.Id && Named(kv.Key.Name)).Select(kv => kv.Value.ToEffect(kv.Key.Name, seconds, playerIds, onBoss: false)).ToList();
 
             lines.Add(new ReportPlayerLine
             {
@@ -320,7 +320,7 @@ public sealed class FightReport
             int giver = line.Player.Id;
             var items = new List<ReportSupportItem>();
             int others = Math.Max(1, playerIds.Count - 1);
-            foreach (var group in effects.Where(kv => kv.Value.SpansByCaster.ContainsKey(giver)).GroupBy(kv => kv.Key.Name))
+            foreach (var group in effects.Where(kv => kv.Value.SpansByCaster.ContainsKey(giver) && Named(kv.Key.Name)).GroupBy(kv => kv.Key.Name))
             {
                 var onParty = group.Where(kv => kv.Key.Target != giver && playerIds.Contains(kv.Key.Target)).ToList();
                 var onTarget = group.Where(kv => input.BossId is int b && kv.Key.Target == b).ToList();
@@ -371,7 +371,7 @@ public sealed class FightReport
         var bossTargets = new List<(double, double, int)>();
         if (input.BossId is int bossId)
         {
-            bossEffects = effects.Where(kv => kv.Key.Target == bossId).Select(kv => kv.Value.ToEffect(kv.Key.Name, seconds, playerIds, onBoss: true))
+            bossEffects = effects.Where(kv => kv.Key.Target == bossId && Named(kv.Key.Name)).Select(kv => kv.Value.ToEffect(kv.Key.Name, seconds, playerIds, onBoss: true))
                 .Where(e => !IsPassive(e.SkillId)).OrderByDescending(e => e.UptimePercent).ToList();
             staggers = RotationAnalysis.Build(input.Extras, bossId, start, end, Array.Empty<DamageEvent>(), nameOf).Staggers;
             foreach (SkillUse u in uses.Where(u => u.Actor == bossId))
@@ -436,6 +436,9 @@ public sealed class FightReport
             PartyDeaths = deaths.Select(d => ((d.At - start).TotalSeconds, d.Entity)).ToList(),
         };
     }
+
+    /// <summary>An effect the client's tables have no name for is shown nowhere (its number says nothing to a player).</summary>
+    private static bool Named(string name) => name.Any(char.IsLetter);
 
     /// <summary>The class's job prefix of the rDPS tables (the first two digits of its skill ids); 0 when unknown.</summary>
     private static int JobPrefix(string className) => className switch
