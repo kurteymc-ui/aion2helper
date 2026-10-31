@@ -1343,6 +1343,7 @@ public partial class MainWindow : Window
             Aion2FieldBosses.EnablePersistence();
             Aion2Tickets.EnablePersistence();
             Aion2Tickets.Changed += () => Aion2Tickets.Flush();
+            AionDPS.Upload.RosterSync.Start(); // the roster on the site (signed in only; Settings can switch it off)
             EnsureRestrictableControllers();
             _network ??= new NetworkOverlayController();
             Aion2Loot.EnablePersistence();

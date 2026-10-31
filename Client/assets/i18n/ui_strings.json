@@ -13404,5 +13404,17 @@
   "Checklist.RosterNote": {
     "en": "Each character as the meter last saw it (at its login and while it played), with what came back since: the Odyle Energy +15 every 3 hours up to the cap (also offline), the counters at the daily and weekly resets. \"~\" marks a number worked out that way; logging the character in shows the game's own. Once the meter has seen a character's recharge, its ticks land on the right minutes. Click a line for everything of that character.",
     "de": "Jeder Charakter, wie der Meter ihn zuletzt gesehen hat (beim Login und beim Spielen), mit dem, was seitdem zurückkam: die Odenergie +15 alle 3 Stunden bis zur Obergrenze (auch offline), die Zähler bei den täglichen und wöchentlichen Resets. \"~\" markiert so berechnete Zahlen; ein Login mit dem Charakter zeigt die des Spiels. Hat der Meter eine Aufladung des Charakters gesehen, liegen seine Ticks auf der richtigen Minute. Eine Zeile anklicken für alles zu diesem Charakter."
+  },
+  "Checklist.RosterSync": {
+    "en": "Also show it on aion2helper.com for my Discord account (to check it on the phone)",
+    "de": "Auch auf aion2helper.com für mein Discord-Konto zeigen (zum Nachsehen am Handy)"
+  },
+  "Checklist.RosterSyncSignIn": {
+    "en": "Also show it on aion2helper.com (needs the AION 2 Helper sign-in: App menu → AION 2 Helper account)",
+    "de": "Auch auf aion2helper.com zeigen (braucht die AION 2 Helper-Anmeldung: App-Menü → AION 2 Helper-Konto)"
+  },
+  "Checklist.RosterOpenSite": {
+    "en": "Open it on the site →",
+    "de": "Auf der Seite öffnen →"
   }
 }

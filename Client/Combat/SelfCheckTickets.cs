@@ -396,7 +396,13 @@ public static class SelfCheckTickets
             && Aion2Tickets.OdyleNow(plain with { Tickets = new Dictionary<int, TicketValue>(plain.Tickets) { [Aion2Tickets.OdyleId] = new(600, 0, 0) } }, seenUtc.AddHours(30), online: false) is { Count: 600, Full: true };
         bool lockedOdyle = Aion2Tickets.OdyleNow(alt with { Level = 20 }, seenUtc.AddHours(7), online: false) is null;
         Console.WriteLine($"  -> Odyle recharge: a regular refill sets the clock (kept over a relog)={tickLearnt}, +15 every 3 hours on that clock with next tick and full time={projected}, online as the game says={liveExact}, without a clock every 3 hours from the reading={withoutClock}, 560 without the membership and nothing above the cap={capped}, below level 22 none={lockedOdyle}");
-        bool odyleOk = tickLearnt && projected && liveExact && withoutClock && capped && lockedOdyle;
+        // what goes to the site's roster page: the reading as the game said it (no ticks added: the page adds them live), the clock, the caps
+        var built = AionDPS.Upload.RosterSync.Build(new[] { alt, plain with { Name = "Plain" } }, "Alt", seenUtc.AddHours(7));
+        bool rosterBuilt = built.Count == 2 && built[0] is { Name: "Alt", ServerId: 1304, Online: true, Premium: true, Odyle: { N: 400, B: 30, Cap: 840, PerTick: 15 } }
+            && built[0].Odyle!.TickMs == new DateTimeOffset(clockUtc).ToUnixTimeMilliseconds() && built[0].SeenMs == new DateTimeOffset(seenUtc).ToUnixTimeMilliseconds()
+            && built[1] is { Name: "Plain", Online: false, Premium: false, Odyle: { N: 550, Cap: 560 } } && built.All(b => b.Tickets.Count == 0);
+        Console.WriteLine($"  -> the roster for the site: readings as seen, clock and caps={rosterBuilt}");
+        bool odyleOk = tickLearnt && projected && liveExact && withoutClock && capped && lockedOdyle && rosterBuilt;
 
         Aion2Tickets.Reset();
         bool ok = odyleOk && missionsReset && missionsStale && stamped && firstLogin && sameDay && newcomer && maskBit2 && startedInGame && relogKeeps && remoteRead && listRead && listedEntries && deletedGone && listKept && membership && premiumKnown && plainCaps && ticketFrame && noTicket && ticketAlone && passFrame && passLevels && lostTomorrow && rules && dungeonRefill && korean && locks && missionsRead && ticks && keptUntilReset && dailyCleared && weeklyCleared && resetTimes && cooldownOk && shortKeeps && rateNotYet && rateOk && jumpOk && restartOk && listOk && truncated && gain && used && refill && notYet && bound && changed && refills && Aion2Tickets.Catalog.Count == 70;

@@ -541,6 +541,34 @@ public sealed class ChecklistWindow : Window
         note.TextWrapping = TextWrapping.Wrap;
         note.Margin = new Thickness(4, 4, 4, 0);
         _body.Children.Add(note);
+
+        // the same roster on the phone: the site keeps it for the player's own Discord account (the meter's AION 2 Helper sign-in)
+        var sync = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(4, 10, 4, 0) };
+        var box = new CheckBox { IsChecked = MeterSettings.Load().SyncRoster, VerticalAlignment = VerticalAlignment.Center };
+        box.Content = Label(AionDPS.Upload.Account.SignedIn ? loc["Checklist.RosterSync"] : loc["Checklist.RosterSyncSignIn"], "Brush.Text", 12);
+        box.Click += (_, _) =>
+        {
+            var settings = MeterSettings.Load();
+            settings.SyncRoster = box.IsChecked == true;
+            settings.Save();
+        };
+        sync.Children.Add(box);
+        TextBlock open = Label(loc["Checklist.RosterOpenSite"], "Brush.Accent", 12, bold: true);
+        open.Margin = new Thickness(12, 0, 0, 0);
+        open.Cursor = Cursors.Hand;
+        open.MouseLeftButtonUp += (_, _) =>
+        {
+            try
+            {
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(Brand.Site + "/meter/roster") { UseShellExecute = true });
+            }
+            catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException)
+            {
+                // no browser to open it with
+            }
+        };
+        sync.Children.Add(open);
+        _body.Children.Add(sync);
     }
 
     private static void Place(Grid grid, UIElement element, int row, int column)
