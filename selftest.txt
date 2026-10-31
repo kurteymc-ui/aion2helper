@@ -1,0 +1,508 @@
+[selftest] Update version comparison:
+  running build reports "1.18.8" -> 1.18.8
+  -> "v" prefix stripped: True
+  -> prerelease suffix dropped: True
+  -> assembly's trailing .0 revision does not read as newer: True
+  -> two-part tag padded to three: True
+  -> unparsable tag cannot outrank a real one: True
+  -> newer releases compare greater (incl. 10 > 9): True
+  -> the running build knows its own version: True
+[selftest] Engaged-target filter:
+  -> our own damage kept: True
+  -> a teammate on the same target kept: True
+  -> a 1v1 opponent who only ever hits US is kept: True
+  -> damage taken by a teammate is kept: True
+  -> a stranger's unrelated fight is dropped: True
+  -> nothing to anchor on leaves everything alone: True
+[selftest] Event timetable:
+  -> soon 30 min before, active with time left, silent between, past midnight, next day: True; shipped table: True; UTC events: True; server clock: True; executor bosses and Nahma: True
+[selftest] All in One rows:
+  Damage unchanged: True; All shows heal and taken: True; All Compact keeps the Damage columns: True
+[selftest] Skill icon by name: Keen Strike -> ICON_GL_SKILL_002.png, unknown -> none: True; Theostone icon: True; NPC names: True
+[selftest] Discord ASCII table:
+  -> wrapped in a code fence: True
+  -> header rule present: True
+  -> columns padded to a common width: True
+  -> numeric column right-aligned: True
+  -> no rows produces no empty frame: True
+[selftest] Toolbar icons:
+  -> Discord mark parses as a WPF geometry: True
+  -> and covers a real area (width 24.0): True
+[selftest] LiveAggregator wiring (hand-built DamageEvents):
+  0x00000002: 50000 dmg (n/a DPS) | 0x00000001: 3300 dmg (1650 DPS)
+  -> gladiator's 3 hits all recorded: True
+  -> gladiator total damage correct: True
+  -> zauberer total damage correct: True
+  -> zauberer's single hit renders as "n/a" DPS, not a fake rate: True
+  -> gladiator (multiple hits, real time span) still gets a real DPS number: True
+[selftest] Damage index against a hand count:
+  -> 8 steps: totals per source=True, targets and damage taken=True, PvP incl. late players=True, damage taken between two times=True: OK
+[selftest] Combat-source seam (FakeCombatSource):
+  -> FakeCombatSource honours pause and delivers queued batches: True
+[selftest] TCP reassembly + frame cutting (synthetic 2-byte-length frames):
+  -> out-of-order segment waits for the gap: True
+  -> both frames cut once the gap fills: True
+  -> retransmission ignored and counted: True
+  -> frame split over three segments comes out whole: True
+[selftest] TCP reassembly: zero padding and TLS records between varint frames:
+  -> padding and a (split) TLS record skipped without a resync, frames intact: True
+[selftest] Game flow detector (keepalive 0E 00 36 names the game's port):
+  -> other traffic ignored: True; two keepalives are not enough: True; the third names the port: True; too slow: True; ports counted apart: True
+[selftest] Assist: a renewed short effect (a Chanter's mantra) is an aura, a timed effect is not:
+  -> mantra renewed every second is an aura: True; a running timed effect is not: True; a long re-cast is not: True; coming back is no renewal: True
+[selftest] Network analysis (ping from acknowledgements, retransmissions, gaps):
+  -> ping min/avg/max 40/50/60 ms from the acknowledgements: True
+  -> retransmissions (client and server) and gap counted: True
+  -> game connection recognised: True
+  -> another server counts as a switch, the same server again as a reconnect: True
+  -> a 6 s silence of the server on a busy connection is one stall: True
+  -> the stall is written to the network log with what the client did meanwhile: True
+[selftest] Aion 2 protocol description + frame decoder:
+  -> shipped opcodes.json is the calibrated varint layout (port 13328): True
+  -> synthetic description parses (ports/opcode families): True
+  -> session + nickname frames name the local player: True
+  -> damage frame decodes ids/amount/skill/crit flag: True
+  -> unknown opcode skipped and counted: True
+  -> skill use raised for the named actor: True
+  -> kill frame decodes victim/killer: True
+  -> Aion2PacketCombatSource delivers via Ingest/Poll: True
+[selftest] Aion 2 real capture (varint framing + damage frame, shipped opcodes.json):
+  -> frame 0: Keen Strike 381 (expected Keen Strike 381): True
+  -> frame 1: Keen Strike 588 crit (expected Keen Strike 588): True
+  -> frame 2: Rupture Strike 432 (expected Rupture Strike 432): True
+  -> frame 3: Blood Absorption 65 heal (expected Blood Absorption 65): True
+  -> calibrated, port 13328 known: True; 4 frames decoded: True
+  -> an unnamed player is shown as "Player #id" (the class is the icon's job) and its class is Gladiator: True
+[selftest] Aion 2 bundle frame (LZ4) from a real capture:
+  -> LZ4 literal block decodes / bad back-reference is rejected: True
+  -> shipped opcodes.json names the bundle opcode: True
+  -> all 4 damage frames inside the bundle are decoded with their real amounts: True
+  -> they belong to one actor: True
+[selftest] Aion 2 damage-opcode frames without a damage block (real Krao Cave frames):
+  -> hit 0: Elemental Fusion 8026 (expected Elemental Fusion 8026): True
+  -> hit 1: Dimensional Control 2957 crit (expected Dimensional Control 2957): True
+  -> hit 2: Jointstrike: Curse 1957 crit (expected Jointstrike: Curse 1957): True
+  -> hit 3: Combustion 615 (expected Combustion 615): True
+  -> 9 frames, only the 4 with a damage block become hits (4): True
+[selftest] Aion 2 summoned spirits credited to their summoner (real Canyon Urugugu frames):
+  -> spawn frames name the summoners (Destinyy 10894, local 3279): True
+  -> the Water Spirit's 105 is credited to Destinyy: True
+  -> the spirit's own spawn heal is no heal of its summoner's: True
+  -> the Fire Spirit's 651 crit is credited to the local player: True
+  -> the id respawning as a monster is no longer anybody's summon: True
+[selftest] Aion 2 summon announced by its owner's name (real Divine Aura frames):
+  -> the Divine Aura's 962 is Psefon's: True
+[selftest] Aion 2 party roster: the latest frame replaces the earlier one:
+  -> three members listed: True; the next frame names the local player alone, the others are gone: True
+[selftest] Aion 2 guild behind the server id (real Draupnir nickname frame, server 1303):
+  -> Miliria of guild Convèrgence: True
+  -> Jungkook without a guild gets none: True
+[selftest] Aion 2 party member named by class (real Draupnir roster):
+  -> unnamed until the Cleric is told from a summon: True; then Butterfinger, the summon left alone: True
+[selftest] Aion 2 accented party member and a summon from before the recording (real Canyon Urugugu frames):
+  -> Azaëde in the party: True; the Divine Aura's hit is Kayzia's: True
+[selftest] Aion 2 party roster: the server id behind the name wins (real frame, SaintlyOrder 2306 in front, 2303 behind):
+  -> SaintlyOrder on 2303: True; RB 2311, SentaiHenpai 2308, Aahz 1304 (the shifted Kaisinel layout): True
+[selftest] Aion 2 party roster: a marker byte in front of the second id is not read as part of it (Munin 2313 was 2305/2307, Zemurru 2315 was 2823), a real second id still wins:
+  -> Munina (marker 07) 2315, Raikishi (03) and Jaykuwalen (01) 2313: True; Ludrana's real second id 2303 wins: True; the table knows 1304 and 2315 but not 2823 and 1801: True
+[selftest] Aion 2 server of a name: the player in view wins over every list entry:
+  -> in view 2304 against lists 1306 / 1303, before and after: True; another one in view 2305 replaces him: True; a name only in the lists: the second id 1303: True
+[selftest] Aion 2 a spirit's basic attack from before the recording (real Canyon Urugugu frames):
+  -> first hit on the spirit itself: True; the next is Boulenbouche's: True; both his in the end: True
+[selftest] Aion 2 shield tick vs Sorcerer summon (real Draupnir frames):
+  -> Lakshmi stays a monster: True, Bittercold Wind is MaRio's: True
+[selftest] Aion 2 two Sorcerers' summons (real Draupnir frames):
+  -> Lumy's wind is Lumy's: True, Aurulio's wind is Aurulio's: True
+[selftest] Aion 2 damage-over-time ticks (real Krao Cave frames):
+  -> tick 0: 4421 -> 34900 Jointstrike: Curse 552 (expected 4421 -> 34900 552): True
+  -> tick 1: 4697 -> 34900 Jointstrike: Curse 201 (expected 4697 -> 34900 201): True
+  -> tick 2: 34900 -> 4421 Attack 106 (expected 34900 -> 4421 106): True
+  -> 8 tick frames, only the 3 damage ticks dealt to another entity count (3): True
+  -> in the skill breakdown ticks add to the total but not to hits/crits/min/max: True
+  -> a Recuperation hit on a member not yet seen casting is a heal, not damage: True
+  -> Recuperation's ticks are heals of 83 each, the announcement is no heal: True
+[selftest] Aion 2 hit points and boss reset (real Krao Cave frames):
+  -> Berk's readings 122,120 / 98,804 / 123,000 / 122,259: True
+  -> highest seen = its full health, 123,000: True
+  -> exactly one reset, when it came back to full for the retry: True
+  -> a player's hit points behind 4-byte stats (9,405), a stats-only frame adds nothing: True
+[selftest] HP check (counted damage against hit points lost, real Berk readings):
+  -> 18,561 HP lost between two readings, 18,561 counted: match, kill seen: True
+  -> a hit counted twice reads as too much: True; a missed hit as too little: True
+  -> the failed attempt summed in: more damage than the boss's 123,000 HP: True
+  -> no hit-point readings, no verdict: True
+  -> damage during a shield phase (hit points frozen) set aside: True
+[selftest] Aion 2 a boss healing itself by the hits it takes (real frames, 2026-10-03 23:37):
+  -> the 122,788 is the boss healing itself: True; the Ranger's damage 189 + 30,697 + 838: True; HP check 100%: True
+[selftest] Aion 2 hits of target-debuff skills are damage (real frames):
+  -> Chain of Torment 21,818 counted: True; Taunt 3,010 counted: True
+[selftest] Aion 2 solo: the local player shows the configured name:
+  -> the only unnamed caster, 6326, is shown as Boulenbouche: True
+  -> in a crowd the detailed-stats frames pick the local player over a busier stranger: True
+[selftest] Aion 2 names, guild and local player (real frames):
+  -> player-seen frame names the id and its guild (Aahz / Akatsuki): True
+  -> the configured character name marks the local player: True
+  -> nickname frames name the other members: True
+  -> the roster's leftover name is the local player's (Aahz), shown but not saved: True
+[selftest] Aion 2 capture starting mid-connection:
+  -> decoded frames by cut offset (of 24): 0:24, 3:23, 11:23, 25:23, 40:22
+  -> whole stream decodes / a mid-stream start loses at most the first few frames: True
+[selftest] Aion 2 character record (name, level, equipment, local player):
+  -> name Aahz, class code 6, level 33, combat id 331: True
+  -> eleven items, first Wind Breeze Greatsword, last Facade Earrings: True
+  -> the record makes id 331 the local player, named Aahz: True
+[selftest] Aion 2 login lists (equipment with enchant, skill levels):
+  -> Daevanion: Nezekan 16 / Zikel 10 / Vaizel 15 activated nodes, skill bonuses match the skill list's bonus levels: True
+  -> belt +4, amulet +3, plain helm +0 (and nothing invented elsewhere): True
+  -> 45 skills with total/base level (Rending Blow 12 = 10+2, Blood Absorption 11 = 10+1 ...): True
+[selftest] Aion 2 own attributes, wing and active pet:
+  -> Aahz: wing 30500200, skin 30400400: True
+  -> Chumley: wing 30200600 without skin (both record variants): True
+  -> Asmodian wing 40200100 + skin 40201500 (marker byte 2), Elyos wing-type skin: True
+  -> an implausible wing id yields nothing: True
+  -> stats frame: ids 1..17 only, missing Intelligence = 0: True
+  -> pet list header = active pet 1124, level 3: True
+  -> all three survive a restart: True
+  -> wing/skin lookup (names en/de, grade, icon) and pet picture: True
+[selftest] Aion 2 mana stones and rolled stats of equipment entries:
+  -> own Aulamus' Earrings: four stones (Block, Angriffskraft, Zusatzausweichen, Verteidigung), MP 96 / MP-Regeneration 23 / Angriffskraft 24 / Ausweichen 24: True
+  -> inspected Kromede Earrings: stones Kritischer Treffer, Verteidigung, Kritischer Treffer (white), MP; LP 213, MP-Regeneration 27, Block 31: True
+  -> inspected Aulamus' Earrings on slot 12 with its own stones and stats: True
+  -> greatsword with godstone Aulvicars Zauber, Praezision 26, Kampftempo 10,68 %, two skill bonuses: True
+  -> Vakron Guard with godstone Rathmans Gier and Zerreissender Schlag +1; pieces without them carry none: True
+  -> saved with the character file and read back (and an older entry without stones still loads): True
+  -> a looked-at player keeps faction, server and the uploaded mark on disk; an older file without them still loads; marking sticks: True
+[selftest] Aion 2 arcana details (experience, god stat, skill bonuses):
+  -> Kompass +2: 600 experience, Vaizel 22, four skill bonuses: True
+  -> Spiegel +2: 3.800 experience, Kaisinel 22, four skill bonuses: True
+  -> Kompass with one extra zero byte behind the size field is read the same: True
+  -> saved with the character file and read back (an older entry without them still loads): True
+  -> the profile upload carries experience, god stat and skill bonuses of an arcana piece, and nothing for other pieces: True
+[selftest] Aion 2 Pantheon (setups per preset, registered decorations):
+  -> the login gives preset 1 with eight decorations and eleven registered: True
+  -> a change replaces its preset, an empty tab is stored empty, an unseen one stays unknown: True
+  -> something that is not a setup is ignored: True
+  -> saved with the character file and read back (an older file without it still loads): True
+  -> the profile upload carries presets, slots and registered decorations: True
+[selftest] Aion 2 species knowledge (pet window):
+  -> five species with level and progress (Fera 7 / 31800, Natura 7 / 1250, Varia 7 / 1200, Specia 7 / 6400, Cognia 10): True
+  -> Fera effects as the window showed them (LP 43, Angriffskraft 5, Präzision 27, LP 60 ...): True
+  -> Cognia: nine effects, Angriffskraft (Boss) 14 first, Eisenwall 1,45 %, Zusatzpräzision 25: True
+  -> Natura, Varia and Specia effects as shown: True
+[selftest] Aion 2 character data kept across restarts:
+  -> the data is written to disk when the game sends it: True
+  -> a new session restores name, level, gear with enchant, skills and boards: True
+  -> the restored record does not claim the old combat id as the local player: True
+  -> fresh data from the game replaces it: True
+  -> class from the record's class code (Gladiator 6, Assassin 18, Chanter 34): True
+[selftest] Aion 2 skill presets:
+  -> a file from before the presets: its first preset word is adopted and the login stigmas replace its flags: True
+  -> preset 1 keeps its stones and two stigmas: True
+  -> the burst after a switch fills preset 2 (own stones, Tenaciousness not Rage Burst): True
+  -> both presets are known, the active one marked: True
+  -> a restart restores both: True
+  -> switching back brings preset 1 back: True
+[selftest] Aion 2 other players' profile (class, faction, visible gear):
+  -> player named Iccarus: True
+  -> class id 8 and class bits 1 read from the class code: True
+  -> eleven visible items (Drifter Staff ... Judicator Earrings): True
+[selftest] Session survives a client restart (snapshot file):
+  -> events come back: True
+  -> names, classes and legion come back: True
+  -> a recognised boss keeps its name: True
+  -> what the live stream already knows wins: True
+[selftest] Aion 2 boss recognition (monster-appears frames from a recorded Krao Cave run):
+  -> entity 30410 is Enhanced Harcon (NPC 2300104): True
+  -> entity 24155 is Ultimate Berk (NPC 2300171): True
+  -> an unknown entity is no boss: True
+[selftest] Aion 2 spawn frame carries the boss's maximum hit points (frames cut from recordings):
+  -> entity 17998: spawn max 5220000 (expected 5220000), current 5220000
+  -> entity 41941: spawn max 15504000 (expected 15504000), current 15504000
+  -> no spawn seen -> null, and the spawn left the reading history alone: True
+[selftest] Aion 2 boss real maximum (spawn value, table value, group size, growth):
+  -> spawn 5,220,000, seen at full: 5,220,000 (expected 5,220,000)
+  -> late joiner, table 5,220,000, first reading 40 %: 5,220,000 (expected 5,220,000)
+  -> spawn 8,208,000, table empty, first reading 40 %: 8,208,000 (expected 8,208,000)
+  -> party-scaled 61,500, group of 5: 307,500 (expected 307,500)
+  -> party-scaled 61,500, group of 3, readings show 3x: 184,500 (expected 184,500)
+  -> party-scaled 61,500, group of 3, first reading 40 %: 184,500 (expected 184,500)
+  -> party-scaled, group size unknown (1), readings already show 2x: 123,000 (expected 123,000)
+  -> party-scaled, group of 6 clamps to 5: 307,500 (expected 307,500)
+  -> no spawn, no table: 1,200,000 (expected 1,200,000)
+  -> growth above the spawn value: 10,400,000 (expected 10,400,000)
+[selftest] Upload model carries bossSpawnMaxHp:
+  -> serialised as bossSpawnMaxHp, bossMaxHp unchanged, null stays null: True
+[selftest] Players first met in the 10 against 10 arena go online with name only:
+  -> met in the arena marked (before the zone frame and inside), a hub player not: True
+  -> seen again outside the arena unmarked: True
+  -> the profile that goes online has no level, class, gear, skills or boards: True
+[selftest] Other players' level, gear score, combat power and worn pieces (frames of 2026-10-22, checked against their NC profiles):
+  -> level 45, gear score 2565 and combat power 138016 read: True
+  -> eleven pieces, dagger with 17 (15 + 2 excess) and helm with 10: True
+  -> the longer frame gives 45, 2629 and 142909: True
+[selftest] The arena's refills between rounds are no damage:
+  -> the three refill skills are effects, the arena's own damage skill and a Gladiator skill are not: True
+[selftest] The players met in an arena are collected for the upload after the fight:
+  -> the opponent and a late arrival are collected, a hub player is not: True
+  -> a player sent is not sent again, but is after a new fight: True
+  -> zones 60, 61 and 62 are arenas, a city is not: True
+[selftest] Class catalog:
+  -> nine classes incl. Spiritmaster, the old name Elementalist is unknown: True
+  -> badge abbreviations match the website's: True
+[selftest] Aion 2 skill names in the UI language:
+  -> data stays "Bittercold Wind"; shown fr "Vent glacial", "Barrière d'acier"; en "Bittercold Wind": True
+[selftest] Settings written by earlier versions:
+  -> an old file loads and keeps the fields still in use: True
+  -> classic Aion fields are dropped when saved again: True
+[selftest] Global hotkey bindings:
+  -> the default bindings read back as written: True
+  -> a key without a modifier, or nothing, is no binding: True
+  -> modifiers and keys parse whatever the case: True
+[selftest] Theme dictionaries (every theme defines every token):
+  -> Dark complete: True
+  -> Light complete: True
+  -> Midnight complete: True
+  -> Elyos complete: True
+  -> Asmodian complete: True
+  -> HighContrast complete: True
+  -> unknown theme name falls back to Dark, names are case-insensitive: True
+  -> font sizes ordered Small < Medium < Large: True
+[selftest] Fight segmentation (120 s silence gap):
+  -> two runs, split at the ten-minute gap: True
+  -> first run spans its own hits only: True
+  -> second run picked up whole: True
+  -> heals and the boss's own hits are not part of a run: True
+[selftest] Sessions:
+  -> map, instance, back to the map picks the map stay up again: True
+  -> events before a zone change stay with the old stay, the way back adds to the first (2 / 5): True
+  -> the instance gets its end time, the map stay is open again and counts the time away: True
+  -> a second run is a stay of its own, the map stay stays one: True
+  -> another map in between is no instance run: the stays stay apart: True
+  -> an empty stay of 40 s leaves no entry: True
+  -> the same zone again does not start a new stay: True
+  -> the same instance again straight from the run before is a new stay: True
+  -> hits before the first zone frame open an unknown-map stay: True
+  -> a combat id change joins the player in every stay: True
+  -> a placeholder name is replaced by the real one: True
+  -> over the event cap the oldest finished stay is dropped: True
+  -> a saved stay reads back whole (zone, times, hits, names, classes): True
+  -> a loaded stay goes in before the open one, is kept, and stays out of "all": True
+  -> saved with the extras they come back with the file; without them the file has none and is smaller: True
+  -> plausibility: damage = HP lost is in order: True
+  -> counted twice (2x the HP lost) is flagged wrong: True
+  -> one player with all of the boss's damage while others were there is flagged: True
+  -> without hit points it says so and does not accuse: True
+  -> hits repeated at the same instant are found: True
+  -> rage: found at about 4:30, about 3x: True; a surge that ends is not one: True; steady damage is not one: True; a short fight has none: True; a burst in the last seconds of a 3:50 fight is not one: True
+  -> rage signal: not before 4:50 and not on an entity out of combat: True; found at 5:00 after going into combat: True; leaving combat resets: True; the session check reports it as exact: True
+  -> 600001 is an instance, 1010 is not: True
+[selftest] Combat overlay frames (windup, cast, effects, maximum hit points):
+  -> windup: caster 19144, skill 1236440, aimed at 41205, 1500 ms, with a position: True
+  -> the cast is gone a few seconds after it ended: True
+  -> a cast notice gives the caster's target for a few seconds only: True
+  -> effect on 5174: instance 55, skill 20, 300 ms, from itself: True; gone after its time: True
+  -> an effect without an end stays until its end frame (instance 42 on 10112): True
+  -> a monster's cast shows on the bar only for "all monsters" (1 row, aimed at #41205): True
+  -> clicked target 19144: its target is #41205: True; with the healer bar on, the health bar is the clicked target's, 6,400 of 10,000: True
+  -> HP frame kind 7 is the maximum (7,349 on 15828): True
+[selftest] Rotation, effects and stagger of a fight:
+  -> weaves one row lower (0,1,2 then a pause, 0,1), other players' skills left out: True
+  -> uses counted per skill, share of the damage 60 %: True
+  -> an effect two givers kept up at once counts once (10 s of 20 = 50 %, 25 % from you, 2 times): True
+  -> a stagger break is a band from 3 s to 8 s: True
+  -> the extras can be packed and read back: True
+  -> a death is counted once with its revive and the time dead (25 s), the file keeps it: True
+  -> the killing blow is the hit with the skill the death frame names (else the last hit): True
+[selftest] rDPS:
+  -> Mantra L25 for the whole fight is worth 15.02% to its recipient (expected ~15.02 %): True
+  -> the DPS keeps 8694 (nDPS), the Chanter is credited 1306: True
+  -> overlapping Protective Light and Mantra: only the Mantra counts: True
+  -> buff events become one span of the Mantra from the Chanter at level 22, 58.3 % of the fight: True
+[selftest] Buffs of the upload:
+  -> an effect from another player: 50 % of the fight, giver named; an own scroll: whole fight, no giver: True
+  -> potions are left out: True
+  -> what a monster gave is dropped, the group's buff stays: True
+  -> the spans of an effect go along in tenths of a second: True
+  -> a flicker under half a second is one span, too many spans are joined to fit: True
+  -> the effects on the boss: what a player put on it, not what it gave itself: True
+  -> the player's skill uses and death in tenths of a second, nobody else's: True
+  -> the boss's health curve, at most one point per half second: True
+  -> the focus counts the time on the boss and on anything else and the switches between targets: True
+  -> an entity's selected target holds until he drops it: True
+  -> a player without skill uses has no time axis: True
+  -> the damage on the boss in 5-second slices (estimates and hits before the window left out): True
+  -> the damage on an add is kept apart from the boss: True
+  -> the dead spans run from the death to the revive or the end of the window, cut at its start: True
+  -> the damage taken by source and skill, heals and self-inflicted damage left out: True
+  -> a player without anything to report has no analysis: True
+  -> the analysis goes along even for a player without skill uses: True
+[selftest] Dummy test:
+  -> waits for the first own hit, the clock starts with it, the countdown counts the planned time: True
+  -> only own hits inside the time are kept (61 of 70): True
+  -> time up: finished at once, skills and effects read a moment later, the overlay clears after a while: True
+  -> the run's numbers (total, hits, average, slowest and fastest second, crit): True
+  -> every Start is its own run; a cast before the first hit moves the start back; Stop keeps the time until then: True
+  -> runs survive their file, the timeline has one skill line and one effect line: True
+  -> the time field reads 2:00 and 90, the overlay writes 2:00:00: True
+  -> the chain skills taken (1 of 3) of a run: True
+  -> DPS leaves the pauses out (200,000), iDPS counts the whole span (36,923); a steady attack gives both about alike: True
+  -> the target of a run is a dummy / not / unknown by the name it kept: True
+  -> Welch's test against hand-computed values (difference, error, df, p, the 95 % range), a side with one value gives none: True
+  -> two runs: a skill hit harder is better (+10 %), one alike has no measurable difference, one with 5 hits is not measurable, the crits are brought back to plain: True
+  -> the iDPS change: +60 % is above the noise, +10 % of one skill and runs alike are within it: True
+  -> skill entries (0x1338, 0x0F38) set a level at once, 0x1038 takes a variant away, a later entry changes the level: True
+  -> a saved run keeps its hit kinds and skill levels, a file from before them still loads: True
+  -> levels: the differing skill is named, none differ for equal runs, unknown levels say so, 18/20/22 give +5 % a level, one level gives no curve: True
+  -> automatic runs: a hit on a dummy starts one (not others' hits or other targets), none chained at once, a pause starts the next, a run walked away from is dropped: True
+[selftest] Fight report:
+  -> damage, DPS, shares and the skills add up; peak >= average >= lowest: True
+  -> a buff put on before the pull is on from the start; a debuff on the boss counts its giver and its 25 s: True
+  -> shields, avoided attacks, damage taken by source and the death are on the right players: True
+  -> whom the boss aimed at, its casts and cast bars: True
+  -> the Chanter's mantra is worth DPS to the others, a buffed player's rDPS is below their DPS: True
+  -> one chart point a second, at most 5 skills and the rest: True
+  -> the history: saved on its own, listed newest first, opened again to the same report (skill ids, levels, casts), deleted with its file: True
+[selftest] Game menu detection (mouse cursor):
+  -> a menu counts after a quarter second of cursor (True) and ends a moment after it hides (True)
+  -> after a click the menu state lasts longer while the cursor is swapped out: True
+  -> holding the show-cursor key keeps the meter up (True); stuck after 20 s (True); a key inside an open menu changes nothing (True)
+  -> not with another window in front (True), not while overlays are being placed (True)
+  -> cursor shown while fighting for 13 s = classic (True); hidden for 16 s = hidden (True); no fight, nothing learnt (True)
+[selftest] Settings backup, reset with undo, uploaded fights:
+  -> saving leaves no half file (True); a damaged file comes back from the last start's copy (True) and is kept (True)
+  -> reset gives the defaults (True), keeps the upload choice and the wizard (True), and undo brings it all back once (True)
+[selftest] Stream overlay server (OBS browser source):
+  -> without names everyone is shown by class (True); the state is the JSON the page reads, cut to the rows asked for (True)
+  -> only this PC and the own network (private ranges) are answered, no address from the internet: True
+  -> a random 32-character key (True); the page, its script and style are served with a strict policy (True)
+  -> no page without the key, none for a foreign host name, none for POST, nothing else (True); the link without a slash is sent on (True)
+  -> a class icon is served, a path out of the folder is not: True
+  -> the event stream sends the newest state at once and every later one, to one connected browser source: True
+  -> after Stop nobody listens: True
+[selftest] Hit kinds (double, perfect, parry, back, front, multi):
+  -> a heal without kinds, a front hit, a back crit with two strikes and a multi hit with three read as they are: True
+  -> perfect, double and parry are told apart from the direction: True
+  -> the direction of a life-steal hit is read after the amount restored: True
+  -> the hit kinds survive the session file, and a hit stored without them stays 'unknown': True
+  -> the share of a skill's hits is over the hits that said anything (25 % double), and a double hit that did twice the damage reads as x2: True
+[selftest] Protocol health monitor:
+  -> healthy quiet=True, break reported once=True, new opcode=True, recovered=True, idle is no break=True, census in log=True: OK
+[selftest] Tickets (login list, changes, which character they belong to, refills):
+  -> login list: 73 entries, Odyle 540+0, keys 28, boss kills 35, 7 h access time: True; a frame cut short is refused: True
+  -> changes: gain with +10=True, use=True, refill=True
+  -> old announcement takes nothing=True, list bound to the new character with the change that followed it=True, later change applied=True
+  -> an entry with mask bit 2 read=True, started in game: changes go to the last saved character=True, relog keeps the Odyle purchases and takes the rest from the new list=True
+  -> missions: reset 09:00 German clock in winter and summer=True, stale before it=True, read with its time=True, first login of the day leaves yesterday's head out=True, relog the same day keeps it=True, a new character takes it=True
+  -> membership frame read (eight effects, one end)=True, premium known / over / unknown=True, caps without it (12 keys)=True
+  -> pet auto-loot ticket read / none / alone / empty=True/True/True, Daeva pass frames=True, pass levels=True, lost at the next refill=True
+  -> Shugo +3 / Nightmare +2 daily and Ascension 3 on Wednesdays=True, daily dungeon back to 14 every Wednesday 16:00 game time=True, game time is Korean time (16:00 there = 07:00 UTC)=True
+  -> refills (daily +2 up to the cap, weekly set on Wednesday 16:00): True; the table has 70 tickets, German name of Odyle energy: Odenergie
+  -> cooldown list 0x4738: 25 entries and the numbers read=True, a short frame changes only its skill=True
+  -> cooldown speed per skill: not before two numbers=True, measured 2276 a second from the recording=True, after a jump of the counter=True, used again starts over=True
+  -> hand-ticked part: ticks and counters (stop at 12 and 0)=True, kept until 16:00=True, daily cleared and weekly kept=True, weekly cleared next Wednesday=True, reset times=True
+  -> mission counter from the quest list 0x1c8d: True
+  -> shop counter of the Odyle purchase 0x8e56: True
+  -> counters locked by level (daily dungeon 30, Nightmare/Ascension/Invasion 45, Odyle 22, Shugo 13)=True
+  -> character list read (two real entries: class, level, item level, legion, times, server, character id)=True, entries for characters without counters=True, deleted one goes=True, login keeps the list's basics=True
+  -> the server's answer for another character read (equipment with stones and god stone, attributes, wings, pet, titles; a character without a profile; no player)=True
+  -> Odyle recharge: a regular refill sets the clock (kept over a relog)=True, +15 every 3 hours on that clock with next tick and full time=True, online as the game says=True, without a clock every 3 hours from the reading=True, 560 without the membership and nothing above the cap=True, below level 22 none=True
+  -> the roster for the site: readings as seen, clock and caps=True
+  -> OK
+[selftest] Boss timers (learnt from uploads):
+  -> the site's answer: 3 casts of 12 fights: True
+  -> next: a seen cast after its interval, an unseen one at its first time=True; one being cast=True; passed unseen left out=True; a minute ahead=True
+  -> an odd answer read leniently=True; the boss's own wind-ups since its start=True
+  -> the report's cast bars carry the skill id for the site: True
+[selftest] Pet route (the website's route, planned by the meter):
+  -> Altgard, Cogni, from the camp: 12 stops (site 12), the same up to stop 12, start the same: ok
+  -> Verteron, every genus, from the camp: 23 stops (site 23), the same up to stop 23, start the same: ok
+  -> Altgard, every genus, from Moslan Forest: 21 stops (site 21), the same up to stop 21, start the same: ok
+  -> Lower Reshanta, Asmodian: 5 stops (site 5), the same up to stop 5, start the same: ok
+  -> Verteron, Fera and Varian, 12 pets done: 19 stops (site 19), the same up to stop 19, start the same: ok
+  -> pet route: ok
+[selftest] Position between the game's reports (followed by the monsters coming and going):
+  -> an exact report: (0.0 m, 0.0 m): ok
+  -> a monster 100 m away appears: (78.0 m, 0.0 m): ok
+  -> one announced 3 km away: (78.0 m, 0.0 m): ok
+  -> the monster left behind: (75.0 m, 0.0 m): ok
+  -> moved without a zone frame: (5010.0 m, 5000.0 m): ok
+  -> a far group while monsters move around him: (1.3 m, 0.8 m): ok
+  -> the direction of the dash: -151.5: ok
+[selftest] Instance timer (0x0061: entry wait, limit, time to leave, closing):
+  -> phases 30 s / 3600 s / 600 s / 10 s: True; time left: True; truncated, unknown phase, end before start not read: True; last reading kept: True
+[selftest] Instance timer OK
+[selftest] Hidden Cube arrivals, militia guards:
+  -> cube arrivals counted once per cube=True, out of sight remembered=True, guards among the live monsters=True/gone again=True, the 29 Guard NPC ids=True, hostile maps only=True
+  -> OK
+[selftest] Maps (open world and instances):
+  -> open maps by zone: True; the instances are not part of the open maps: True
+  -> instance zones: Horn Den HornCave, Dungeon_L_0010 Dungeon_L_0010, unknown zone none, an instance without pet monsters (Dungeon_L_0019) has no map: True
+  -> Horn Den world (-5225, 10748) -> pixel (691, 1418) of 2048: inside True
+  -> pet spawn points in the Horn Den: True
+[selftest] Loot log (ground drop, inventory, pickup):
+  -> one session with two maps: True; 2 pickups = 3 souls on the first map, either order of the two frames: True; the stones of the second map only (a vanished drop and another's pickup left out): True
+  -> the next pickup after two hours is a new session: True
+  -> an item is named from the client's table in English and German (Soul: Krall Laborer (Bound) / Seele: Fronarbeiter (Krall) (Gebunden)), a gear piece has its grade: True
+[selftest] Crafting tool (stock, sort, recipes, ingots):
+  -> the login frame fills the three stocks apart: True
+  -> a changed slot sets its quantity, a slot of kind 2 is gone: True
+  -> eight pickups at once are no sort (the storages stay as they were): True
+  -> a sort lists the inventory again: what is more than the single frames explain was taken from the storage (5 of 10 elixirs): True
+  -> the recipe table is read (a hammer, the recipe of its ingot): True
+  -> 3 hammers: 18 ingots = 18 crafts of the ingot recipe, the list shows the ore and no ingot: True
+  -> without breaking down, the ingot is a line of its own: True
+  -> 6 ingots on hand are used first (counted as there, the rest is made): True
+  -> the first recipe of two that want the same material gets the stock first (2 then 2): True
+  -> a recipe of one faction finds its twin of the other and back: True
+  -> a crafting level-up teaches the level's recipes of its profession (nothing before a login list): True (2 known before)
+  -> without a list every recipe counts as learned, the list frame sets the learned ones (twin included): True
+  -> a chain skill is open for 3 s after frame 1838, closed by 1938 or by the time: True
+  -> the legion list is read with and without a comment, names counted in characters: True
+  -> the week's season points are read from the achievements frame: True
+  -> the own rank of the ranking window is read: True
+  -> an unknown frame is a debug point once, again after two quiet minutes, never more than twice, a known one never: True
+  -> the privacy answer: uploads only with the current version accepted, older or never asked is asked, declined is not asked again, eight tools stay: True
+[selftest] Fight clock of the boss bar:
+  -> start kept at the first signal=True, cleared when the boss leaves combat=True, m:ss and h:mm:ss=True, yellow from 4:00 and red from 4:40=True, per-boss rage time=True: OK
+[selftest] Colour picker (hue, saturation, brightness):
+  -> eleven colours go through hue/saturation/brightness and back unchanged=True, red 0 / green 120 / blue 240 degrees=True: OK
+[selftest] Replay map (positions, areas learnt, the replay itself):
+  -> position frames of three families give the place of entities that are not the local player: True
+  -> a wrong reading (50,000 m away for a moment) is dropped, a real jump kept once confirmed: True
+  -> the area of a skill is learnt from where its hits landed (radius 545 cm for hits at 3-5 m): True
+  -> a walk is drawn straight between two readings (True); the replay has the group, the boss, its area, the hit, the death and the stagger: True
+  -> another monster of the fight is an add (no area of its own, the boss stays the boss): True
+  -> a monster that never moved stands where it appeared until it dies: True
+  -> the own character's spot between two readings is marked as an estimate: True
+  -> the upload for the replay leaves other players' paths out without the switch (True); the paths other clients sent fill the map (True)
+[selftest] One player under several combat ids:
+  -> a name that comes back under a new combat id is the same player: True
+  -> an id that now belongs to another player carries the new name: True
+  -> the same name on two classes is not merged: True
+  -> the same name on two servers is not merged: True
+  -> a name listed for two servers is not merged without a server in the frame: True
+  -> a player list gives the permanent character id of a player, a legion in it is skipped: True
+[selftest] Stat calculator:
+  -> flat stats stay, percentages are read from hundredths, a stat the frame lacks is 0: True
+  -> no change, no gain: True
+  -> more of a stat gives more damage, less gives less; the front stat does nothing while the player hits from behind: True
+  -> unknown side adds nothing, a crit amplification is worth more with more crits (1.89 % at 10, 8.98 % at 60): True
+  -> expert setting: the same amplification is worth more against a boss that resists less, a buff raises the index: True
+  -> the amount a lever names really gives one percent, a stat that does nothing is not listed: True
+  -> a character without a physical attack is not calculated: True
+  -> a crit resistance lowers the worth of a crit; the crit multiplier is measured from crit and plain hits of the same skill, monster and side; the side comes from the larger direction bonus: True
+  -> a recording writes down the stats that change, stops by itself after ten minutes: True
+  -> the document holds the figures, only monsters as targets, only own skills and the effects on the player, and no name: True
+  -> the network report has the shape the server wants, a file name aiondps_VERSION_DATE_TIME.json, no IP address and no PC or account name (the file for the player's own use has no identifier): True
+[selftest] World boss estimate, final correction:
+  -> an overshoot is scaled down onto the hit points, exact hits stay: True
+  -> a shortfall is scaled up onto them: True
+  -> few estimates or nothing left to explain change nothing, a wild reading is bounded: True
+[selftest] Window places (second monitor, monitor gone):
+  -> a place on the first monitor is kept as it is and saving stays on: True
+  -> a place on no monitor goes to the first monitor (size kept): True
+  -> nothing is saved until the player has decided: True
+  -> a window larger than the first monitor is made to fit it: True
+  -> the title strip decides whether a window can still be grabbed: True
+
+[selftest] ALL CHECKS PASSED
