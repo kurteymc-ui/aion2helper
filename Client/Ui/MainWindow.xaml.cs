@@ -1576,7 +1576,7 @@ public partial class MainWindow : Window
         {
             try
             {
-                SessionAnalysis analysis = SessionAnalysis.Analyze(stay);
+                SessionAnalysis analysis = SessionAnalyzer.Analyze(stay);
                 var jobs = new List<(FightLogKind Kind, ReportInput Input, string? Detail, int Fights)>();
                 var attempts = analysis.Attempts.ToList();
                 foreach (BossAttempt attempt in attempts)
