@@ -47,6 +47,15 @@ public sealed class PlayerRow : INotifyPropertyChanged
     }
 
     /// <summary>The name, followed by a skull and the count when the player died.</summary>
+    private string _combatPowerText = "";
+
+    /// <summary>The combat power the game showed of the player, short ("191.2K"); empty when unknown. The in-game meter shows it after the name.</summary>
+    public string CombatPowerText
+    {
+        get => _combatPowerText;
+        set { if (_combatPowerText == value) { return; } _combatPowerText = value; OnPropertyChanged(); }
+    }
+
     public string NameDisplay => Deaths > 0 ? $"{Name}  ☠{(Deaths > 1 ? Deaths.ToString() : "")}" : Name;
 
     public string ClassName

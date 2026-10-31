@@ -1155,7 +1155,8 @@ internal static class Program
         foreach (var x in sample)
         {
             var row = new Ui.PlayerRow(++rank) { Name = x.Name, ClassName = x.Cls, Damage = x.Dmg, Dps = x.Dps, SharePercent = 100.0 * x.Dmg / total, FillPercent = 100.0 * x.Dmg / sample[0].Dmg,
-                Rank = rank, Faction = rank is 1 or 5 ? "Elyos" : rank is 3 ? "" : "Asmodian" }; // a sample of both factions and one unknown
+                Rank = rank, Faction = rank is 1 or 5 ? "Elyos" : rank is 3 ? "" : "Asmodian", // a sample of both factions and one unknown
+                CombatPowerText = Ui.PlayerRow.Compact(150_000 + 9_300 * (6 - rank)) };
             if (all)
             {
                 row.AllMode = !allCompact;
@@ -1171,6 +1172,7 @@ internal static class Program
         window.OverlayTargetText.Text = "Transcendent Bakarma";
         window.OverlayTimeText.Text = "1:51";
         window.OverlayModeText.Text = allCompact ? "ALL+" : all ? "ALL" : "DMG";
+        window.OverlayTotalRateText.Text = Ui.PlayerRow.Compact((long)sample.Sum(x => x.Dps));
         if (all && !allCompact)
         {
             window.OverlayRateHeader.Text = "Damage";

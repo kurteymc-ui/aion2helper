@@ -440,6 +440,12 @@ public sealed class MeterSettings
     /// <summary>Seconds without combat before the overlay steps aside outside instances (10 to 600).</summary>
     public int MeterOverlayHideSeconds { get; set; } = 30;
 
+    /// <summary>The meter overlay's look: "Themed" (the site's dark colours with the gold edge) or "Clear" (see-through, nearly no frame).</summary>
+    public string OverlayLook { get; set; } = "Themed";
+
+    /// <summary>The meter overlay stays where it is: no moving, no scaling (its buttons still work).</summary>
+    public bool MeterOverlayLocked { get; set; }
+
     /// <summary>Where the meter overlay was put (null = beside the client window at the first start).</summary>
     public double? MeterOverlayLeft { get; set; }
 

@@ -140,6 +140,17 @@ public sealed class FightReport
 
     public ReportPlayerLine? PlayerOf(int id) => Players.FirstOrDefault(p => p.Player.Id == id);
 
+    /// <summary>The effects on one player over [from, to], the helpful ones first by uptime, harmful ones after; no passives, nothing unnamed (the in-game meter's buff view).</summary>
+    public static IReadOnlyList<ReportEffect> EffectsOn(IReadOnlyList<BuffEvent> buffs, int target, ISet<int> players, DateTime from, DateTime to)
+    {
+        double seconds = Math.Max(1, (to - from).TotalSeconds);
+        return EffectSpans(buffs, new HashSet<int> { target }, from, to)
+            .Where(kv => Named(kv.Key.Name) && !IsPassive(kv.Value.SkillId))
+            .Select(kv => kv.Value.ToEffect(kv.Key.Name, seconds, players, onBoss: false))
+            .Where(e => e.UptimePercent >= 1)
+            .OrderBy(e => e.Harmful).ThenByDescending(e => e.UptimePercent).ToList();
+    }
+
     /// <summary>The chart's bin for a fight of this length: one second up to two minutes, then wider, at most about 300 bins.</summary>
     public static double BinFor(double seconds) => seconds <= 120 ? 1 : seconds <= 600 ? 2 : Math.Ceiling(seconds / 300);
 

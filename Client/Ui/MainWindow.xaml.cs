@@ -162,6 +162,17 @@ public partial class MainWindow : Window
     /// <summary>The eye button showed the overlay outside a fight: it stays up until then, as if a fight had just been.</summary>
     private DateTime _overlayPeekUntil = DateTime.MinValue;
 
+    private bool _overlayClear;
+    private bool _overlayMenuOpen;
+    private bool _meterOverlayLocked;
+
+    /// <summary>The meter shows the effects on the own character instead of the players (its mode menu's "Buffs").</summary>
+    private bool _overlayBuffs;
+
+    private readonly ObservableCollection<OverlayBuffRow> _overlayBuffRows = new();
+    private DateTime _overlayBuffsAt = DateTime.MinValue;
+    private DateTime _overlayPowerAt = DateTime.MinValue;
+
     /// <summary>The compact panel lives in its own overlay window and Settings have it on.</summary>
     private bool MeterOverlayActive => _meterOverlay is not null && _meterOverlayOn && _compactOverlay;
 
@@ -305,6 +316,7 @@ public partial class MainWindow : Window
         PlayersGrid.ItemsSource = _rows;
         OverlayContent.ItemsSource = _rows;
         CompactOverlayRows.ItemsSource = _rows;
+        OverlayBuffRows.ItemsSource = _overlayBuffRows;
 
         // Per the user: the list must sort itself by damage, highest first, not just show rows in
         // whatever order they were first discovered in. IsLiveSorting (not just SortDescriptions
@@ -609,9 +621,18 @@ public partial class MainWindow : Window
         double opacity = Math.Clamp(double.IsFinite(settings.OverlayOpacity) ? settings.OverlayOpacity : 0.6, 0.2, 1.0);
         // the theme's own overlay colour (a deep navy in the default theme), at the opacity chosen
         Color baseColor = TryFindResource("Color.OverlayBg") is Color themed ? themed : Colors.Black;
-        var overlayBrush = new SolidColorBrush(Color.FromArgb((byte)Math.Round(opacity * 255), baseColor.R, baseColor.G, baseColor.B));
+        // the meter's look: the site's colours with the gold edge, or see-through (a light dark glass, nearly no frame)
+        _overlayClear = string.Equals(settings.OverlayLook, "Clear", StringComparison.OrdinalIgnoreCase);
+        var overlayBrush = _overlayClear
+            ? new SolidColorBrush(Color.FromArgb((byte)Math.Round(opacity * 0.55 * 255), 0x08, 0x08, 0x0A))
+            : new SolidColorBrush(Color.FromArgb((byte)Math.Round(opacity * 255), baseColor.R, baseColor.G, baseColor.B));
         overlayBrush.Freeze();
         Resources["Brush.OverlayBg"] = overlayBrush;
+        var edge = new SolidColorBrush(_overlayClear ? Color.FromArgb(0x14, 0xFF, 0xFF, 0xFF) : Color.FromArgb(0x33, 0xDC, 0xB8, 0x77));
+        edge.Freeze();
+        Resources["Brush.OverlayEdge"] = edge;
+        _meterOverlayLocked = settings.MeterOverlayLocked;
+        ApplyOverlayLock();
         if (_hideUiActive)
         {
             ApplyOverlayLook();
@@ -1343,7 +1364,7 @@ public partial class MainWindow : Window
 
         DateTime now = DateTime.Now;
         bool inFight = !_meterOverlayAutoHide || InInstanceNow() || now - _lastOwnCombat < _meterOverlayHideAfter || now < _overlayPeekUntil
-            || _meterOverlay.IsMouseOver;
+            || _meterOverlay.IsMouseOver || _overlayMenuOpen || _dummy?.Model.State is DummyState.Armed or DummyState.Running or DummyState.Finished;
         _meterOverlay.ShowOverlay(MeterOverlayActive && _gameGateOpen && inFight);
     }
 
@@ -6932,6 +6953,7 @@ public partial class MainWindow : Window
             ShowOverlayPanels();
         }
 
+        UpdateOverlayDummy();
         UpdateMeterOverlay();
 
         if ((DateTime.UtcNow - _gateSettingsAt).TotalSeconds >= 1)
@@ -7245,6 +7267,20 @@ public partial class MainWindow : Window
             return;
         }
 
+        // a button of the header is no handle; a locked meter stays where it is
+        for (DependencyObject? at = e.OriginalSource as DependencyObject; at is not null && !ReferenceEquals(at, sender); at = VisualTreeHelper.GetParent(at))
+        {
+            if (at is FrameworkElement { Cursor: var cursor } && cursor == Cursors.Hand)
+            {
+                return;
+            }
+        }
+
+        if (_meterOverlayLocked && _meterOverlay is not null)
+        {
+            return;
+        }
+
         if (_meterOverlay is not null)
         {
             _meterOverlay.DragFromHeader();
@@ -7252,6 +7288,136 @@ public partial class MainWindow : Window
         }
 
         DragMove();
+    }
+
+    // ---- the meter's header menus: what is measured, past fights, lock, the look -------------------------------------------
+
+    /// <summary>A menu under one of the meter's header buttons, in the app's menu style.</summary>
+    private void OpenOverlayMenu(FrameworkElement anchor, IEnumerable<Control> items)
+    {
+        var menu = new ContextMenu { PlacementTarget = anchor, Placement = PlacementMode.Bottom, VerticalOffset = 2 };
+        if (TryFindResource(typeof(ContextMenu)) is Style menuStyle)
+        {
+            menu.Style = menuStyle;
+        }
+
+        foreach (Control item in items)
+        {
+            menu.Items.Add(item);
+        }
+
+        // the meter stays up while its menu is open and a while after (it may be between fights)
+        menu.Opened += (_, _) => _overlayMenuOpen = true;
+        menu.Closed += (_, _) =>
+        {
+            _overlayMenuOpen = false;
+            _overlayPeekUntil = DateTime.Now + _meterOverlayHideAfter;
+        };
+        menu.IsOpen = true;
+    }
+
+    private MenuItem OverlayItem(string header, Action act, bool check = false, bool enabled = true)
+    {
+        var item = new MenuItem { Header = header, IsChecked = check, IsEnabled = enabled };
+        if (TryFindResource(typeof(MenuItem)) is Style itemStyle)
+        {
+            item.Style = itemStyle;
+        }
+
+        item.Click += (_, _) => act();
+        return item;
+    }
+
+    private void OnOverlayModeMenuClicked(object sender, MouseButtonEventArgs e)
+    {
+        e.Handled = true;
+        bool restricted = PrivacyConsent.Restricted;
+        void Pick(MeterMode mode)
+        {
+            _overlayBuffs = false;
+            SetMode(mode);
+        }
+
+        OpenOverlayMenu((FrameworkElement)sender, new Control[]
+        {
+            OverlayItem("Damage (DPS)", () => Pick(MeterMode.Damage), !_overlayBuffs && _mode == MeterMode.Damage),
+            OverlayItem("rDPS (buffs credited)", () => Pick(MeterMode.Raid), !_overlayBuffs && _mode == MeterMode.Raid, !restricted),
+            OverlayItem("Healing (HPS)", () => Pick(MeterMode.Heal), !_overlayBuffs && _mode == MeterMode.Heal, !restricted),
+            OverlayItem("Tanked (damage taken)", () => Pick(MeterMode.Taken), !_overlayBuffs && _mode == MeterMode.Taken, !restricted),
+            OverlayItem("Buffs on you", () =>
+            {
+                _overlayBuffs = true;
+                _overlayBuffsAt = DateTime.MinValue;
+                RefreshRows();
+            }, _overlayBuffs, !restricted),
+            new Separator(),
+            OverlayItem("All in one", () => Pick(MeterMode.All), !_overlayBuffs && _mode == MeterMode.All, !restricted),
+        });
+    }
+
+    private void OnOverlayHistoryClicked(object sender, MouseButtonEventArgs e)
+    {
+        e.Handled = true;
+        var items = new List<Control>
+        {
+            OverlayItem("Follow the current fight", () => FollowNewestRun()),
+            OverlayItem("All targets", () => MobBossFilter.SelectedItem = _mobBossAllItem, ReferenceEquals(MobBossFilter.SelectedItem, _mobBossAllItem)),
+        };
+        var fights = MobBossFilter.Items.OfType<ComboBoxItem>().Where(i => i.Tag is MobBossTag).ToList();
+        if (fights.Count > 0)
+        {
+            items.Add(new Separator());
+        }
+
+        // the newest first: a run by its end, a whole target where the list has it
+        foreach (ComboBoxItem fight in fights.OrderByDescending(i => ((MobBossTag)i.Tag).WindowEnd ?? DateTime.MinValue).Take(14))
+        {
+            ComboBoxItem chosen = fight;
+            items.Add(OverlayItem(fight.Content as string ?? "?", () => MobBossFilter.SelectedItem = chosen, ReferenceEquals(MobBossFilter.SelectedItem, fight)));
+        }
+
+        items.Add(new Separator());
+        items.Add(OverlayItem("Fight report of what is shown…", () =>
+        {
+            ShowClient();
+            _ = OpenFightReportAsync();
+        }));
+        items.Add(OverlayItem("Older fights (history)…", () =>
+        {
+            ShowClient();
+            OpenSessionManager();
+        }));
+        OpenOverlayMenu((FrameworkElement)sender, items);
+    }
+
+    private void OnOverlayLockClicked(object sender, MouseButtonEventArgs e)
+    {
+        e.Handled = true;
+        var settings = MeterSettings.Load();
+        settings.MeterOverlayLocked = _meterOverlayLocked = !_meterOverlayLocked;
+        settings.Save();
+        ApplyOverlayLock();
+    }
+
+    /// <summary>The lock's picture and the meter's handles: locked, the header no longer moves it and the corner grip is gone.</summary>
+    private void ApplyOverlayLock()
+    {
+        OverlayLockGlyph.Text = _meterOverlayLocked ? "\uE72E" : "\uE785";
+        OverlayLockButton.ToolTip = _meterOverlayLocked ? "Locked in place - click to move or scale the meter again" : "Lock the meter in place";
+        OverlayLockGlyph.SetResourceReference(TextBlock.ForegroundProperty, _meterOverlayLocked ? "Brush.Accent" : "Brush.TextSubtle");
+        OverlayResizeGrip.Visibility = _meterOverlayLocked ? Visibility.Collapsed : Visibility.Visible;
+        OverlayHeader.Cursor = _meterOverlayLocked ? Cursors.Arrow : Cursors.SizeAll;
+    }
+
+    /// <summary>Saves one of the meter's own settings and applies the lot again.</summary>
+    private void ChangeOverlaySetting(Action<MeterSettings> change)
+    {
+        var settings = MeterSettings.Load();
+        change(settings);
+        settings.Save();
+        RefreshCharacterSettings(settings);
+        RefreshRows();
+        UpdateMeterOverlay();
     }
 
     /// <summary>A click on a player's line in the compact overlay: that player's skill breakdown.</summary>
@@ -7263,11 +7429,41 @@ public partial class MainWindow : Window
         }
     }
 
+    /// <summary>The meter's own menu: its look (the site's colours or see-through), how opaque, click-through, when it shows, and the way to everything else.</summary>
     private void OnOverlaySettingsClicked(object sender, MouseButtonEventArgs e)
     {
-        ShowClient();
-        OnSettingsClicked(sender, new RoutedEventArgs());
         e.Handled = true;
+        var settings = MeterSettings.Load();
+        var opacity = new MenuItem { Header = "Opacity" };
+        if (TryFindResource(typeof(MenuItem)) is Style itemStyle)
+        {
+            opacity.Style = itemStyle;
+        }
+
+        foreach (double step in new[] { 0.4, 0.6, 0.8, 0.92, 1.0 })
+        {
+            double chosen = step;
+            opacity.Items.Add(OverlayItem($"{step * 100:0} %", () => ChangeOverlaySetting(s => s.OverlayOpacity = chosen), Math.Abs(settings.OverlayOpacity - step) < 0.01));
+        }
+
+        OpenOverlayMenu((FrameworkElement)sender, new Control[]
+        {
+            OverlayItem("A2H colours", () => ChangeOverlaySetting(s => s.OverlayLook = "Themed"), !_overlayClear),
+            OverlayItem("See-through", () => ChangeOverlaySetting(s => s.OverlayLook = "Clear"), _overlayClear),
+            opacity,
+            new Separator(),
+            OverlayItem("Only in dungeons and fights", () => ChangeOverlaySetting(s => s.MeterOverlayAutoHide = !s.MeterOverlayAutoHide), settings.MeterOverlayAutoHide),
+            OverlayItem("Party buffs under the names", () => ChangeOverlaySetting(s => s.ShowPartyBuffs = !s.ShowPartyBuffs), settings.ShowPartyBuffs),
+            OverlayItem("Click-through (turn off in Settings)", () => ChangeOverlaySetting(s => s.CompactClickThrough = !s.CompactClickThrough), settings.CompactClickThrough),
+            new Separator(),
+            OverlayItem("Copy to chat", CopyRowsToClipboard),
+            OverlayItem("Open the meter window", ShowClient),
+            OverlayItem("All settings…", () =>
+            {
+                ShowClient();
+                OnSettingsClicked(this, new RoutedEventArgs());
+            }),
+        });
     }
 
     private void OnOverlayCopyClicked(object sender, MouseButtonEventArgs e)
@@ -7406,6 +7602,106 @@ public partial class MainWindow : Window
             : "";
         _lastShownHits = shownHits;
         OverlayHpBlock.Visibility = Visibility.Collapsed; // the boss's health is a window of its own now (CombatOverlayWindow.Part.Hp)
+
+        // the header's mode word and the group's total in big
+        string unit = _healMode ? "HPS" : _takenMode ? "DTPS" : _mode == MeterMode.Raid && !_pvpOnly ? "rDPS" : "DPS";
+        OverlayModeShort.Text = _overlayBuffs ? "BUFFS" : _allMode || _allCompactMode ? "ALL" : _takenMode ? "TANK" : _healMode ? "HEAL" : _mode == MeterMode.Raid ? "rDPS" : "DPS";
+        if (!_overlayBuffs)
+        {
+            double total = _rows.Where(r => !r.IsEnemy).Sum(r => (r.RdpsView ? r.Rdps ?? r.Dps : r.Dps) ?? 0);
+            OverlayTotalRateText.Text = PlayerRow.Compact((long)Math.Round(total));
+            OverlayTotalUnitText.Text = unit;
+        }
+
+        // the combat power after each name, from what the game showed of the player (every few seconds: it changes with a gear swap only)
+        if (DateTime.UtcNow - _overlayPowerAt > TimeSpan.FromSeconds(3) && _source?.Entities is Aion2.Aion2EntityDirectory powers)
+        {
+            _overlayPowerAt = DateTime.UtcNow;
+            foreach (PlayerRow row in _rows)
+            {
+                int id = _historyMode ? _historyLiveIds.GetValueOrDefault(row.ObjectId, row.ObjectId) : row.ObjectId;
+                int? power = (_historyMode ? _liveSource?.Entities as Aion2.Aion2EntityDirectory : powers)?.SeenProfileOf(id)?.CombatPower;
+                row.CombatPowerText = power is int cp and > 0 and not 397228 ? PlayerRow.Compact(cp) : "";
+            }
+        }
+
+        UpdateOverlayBuffs(shownHits);
+    }
+
+    /// <summary>The meter's buff view: the effects on the own character over the fight shown (the last minute when nothing is shown), with
+    /// their uptime, the helpful ones first. Worked out every second and a half at most.</summary>
+    private void UpdateOverlayBuffs(IReadOnlyList<DamageEvent> shownHits)
+    {
+        CompactOverlayRows.Visibility = _overlayBuffs ? Visibility.Collapsed : Visibility.Visible;
+        OverlayBuffRows.Visibility = _overlayBuffs ? Visibility.Visible : Visibility.Collapsed;
+        OverlayScopeSwitch.Visibility = _overlayBuffs ? Visibility.Collapsed : Visibility.Visible;
+        if (!_overlayBuffs || DateTime.UtcNow - _overlayBuffsAt < TimeSpan.FromSeconds(1.5) || ReplayDirectory is not { } directory)
+        {
+            return;
+        }
+
+        _overlayBuffsAt = DateTime.UtcNow;
+        int you = directory.LocalPlayerId >= 0 ? directory.LocalPlayerId : directory.InferLocalPlayer() ?? -1;
+        DateTime to = shownHits.Count > 0 ? shownHits.Max(h => h.Timestamp) : DateTime.Now;
+        DateTime from = shownHits.Count > 0 ? shownHits.Min(h => h.Timestamp) : to.AddMinutes(-1);
+        if (to - from < TimeSpan.FromSeconds(5))
+        {
+            from = to.AddSeconds(-5);
+        }
+
+        _overlayBuffRows.Clear();
+        OverlayTotalRateText.Text = CompactOverlayOwnName() ?? "You";
+        OverlayTotalUnitText.Text = "buffs";
+        if (you < 0)
+        {
+            return;
+        }
+
+        var players = _rows.Select(r => r.ObjectId).ToHashSet();
+        players.Add(you);
+        var good = MakeFrozen(Color.FromRgb(0x5C, 0xC2, 0x7E));
+        var bad = MakeFrozen(Color.FromRgb(0xE0, 0x6A, 0x5E));
+        foreach (ReportEffect effect in FightReport.EffectsOn(directory.Combat.BuffsAround(from, to), you, players, from, to).Take(14))
+        {
+            string? icon = Aion2SkillIcons.PathFor(effect.SkillId) ?? Aion2SkillIcons.PathForName(effect.Name, null) ?? Aion2Artwork.EffectIconPath(effect.SkillId);
+            _overlayBuffRows.Add(new OverlayBuffRow(effect.Name, OverlayPictures.Load(icon), effect.UptimePercent, $"{effect.UptimePercent:0}%",
+                effect.Harmful ? bad : good, effect.Harmful ? bad : (Brush)FindResource("Brush.OverlayText")));
+        }
+    }
+
+    /// <summary>The dummy run in the meter itself (no window of its own): "Dummy 1:42" with the time running out under it, "Run 3 saved" when over.
+    /// A few times a second, from the game gate's timer.</summary>
+    private void UpdateOverlayDummy()
+    {
+        if (_dummy is null)
+        {
+            return;
+        }
+
+        _dummy.ShownInMeter = MeterOverlayActive;
+        DummyTest model = _dummy.Model;
+        DateTime now = DateTime.Now;
+        string? text = null;
+        double? fraction = null;
+        switch (model.State)
+        {
+            case DummyState.Armed:
+                text = "Dummy · waiting for your first hit";
+                break;
+            case DummyState.Running when model.Current is not null:
+                TimeSpan left = model.Remaining(now);
+                text = $"Dummy {(int)left.TotalMinutes}:{left.Seconds:00}";
+                fraction = model.Planned.TotalSeconds > 0 ? left.TotalSeconds / model.Planned.TotalSeconds : 0;
+                break;
+            case DummyState.Finished when model.Current is { } done:
+                text = $"Dummy run {done.Number} saved";
+                break;
+        }
+
+        OverlayDummyChip.Visibility = text is null ? Visibility.Collapsed : Visibility.Visible;
+        OverlayDummyText.Text = text ?? "";
+        OverlayDummyBar.Visibility = fraction is null ? Visibility.Collapsed : Visibility.Visible;
+        OverlayDummyBar.Value = fraction ?? 0;
     }
 
     /// <summary>The fought boss's health in the compact overlay, with the HP check's verdict on the
@@ -7633,3 +7929,6 @@ public partial class MainWindow : Window
         }
     }
 }
+
+/// <summary>One line of the meter's buff view.</summary>
+public sealed record OverlayBuffRow(string Name, ImageSource? Icon, double Percent, string PercentText, Brush BarBrush, Brush NameBrush);

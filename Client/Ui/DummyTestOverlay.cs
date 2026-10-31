@@ -112,6 +112,9 @@ public sealed class DummyTestController : IDisposable
 
     public DummyTest Model { get; } = new();
 
+    /// <summary>The meter overlay shows the run's countdown itself: this window of its own then stays away.</summary>
+    public bool ShownInMeter { get; set; }
+
     public DummyTestController(Func<Aion2EntityDirectory?> directory)
     {
         _directory = directory;
@@ -241,7 +244,7 @@ public sealed class DummyTestController : IDisposable
     {
         bool locked = _settings.DummyOverlayLocked;
         bool dropped = Model.State == DummyState.Idle && now - _droppedAt < DroppedShown;
-        bool wanted = _settings.ShowDummyOverlay && (Model.State != DummyState.Idle || dropped || !locked);
+        bool wanted = _settings.ShowDummyOverlay && !ShownInMeter && (Model.State != DummyState.Idle || dropped || !locked);
         if (!wanted)
         {
             _overlay?.ShowOverlay(false);
