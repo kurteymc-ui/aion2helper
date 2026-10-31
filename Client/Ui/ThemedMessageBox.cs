@@ -42,7 +42,23 @@ public static class ThemedMessageBox
         return answer.Value;
     }
 
-    /// <summary>The answer of a box that is still open.</summary>
+    /// <summary>A window on screen to hold a box: the app's own when it is shown, else the active one, else none (the box then stands on its own, on top).</summary>
+    public static Window? ShownOwner()
+    {
+        if (Application.Current is not { } app)
+        {
+            return null;
+        }
+
+        if (app.MainWindow is { IsVisible: true, IsLoaded: true, WindowState: not WindowState.Minimized } main)
+        {
+            return main;
+        }
+
+        return app.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive && w.IsVisible && w.IsLoaded && w.WindowState != WindowState.Minimized);
+    }
+
+        /// <summary>The answer of a box that is still open.</summary>
     public sealed class Answer
     {
         public MessageBoxResult Value { get; set; }
@@ -63,6 +79,9 @@ public static class ThemedMessageBox
         };
         answer = holder;
 
+        // The box sits on a window the player can see. A window that only lends its content to one of the app's pages (Training dummy, History, sessions)
+        // is never shown: a box on it would be invisible and still block every click of the meter. Then it sits on the app's window, or on its own on top.
+        owner = owner is { IsVisible: true, IsLoaded: true } ? owner : ShownOwner();
         var window = new Window
         {
             Title = caption,
@@ -70,9 +89,10 @@ public static class ThemedMessageBox
             MinWidth = 340,
             MaxWidth = 560,
             ShowInTaskbar = owner is null,
+            Topmost = owner is null,
             WindowStartupLocation = owner is null ? WindowStartupLocation.CenterScreen : WindowStartupLocation.CenterOwner,
         };
-        if (owner is { IsLoaded: true })
+        if (owner is not null)
         {
             window.Owner = owner;
         }
