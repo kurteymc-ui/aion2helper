@@ -10,7 +10,8 @@ public static class ExtrasBlob
 {
     private sealed record Use(long T, int A, int S);
 
-    private sealed record Buff(long T, int K, int G, int I, int S, int C, int D);
+    private sealed record Buff(long T, int K, int G, int I, int S, int C, int D,
+        [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] int? L = null);
 
     private sealed record Stagger(long T, int E, int C, int M, bool B);
 
@@ -36,7 +37,7 @@ public static class ExtrasBlob
     {
         var payload = new Payload(
             extras.Uses.Select(u => new Use(u.At.Ticks, u.Actor, u.SkillId)).ToList(),
-            extras.Buffs.Select(b => new Buff(b.At.Ticks, (int)b.Kind, b.Target, b.Instance, b.SkillId, b.Caster, b.DurationMs)).ToList(),
+            extras.Buffs.Select(b => new Buff(b.At.Ticks, (int)b.Kind, b.Target, b.Instance, b.SkillId, b.Caster, b.DurationMs, b.Level > 0 ? b.Level : null)).ToList(),
             extras.Staggers.Select(s => new Stagger(s.At.Ticks, s.Entity, s.Current, s.Max, s.Broke)).ToList(),
             extras.Names.ToDictionary(kv => kv.Key.ToString(), kv => kv.Value),
             extras.Tracks?.Select(t => new Track(t.Entity, t.Start.Ticks, t.T, t.X, t.Y)).ToList(),
@@ -66,7 +67,7 @@ public static class ExtrasBlob
         DateTime At(long ticks) => new(ticks, DateTimeKind.Local);
         return new FightExtras(
             payload.U.Select(u => new SkillUse(At(u.T), u.A, u.S)).ToList(),
-            payload.B.Select(b => new BuffEvent(At(b.T), (BuffKind)b.K, b.G, b.I, b.S, b.C, b.D)).ToList(),
+            payload.B.Select(b => new BuffEvent(At(b.T), (BuffKind)b.K, b.G, b.I, b.S, b.C, b.D, b.L ?? 0)).ToList(),
             payload.S.Select(s => new StaggerEvent(At(s.T), s.E, s.C, s.M, s.B)).ToList(),
             payload.N.ToDictionary(kv => int.Parse(kv.Key), kv => kv.Value),
             payload.R?.Select(t => new PositionTrack(t.E, At(t.S), t.T, t.X, t.Y)).ToList(),

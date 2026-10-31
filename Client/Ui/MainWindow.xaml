@@ -845,6 +845,14 @@
                                 <TextBlock Text="Report" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center" Foreground="{DynamicResource Brush.Text}"/>
                             </StackPanel>
                         </Button>
+                        <!-- The history: every run, boss fight, dummy parse and arena stay saved on its own. -->
+                        <Button x:Name="HistoryButton" Style="{StaticResource ToolbarIconButton}" Click="OnHistoryClicked" Padding="8,5" Margin="1,0"
+                                ToolTip="History: every dungeon run, boss fight, training dummy parse and PvP fight saved on this PC, each on its own">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE81C;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="14" Foreground="{DynamicResource Brush.Accent}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                <TextBlock Text="History" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center" Foreground="{DynamicResource Brush.Text}"/>
+                            </StackPanel>
+                        </Button>
                         <Button x:Name="UploadReplayButton" Style="{StaticResource ToolbarIconButton}" Click="OnUploadReplayClicked" Padding="6,5" Margin="1,0"
                                 Visibility="Collapsed"
                                 ToolTip="{local:Loc Main.UploadReplay.Tooltip}">

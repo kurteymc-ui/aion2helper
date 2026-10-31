@@ -239,10 +239,17 @@ public sealed class DummyTest
     /// <summary>Moves the clock on: ends a run whose time is up, closes it a moment later, and clears the "Finished" after a while.</summary>
     public void Tick(DateTime now)
     {
-        // an automatic run the player walked away from: dropped, it is no parse of the planned time
+        // an automatic run the player walked away from: ends at the last hit when it lasted at least half its time (a parse, if a short one), else dropped
         if (IsAuto && State == DummyState.Running && _current is { } dropped && now - (_lastDummyHit > dropped.Start ? _lastDummyHit : dropped.Start) >= AutoAbandonAfter
             && now < dropped.End)
         {
+            if (_lastDummyHit - dropped.Start >= TimeSpan.FromTicks(dropped.Planned.Ticks / 2))
+            {
+                dropped.Length = _lastDummyHit - dropped.Start;
+                Finish(now);
+                return;
+            }
+
             _runs.Remove(dropped);
             _current = null;
             _nextNumber = Math.Max(1, dropped.Number);
@@ -327,7 +334,11 @@ public sealed class DummyTest
         run.Closed = true;
         Capture?.Invoke(run);
         Changed?.Invoke();
+        Completed?.Invoke(run);
     }
+
+    /// <summary>A run is over and complete (its skills and effects were read): the history keeps it as a fight of its own.</summary>
+    public event Action<DummyRun>? Completed;
 }
 
 /// <summary>The numbers of one run, the ones the player's details show: damage per second, the hits and the skills used.</summary>

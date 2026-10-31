@@ -240,8 +240,14 @@ public sealed class SessionRecorder
         if (session.Data.Events.Count == 0 && end - session.Start < TrivialStay)
         {
             _sessions.Remove(session);
+            return;
         }
+
+        StayClosed?.Invoke(session);
     }
+
+    /// <summary>A stay ended (a map stay can open again when the player comes back: it then ends again later). The history saves its runs and fights here.</summary>
+    public event Action<SessionInfo>? StayClosed;
 
     /// <summary>Asks again for the name and class of every id of the open stay (names arrive some time after the first hit).</summary>
     public void RefreshNames()

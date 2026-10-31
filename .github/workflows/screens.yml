@@ -43,7 +43,10 @@ jobs:
             @('render-report', 'report-support.png', 'Support'),
             @('render-report', 'report-rotation.png', 'Rotation'),
             @('render-report', 'report-timeline.png', 'Timeline'),
-            @('render-report', 'report-defense.png', 'Defense')
+            @('render-report', 'report-defense.png', 'Defense'),
+            @('render-history', 'history-runs.png', 'Dungeon-runs'),
+            @('render-history', 'history-bosses.png', 'Boss-fights'),
+            @('render-history', 'history-bests.png', 'Personal-bests')
           )
           foreach ($s in $shots) {
             $out = Join-Path (Resolve-Path screens).Path $s[1]

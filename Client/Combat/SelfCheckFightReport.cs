@@ -1,3 +1,4 @@
+using System.IO;
 namespace AionDPS.Combat;
 
 /// <summary>The fight report on a made-up fight (Ui.FightReportSample): totals add up, the shares make 100 %, a buff that was on before the pull
@@ -35,6 +36,45 @@ public static class SelfCheckFightReport
 
         bool series = you.DamageSeries.Count is > 0 and <= FightReport.SeriesShown + 1 && r.PartyLine.Length == 55 && you.DamageSeries.All(s => s.Values.Length == 55);
         Console.WriteLine($"  -> one chart point a second, at most {FightReport.SeriesShown} skills and the rest: {series}");
-        return totals && effects && defense && boss && support && series;
+        bool history = HistoryRoundTrip(input, r);
+        return totals && effects && defense && boss && support && series && history;
+    }
+
+    /// <summary>A fight saved in the history and opened again gives the same report; the index lists it newest first; delete takes the file too.</summary>
+    private static bool HistoryRoundTrip(ReportInput input, FightReport r)
+    {
+        string folder = Path.Combine(Path.GetTempPath(), "a2h-history-" + Guid.NewGuid().ToString("N")[..8]);
+        string before = History.FightLog.Folder;
+        History.FightLog.Folder = folder;
+        History.FightLog.Reload();
+        try
+        {
+            History.FightLogEntry? boss = History.FightLog.Save(History.FightLogKind.Boss, input);
+            History.FightLogEntry? run = History.FightLog.Save(History.FightLogKind.Run, input with { Start = input.Start.AddMinutes(-1), Targets = null }, "Normal", 600001, 3);
+            bool saved = boss is { Killed: true } && run is { BossFights: 3, Killed: null } && History.FightLog.Entries().Count == 2 && History.FightLog.Entries()[0].Id == boss.Id
+                && Math.Abs(boss.PartyDps - r.PartyDps) < 0.5 && boss.You == "Ichigo" && Math.Abs(boss.YourDps - r.PlayerOf(3)!.Dps) < 0.5;
+            ReportInput? back = History.FightLog.Open(boss!);
+            FightReport again = FightReport.Build(back!);
+            bool same = again.Damage == r.Damage && again.Players.Count == r.Players.Count && again.PlayerOf(3)!.Skills.Count == r.PlayerOf(3)!.Skills.Count
+                && again.PlayerOf(3)!.Skills.All(s => s.SkillId != 0) && again.BossTargets.Count == r.BossTargets.Count && again.CastBars.Count == r.CastBars.Count
+                && again.PlayerOf(3)!.Buffs.Any(b => b.Name == "Undefeated Mantra" && b.Level == 15) && again.PlayerOf(3)!.Absorbed == r.PlayerOf(3)!.Absorbed;
+            History.FightLog.Delete(boss!);
+            History.FightLog.Reload();
+            bool deleted = History.FightLog.Entries().Count == 1 && History.FightLog.Open(boss!) is null;
+            Console.WriteLine($"  -> the history: saved on its own, listed newest first, opened again to the same report (skill ids, levels, casts), deleted with its file: {saved && same && deleted}");
+            return saved && same && deleted;
+        }
+        finally
+        {
+            History.FightLog.Folder = before;
+            History.FightLog.Reload();
+            try
+            {
+                Directory.Delete(folder, true);
+            }
+            catch (IOException)
+            {
+            }
+        }
     }
 }

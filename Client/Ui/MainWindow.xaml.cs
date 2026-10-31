@@ -479,7 +479,11 @@ public partial class MainWindow : Window
 
         _worldBoss ??= new WorldBossController();
         _assist ??= new AssistController(() => _liveSource?.Entities as Aion2.Aion2EntityDirectory);
-        _dummy ??= new DummyTestController(() => _liveSource?.Entities as Aion2.Aion2EntityDirectory);
+        if (_dummy is null)
+        {
+            _dummy = new DummyTestController(() => _liveSource?.Entities as Aion2.Aion2EntityDirectory);
+            _dummy.Model.Completed += LogDummyRun;
+        }
         _combat ??= new CombatOverlayController(() => _source?.Entities as Aion2.Aion2EntityDirectory, BossHpCheck);
     }
 
@@ -1348,6 +1352,7 @@ public partial class MainWindow : Window
             _gateTimer.Tick += (_, _) => OnGateTick();
             _gateTimer.Start();
             CreateMeterOverlay();
+            _sessions.StayClosed += stay => Dispatcher.BeginInvoke(new Action(() => LogStay(stay)));
         }
     }
 
@@ -1467,7 +1472,9 @@ public partial class MainWindow : Window
                 continue;
             }
 
-            if (local >= 0 ? ev.SourceObjectId == local || ev.TargetObjectId == local : directory.IsKnownPlayer(ev.SourceObjectId))
+            // before the own character is known: any player's hit (or anything that is no monster hitting no player: the own character has no name frame yet)
+            if (local >= 0 ? ev.SourceObjectId == local || ev.TargetObjectId == local
+                : directory.IsKnownPlayer(ev.SourceObjectId) || (!directory.IsKnownMonster(ev.SourceObjectId) && !directory.IsKnownPlayer(ev.TargetObjectId)))
             {
                 _lastOwnCombat = DateTime.Now;
                 return true;
@@ -1508,6 +1515,174 @@ public partial class MainWindow : Window
         RefreshUpdateBadge();
         UpdateMeterOverlay();
     }
+
+    // ---- the history: every dungeon run, boss fight, dummy parse and arena stay is saved on its own as it ends (History/FightLog) ----
+
+    /// <summary>What was saved already: a map stay ends again each time the player comes back from an instance, and its boss fights must not be saved twice.</summary>
+    private readonly HashSet<string> _loggedFights = new();
+
+    /// <summary>A stay ended: an instance is a dungeon run (an arena a PvP stay), and every boss fight in it, in an instance or in the open world, is an entry
+    /// of its own. The data is taken here; the analysis and the files are made off the window's thread.</summary>
+    private void LogStay(SessionInfo stay)
+    {
+        if (Headless || stay.FromFile || stay.End is not DateTime end || _liveSource?.Entities is not Aion2.Aion2EntityDirectory directory)
+        {
+            return;
+        }
+
+        List<DamageEvent> events = stay.Data.Events.ToList();
+        if (events.Count == 0)
+        {
+            return;
+        }
+
+        List<DamageEvent> shields = stay.Data.Shields.ToList();
+        var names = new Dictionary<int, string>(stay.Names);
+        var classes = new Dictionary<int, string>(stay.Classes);
+        var seen = new HashSet<int>();
+        foreach (DamageEvent e in events)
+        {
+            seen.Add(e.SourceObjectId);
+            seen.Add(e.TargetObjectId);
+        }
+
+        string? ownName = directory.LocalCharacter?.Name;
+        int local = directory.LocalPlayerId;
+        var players = classes.Keys.Where(seen.Contains).Select(id =>
+        {
+            string name = names.GetValueOrDefault(id) ?? ResolveDisplayName(id);
+            int? cp = directory.SeenProfileOf(id)?.CombatPower;
+            return new ReportPlayer(id, name, classes[id], cp is 397228 ? null : cp, id == local || (ownName is not null && name == ownName));
+        }).ToList();
+        if (players.Count == 0)
+        {
+            return;
+        }
+
+        var playerIds = players.Select(p => p.Id).ToHashSet();
+        var avoids = _avoids.Where(a => a.Timestamp >= stay.Start && a.Timestamp <= end).ToList();
+        Func<int, string?> nameOf = id => names.GetValueOrDefault(id) ?? ResolveDisplayName(id);
+        bool Keep(int id) => playerIds.Contains(id) || directory.BossNpcIdOf(id) is not null;
+        var bossNpc = new Dictionary<int, int?>();
+        int? NpcOf(int id) => bossNpc.TryGetValue(id, out int? npc) ? npc : bossNpc[id] = BossNpcIdOf(id);
+        bool arena = Aion2Zones.IsArena(stay.ZoneId);
+        bool run = stay.Kind == SessionKind.Instance || arena;
+        string zone = Aion2Zones.NameOf(stay.ZoneId, "en") ?? SessionLabels.NameOf(stay);
+        int zoneId = stay.ZoneId;
+        string stayKey = $"stay:{stay.Number}:{stay.Start.Ticks}";
+        FightExtras? runExtras = run && !_loggedFights.Contains(stayKey) ? directory.Combat.Slice(stay.Start, end, nameOf, Keep) : null;
+        // the boss fights' extras are cut here (the capture forgets), the analysis that finds the fights runs in the background
+        _ = Task.Run(() =>
+        {
+            try
+            {
+                SessionAnalysis analysis = SessionAnalysis.Analyze(stay);
+                var jobs = new List<(FightLogKind Kind, ReportInput Input, string? Detail, int Fights)>();
+                var attempts = analysis.Attempts.ToList();
+                foreach (BossAttempt attempt in attempts)
+                {
+                    string key = $"boss:{attempt.TargetId}:{attempt.Start.Ticks}";
+                    bool fresh;
+                    lock (_loggedFights)
+                    {
+                        fresh = _loggedFights.Add(key);
+                    }
+
+                    if (!fresh)
+                    {
+                        continue;
+                    }
+
+                    DateTime from = attempt.Start.AddSeconds(-2), to = attempt.End.AddSeconds(2);
+                    var window = events.Where(e => e.Timestamp >= from && e.Timestamp <= to).ToList();
+                    var inWindow = window.SelectMany(e => new[] { e.SourceObjectId, e.TargetObjectId }).ToHashSet();
+                    FightExtras extras = Dispatcher.Invoke(() => directory.Combat.Slice(from, to, nameOf, Keep));
+                    jobs.Add((FightLogKind.Boss, new ReportInput(attempt.Name, attempt.Start, attempt.End, players.Where(p => inWindow.Contains(p.Id)).ToList(), window,
+                        shields.Where(e => e.Timestamp >= from && e.Timestamp <= to).ToList(), avoids.Where(a => a.Timestamp >= from && a.Timestamp <= to).ToList(),
+                        extras, attempt.TargetId, NpcOf(attempt.TargetId), attempt.Killed, nameOf, new HashSet<int> { attempt.TargetId }), run ? zone : null, 0));
+                }
+
+                if (runExtras is not null)
+                {
+                    bool freshRun;
+                    lock (_loggedFights)
+                    {
+                        freshRun = _loggedFights.Add(stayKey);
+                    }
+
+                    // the run from the first hit to the last (the walk to the first pull is no part of it)
+                    var fighting = events.Where(e => !e.IsHeal && playerIds.Contains(e.SourceObjectId) && !playerIds.Contains(e.TargetObjectId)).ToList();
+                    if (freshRun && fighting.Count > 0)
+                    {
+                        DateTime first = fighting.Min(e => e.Timestamp), last = fighting.Max(e => e.Timestamp);
+                        BossAttempt? lastBoss = attempts.LastOrDefault();
+                        jobs.Insert(0, (arena ? FightLogKind.Pvp : FightLogKind.Run, new ReportInput(zone, first, last, players, events, shields, avoids, runExtras,
+                            lastBoss?.TargetId, lastBoss is null ? null : NpcOf(lastBoss.TargetId), lastBoss?.Killed ?? false, nameOf, null), null, attempts.Count));
+                    }
+                }
+
+                foreach (var job in jobs)
+                {
+                    FightLog.Save(job.Kind, job.Input, job.Detail, zoneId, job.Fights);
+                }
+            }
+            catch (Exception ex) when (ex is InvalidOperationException or IOException or UnauthorizedAccessException or ArgumentException)
+            {
+                AutoUploadLog.Write("history: a stay could not be saved: " + ex.Message);
+            }
+        });
+    }
+
+    /// <summary>A dummy parse is over: an entry of the history's training dummy tab (your hits, skills and effects over its exact time).</summary>
+    private void LogDummyRun(DummyRun run)
+    {
+        if (Headless || run.Events.Count == 0)
+        {
+            return;
+        }
+
+        var directory = _liveSource?.Entities as Aion2.Aion2EntityDirectory;
+        var names = new Dictionary<int, string>(run.Names);
+        string name = names.GetValueOrDefault(run.PlayerId) ?? directory?.NameFor(run.PlayerId) ?? CompactOverlayOwnName() ?? "You";
+        int? cp = directory?.SeenProfileOf(run.PlayerId)?.CombatPower;
+        int dummy = run.Events.GroupBy(e => e.TargetObjectId).OrderByDescending(g => g.Sum(e => e.Amount)).First().Key;
+        string dummyName = names.GetValueOrDefault(dummy) ?? directory?.MonsterNameFor(dummy) ?? "Training dummy";
+        names[run.PlayerId] = name;
+        var input = new ReportInput(dummyName, run.Start, run.End, new[] { new ReportPlayer(run.PlayerId, name, ResolveClassName(run.PlayerId), cp, true) },
+            run.Events.ToList(), Array.Empty<DamageEvent>(), Array.Empty<AvoidEvent>(),
+            new FightExtras(run.Uses.ToList(), run.Buffs.ToList(), Array.Empty<StaggerEvent>(), names), dummy, null, false, id => names.GetValueOrDefault(id), null);
+        string detail = $"{(int)run.Planned.TotalMinutes}:{run.Planned.Seconds:00} parse" + (run.Length < run.Planned - TimeSpan.FromSeconds(1) ? " · ended early" : "");
+        _ = Task.Run(() =>
+        {
+            try
+            {
+                FightLog.Save(FightLogKind.Dummy, input, detail);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                AutoUploadLog.Write("history: a dummy parse could not be saved: " + ex.Message);
+            }
+        });
+    }
+
+    private HistoryWindow? _historyWindow;
+
+    /// <summary>The history window: every run, boss fight, dummy parse and arena stay saved on this PC.</summary>
+    private void OpenHistory()
+    {
+        ShowClient();
+        if (_historyWindow is { IsLoaded: true })
+        {
+            _historyWindow.Activate();
+            return;
+        }
+
+        _historyWindow = new HistoryWindow { Owner = this };
+        _historyWindow.Closed += (_, _) => _historyWindow = null;
+        _historyWindow.Show();
+    }
+
+    private void OnHistoryClicked(object sender, RoutedEventArgs e) => OpenHistory();
 
     /// <summary>Brings the client window back (from the tray, minimized or behind the game).</summary>
     private void ShowClient()
@@ -7474,11 +7649,7 @@ public partial class MainWindow : Window
             ShowClient();
             _ = OpenFightReportAsync();
         }));
-        items.Add(OverlayItem("Older fights (history)…", () =>
-        {
-            ShowClient();
-            OpenSessionManager();
-        }));
+        items.Add(OverlayItem("History: runs, boss fights, dummy parses…", OpenHistory));
         OpenOverlayMenu((FrameworkElement)sender, items);
     }
 

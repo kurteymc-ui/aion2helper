@@ -249,6 +249,12 @@ internal static class Program
             return;
         }
 
+        if (args.Length > 0 && args[0] == "render-history")
+        {
+            RunRenderHistoryMode(args.Length > 1 ? args[1] : "history.png", args.Length > 2 ? args[2] : "Dungeon runs");
+            return;
+        }
+
         if (args.Length > 0 && args[0] == "render-report")
         {
             RunRenderReportMode(args.Length > 1 ? args[1] : "report.png", args.Length > 2 ? args[2] : "Damage");
@@ -999,6 +1005,90 @@ internal static class Program
         }
 
         Environment.Exit(0);
+    }
+
+    /// <summary>Draws the history window on one of its tabs, with made-up entries (the sample fight saved as runs, boss fights and dummy parses on
+    /// a few days) in a folder of its own; no window is shown.</summary>
+    private static void RunRenderHistoryMode(string path, string tab)
+    {
+        Environment.SetEnvironmentVariable("AIONDPS_DATA_DIR", Path.Combine(Path.GetTempPath(), "aiondps-render-history"));
+        var app = new System.Windows.Application();
+        var settings = Ui.MeterSettings.Load();
+        Ui.ThemeManager.Apply(app, settings);
+        Ui.MainWindow.Headless = true;
+        app.Resources.MergedDictionaries.Add(
+            (System.Windows.ResourceDictionary)System.Windows.Application.LoadComponent(new Uri("/Ui/Styles/Shared.xaml", UriKind.Relative)));
+        try
+        {
+            string folder = Path.Combine(Path.GetTempPath(), "a2h-render-history");
+            if (Directory.Exists(folder))
+            {
+                Directory.Delete(folder, true);
+            }
+
+            History.FightLog.Folder = folder;
+            History.FightLog.Reload();
+            Combat.ReportInput sample = Ui.FightReportSample.Input();
+            for (int day = 0; day < 2; day++)
+            {
+                for (int k = 0; k < 3; k++)
+                {
+                    TimeSpan shift = TimeSpan.FromDays(-day) + TimeSpan.FromMinutes(-40 * k);
+                    Combat.ReportInput moved = Shift(sample, shift);
+                    History.FightLog.Save(History.FightLogKind.Run, moved with { Title = k == 1 ? "Shattered Arkanis" : "Ferocious Horn Den", Targets = null }, k == 1 ? "Hard" : "Normal", 600001, 3 + k);
+                    History.FightLog.Save(History.FightLogKind.Boss, moved with { Killed = k != 2 });
+                }
+
+                History.FightLog.Save(History.FightLogKind.Dummy, Shift(sample, TimeSpan.FromDays(-day) + TimeSpan.FromHours(-3)) with { Title = "Training Scarecrow" }, "2:00 parse");
+            }
+
+            var window = new Ui.HistoryWindow();
+            window.ShowTab(tab.Replace('-', ' '));
+            var page = window.PageContent;
+            ((System.Windows.Controls.ScrollViewer)page.Parent).Content = null;
+            const double width = 1040;
+            var content = new System.Windows.Controls.Border { Child = page };
+            content.SetResourceReference(System.Windows.Controls.Border.BackgroundProperty, "Brush.Window");
+            content.SetResourceReference(System.Windows.Documents.TextElement.ForegroundProperty, "Brush.Text");
+            content.SetResourceReference(System.Windows.Documents.TextElement.FontFamilyProperty, "Font.Ui");
+            content.Measure(new System.Windows.Size(width, double.PositiveInfinity));
+            double height = Math.Min(2400, Math.Ceiling(content.DesiredSize.Height));
+            content.Arrange(new System.Windows.Rect(0, 0, width, height));
+            content.UpdateLayout();
+            var bitmap = new System.Windows.Media.Imaging.RenderTargetBitmap((int)width, (int)height, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
+            bitmap.Render(content);
+            var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
+            encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bitmap));
+            using (var file = File.Create(path))
+            {
+                encoder.Save(file);
+            }
+
+            Console.WriteLine("render-history: wrote " + path);
+        }
+        catch (Exception ex)
+        {
+            File.WriteAllText(Path.ChangeExtension(path, ".error.txt"), ex.ToString());
+            Environment.Exit(1);
+        }
+
+        Environment.Exit(0);
+    }
+
+    /// <summary>The sample fight moved in time (every event, effect and cast), for the history picture's other days.</summary>
+    private static Combat.ReportInput Shift(Combat.ReportInput input, TimeSpan by)
+    {
+        Combat.FightExtras x = input.Extras;
+        var extras = new Combat.FightExtras(x.Uses.Select(u => u with { At = u.At + by }).ToList(), x.Buffs.Select(b => b with { At = b.At + by }).ToList(),
+            x.Staggers.Select(s => s with { At = s.At + by }).ToList(), x.Names, null, x.Windups?.Select(w => w with { At = w.At + by }).ToList(),
+            x.Deaths?.Select(d => d with { At = d.At + by, RevivedAt = d.RevivedAt + by }).ToList(), null, x.Targets?.Select(t => t with { At = t.At + by }).ToList());
+        return input with
+        {
+            Start = input.Start + by, End = input.End + by, Extras = extras,
+            Events = input.Events.Select(e => e with { Timestamp = e.Timestamp + by }).ToList(),
+            Shields = input.Shields.Select(e => e with { Timestamp = e.Timestamp + by }).ToList(),
+            Avoids = input.Avoids.Select(a => a with { Timestamp = a.Timestamp + by }).ToList(),
+        };
     }
 
     private static void RenderReport(string path, string tab)
