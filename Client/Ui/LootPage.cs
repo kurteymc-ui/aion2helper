@@ -23,6 +23,21 @@ public sealed class LootPage : Grid
     private List<LootSession> _list = new();
     private DateTime? _selectedStart;
     private string _shown = "";
+    private bool _consent;
+    private long _consentAt = long.MinValue;
+
+    /// <summary>The privacy policy accepted (read from the settings at most every ten seconds: the page refreshes several times a second).</summary>
+    private bool Consent()
+    {
+        long tick = Environment.TickCount64;
+        if (tick - _consentAt > 10_000)
+        {
+            _consentAt = tick;
+            _consent = PrivacyConsent.CanUpload;
+        }
+
+        return _consent;
+    }
 
     public LootPage()
     {
@@ -91,9 +106,10 @@ public sealed class LootPage : Grid
         var loc = LocalizationManager.Instance;
         _list = Aion2Loot.Sessions.ToList();
         int server = OwnServer();
-        MarketBook? book = MarketPrices.For(server);
+        bool ask = Consent() && MarketPrices.SignedIn;
+        MarketBook? book = MarketPrices.For(server, ask);
         string key = string.Join("|", _list.Select(s => $"{s.Start.Ticks}:{s.End.Ticks}:{s.Maps.Sum(m => m.Items.Sum(i => i.Picks))}")) + "/" + _selectedStart?.Ticks + "/" + loc.Language
-            + "/" + server + ":" + MarketPrices.Version;
+            + "/" + server + ":" + MarketPrices.Version + ":" + ask;
         if (key == _shown)
         {
             return;
@@ -145,7 +161,7 @@ public sealed class LootPage : Grid
 
         long total = session.Maps.Sum(m => m.Items.Sum(i => i.Count));
         _summary.Text = string.Format(loc["Loot.Summary"], total, LootText.Merge(session.Maps).Count);
-        ShowWorth(session, book, server);
+        ShowWorth(session, book, server, ask);
         foreach (LootMap map in session.Maps.OrderByDescending(m => m.Items.Max(i => i.Last)))
         {
             var head = new TextBlock { Text = LootText.MapName(map.Zone), FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 8, 0, 3) };
@@ -185,13 +201,19 @@ public sealed class LootPage : Grid
         return (characters.FirstOrDefault(c => c.Name == now && c.ServerId > 0) ?? characters.Where(c => c.ServerId > 0).OrderByDescending(c => c.SavedAt).FirstOrDefault())?.ServerId ?? 0;
     }
 
-    private void ShowWorth(LootSession session, MarketBook? book, int server)
+    private void ShowWorth(LootSession session, MarketBook? book, int server, bool ask)
     {
         var loc = LocalizationManager.Instance;
         _worth.Inlines.Clear();
         _worth.ToolTip = null;
         if (server <= 0)
         {
+            return;
+        }
+
+        if (!ask && book is null)
+        {
+            _worth.Text = loc["Loot.WorthSignIn"];
             return;
         }
 

@@ -4891,9 +4891,9 @@ public partial class MainWindow : Window
                 await UploadClient.SendReplayAsync(new ReplayUploadRequest(AppVersion.Text, fingerprint, sent.EncounterId, fight.BossNpcId, fight.StartedAt.ToUniversalTime(), fight.EndedAt.ToUniversalTime(), tracks));
             }
         }
-        catch (Exception ex) when (ex is InvalidOperationException or ArgumentException)
+        catch (Exception ex)
         {
-            AutoUploadLog.Write("replay: " + ex.Message);
+            AutoUploadLog.Write("replay: " + ex.Message); // the replay is extra: whatever went wrong with it, the upload loop goes on
         }
     }
 
@@ -8202,7 +8202,32 @@ public partial class MainWindow : Window
         OverlayDummyBar.Value = fraction ?? 0;
     }
 
-    private DateTime _calloutAt = DateTime.MinValue;
+    private long _calloutAt;
+    private (int Entity, DateTime? Since, DateTime? First, long At) _calloutStart = (-1, null, null, 0);
+
+    /// <summary>When the boss was first hit in this pull (the fight's start as the uploads count it), null before; worked out again when the boss or its pull changes.</summary>
+    private DateTime? BossFirstHit(int entity, Aion2.Aion2EntityDirectory dir)
+    {
+        DateTime? since = dir.EngagedSince(entity);
+        long tick = Environment.TickCount64;
+        if (_calloutStart.Entity == entity && _calloutStart.Since == since && (_calloutStart.First is not null || tick - _calloutStart.At < 1000))
+        {
+            return _calloutStart.First;
+        }
+
+        DateTime from = (since ?? DateTime.MinValue).AddSeconds(since is null ? 0 : -60);
+        DateTime? first = null;
+        foreach (DamageEvent ev in _aggregator.Events)
+        {
+            if (!ev.IsHeal && ev.TargetObjectId == entity && ev.Timestamp >= from && (first is null || ev.Timestamp < first))
+            {
+                first = ev.Timestamp;
+            }
+        }
+
+        _calloutStart = (entity, since, first, tick);
+        return first;
+    }
 
     /// <summary>The meter overlay's boss timers line (<see cref="BossTimers"/>): the boss's next two casts as everyone's uploads learnt them, red within 5 s
     /// and while cast, and the time to its rage where the game data knows it (amber the last minute, red the last 20 s). Hidden without a boss or anything known.</summary>
@@ -8213,15 +8238,17 @@ public partial class MainWindow : Window
             return;
         }
 
-        DateTime now = DateTime.Now;
-        if (now - _calloutAt < TimeSpan.FromMilliseconds(240))
+        long tick = Environment.TickCount64;   // not the wall clock: a clock set back doesn't stop the line
+        if (tick - _calloutAt < 240)
         {
             return;
         }
 
-        _calloutAt = now;
+        _calloutAt = tick;
+        DateTime now = DateTime.Now;
+        // the site is asked for the timers only with the privacy policy accepted; without, the line shows the enrage from the game's own data
         BossCalloutFrame? frame = _gateSettings.OverlayBossTimers && !_historyMode && !_pvpOnly && _source?.Entities is Aion2.Aion2EntityDirectory dir
-            ? BossTimers.Now(dir, now, LocalizationManager.Instance.Language) : null;
+            ? BossTimers.Now(dir, now, LocalizationManager.Instance.Language, id => BossFirstHit(id, dir), PrivacyConsent.IsAccepted(_gateSettings)) : null;
         if (frame is null || (frame.Next.Count == 0 && frame.Rage is null))
         {
             OverlayBossCallout.Visibility = Visibility.Collapsed;
@@ -8229,14 +8256,16 @@ public partial class MainWindow : Window
         }
 
         ShowBossCallout(OverlayBossCalloutText, frame);
+        var loc = LocalizationManager.Instance;
         OverlayBossCallout.ToolTip = frame.Fights > 0
-            ? $"{frame.Boss}: the next casts as {frame.Fights} uploaded fight{(frame.Fights == 1 ? "" : "s")} of it show them" + (frame.Rage is null ? "" : "; the enrage from the game's data")
-            : $"{frame.Boss}: the enrage from the game's data (no uploaded fights of it yet)";
+            ? string.Format(loc["Overlay.BossTimersTip"], frame.Boss, frame.Fights) + (frame.Rage is null ? "" : loc["Overlay.BossTimersTipRage"])
+            : string.Format(loc["Overlay.BossTimersRageOnly"], frame.Boss);
         OverlayBossCallout.Visibility = Visibility.Visible;
     }
 
     internal static void ShowBossCallout(TextBlock text, BossCalloutFrame frame)
     {
+        var loc = LocalizationManager.Instance;
         text.Inlines.Clear();
         bool first = true;
         void Gap()
@@ -8253,7 +8282,7 @@ public partial class MainWindow : Window
         {
             Gap();
             text.Inlines.Add(new System.Windows.Documents.Run(c.Name) { FontWeight = FontWeights.SemiBold });
-            text.Inlines.Add(new System.Windows.Documents.Run(c.Casting ? "  now" : $"  {Math.Ceiling(c.In):0} s")
+            text.Inlines.Add(new System.Windows.Documents.Run("  " + (c.Casting ? loc["Overlay.BossNow"] : string.Format(loc["Overlay.BossIn"], Math.Ceiling(c.In))))
             {
                 Foreground = c.Casting || c.In <= 5 ? OverlayPictures.Red : c.In <= 15 ? OverlayPictures.Amber : OverlayPictures.Muted,
                 FontWeight = FontWeights.SemiBold,
@@ -8263,7 +8292,7 @@ public partial class MainWindow : Window
         if (frame.Rage is TimeSpan rage)
         {
             Gap();
-            text.Inlines.Add(new System.Windows.Documents.Run(rage > TimeSpan.Zero ? $"Enrage {(int)rage.TotalMinutes}:{rage.Seconds:00}" : "Enraged")
+            text.Inlines.Add(new System.Windows.Documents.Run(rage > TimeSpan.Zero ? string.Format(loc["Overlay.Enrage"], $"{(int)rage.TotalMinutes}:{rage.Seconds:00}") : loc["Overlay.Enraged"])
             {
                 Foreground = rage <= HpBarView.RageSoonBefore ? OverlayPictures.Red : rage <= HpBarView.RageWarnBefore ? OverlayPictures.Amber : OverlayPictures.Muted,
                 FontWeight = FontWeights.SemiBold,

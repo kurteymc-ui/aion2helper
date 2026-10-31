@@ -9428,8 +9428,8 @@
     "de": "Wert etwa {0} Kinah zu den Marktpreisen von {1}"
   },
   "Loot.WorthHour": {
-    "en": "{0} Kinah per hour",
-    "de": "{0} Kinah pro Stunde"
+    "en": "about {0} per hour",
+    "de": "etwa {0} pro Stunde"
   },
   "Loot.WorthUnpriced": {
     "en": "{0} kinds without a market price",
@@ -9444,8 +9444,8 @@
     "de": "Die Marktpreise konnten gerade nicht geladen werden."
   },
   "Loot.WorthTip": {
-    "en": "Each item at its average sale of the last 28 days (else its cheapest listing), before the market's fee. Prices of {0}.",
-    "de": "Jeder Gegenstand zu seinem Durchschnittsverkauf der letzten 28 Tage (sonst zum günstigsten Angebot), vor der Marktgebühr. Preise von {0}."
+    "en": "Each item at its average sale of the last 28 days, else its cheapest listing now, else the last listing seen; before the market's fee. It is what the items would sell for, not Kinah picked up. Prices of {0}.",
+    "de": "Jeder Gegenstand zu seinem Durchschnittsverkauf der letzten 28 Tage, sonst zum günstigsten Angebot jetzt, sonst zum zuletzt gesehenen Angebot; vor der Marktgebühr. Das ist, was die Gegenstände einbringen würden, kein aufgehobenes Kinah. Preise von {0}."
   },
   "Loot.ItemWorth": {
     "en": "{0} each · {1} in all",
@@ -13648,5 +13648,37 @@
   "Shell.OvStreamWhat": {
     "en": "The overlays for OBS, to show them on stream.",
     "de": "Die Overlays für OBS, um sie im Stream zu zeigen."
+  },
+  "Overlay.BossNow": {
+    "en": "now",
+    "de": "jetzt"
+  },
+  "Overlay.BossIn": {
+    "en": "{0} s",
+    "de": "{0} s"
+  },
+  "Overlay.Enrage": {
+    "en": "Enrage {0}",
+    "de": "Raserei {0}"
+  },
+  "Overlay.Enraged": {
+    "en": "Enraged",
+    "de": "In Raserei"
+  },
+  "Overlay.BossTimersTip": {
+    "en": "{0}: the next casts as {1} uploaded fights of it show them",
+    "de": "{0}: die nächsten Zauber, wie {1} hochgeladene Kämpfe sie zeigen"
+  },
+  "Overlay.BossTimersTipRage": {
+    "en": "; the enrage from the game's data",
+    "de": "; die Raserei aus den Spieldaten"
+  },
+  "Overlay.BossTimersRageOnly": {
+    "en": "{0}: the enrage from the game's data",
+    "de": "{0}: die Raserei aus den Spieldaten"
+  },
+  "Loot.WorthSignIn": {
+    "en": "What the loot is worth needs the AION 2 Helper sign-in (App menu → AION 2 Helper account) and the privacy policy accepted.",
+    "de": "Der Wert der Beute braucht die Anmeldung bei AION 2 Helper (App-Menü → AION 2 Helper-Konto) und die angenommene Datenschutzerklärung."
   }
 }

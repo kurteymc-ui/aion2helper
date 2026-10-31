@@ -364,6 +364,38 @@ public sealed class Aion2CombatState
         }
     }
 
+    /// <summary>When each skill of <paramref name="actor"/> was last begun since <paramref name="since"/> (the wind-ups as they came, also the short ones a
+    /// display never caught): what the boss timers count down from. The log is read from its newest end until it is well before <paramref name="since"/>.</summary>
+    public Dictionary<int, DateTime> LastWindups(int actor, DateTime since)
+    {
+        var last = new Dictionary<int, DateTime>();
+        lock (_gate)
+        {
+            int older = 0;
+            for (int i = _windupLog.Count - 1; i >= 0; i--)
+            {
+                WindupRecord w = _windupLog[i];
+                if (w.At < since)
+                {
+                    if (w.At < since.AddMinutes(-2) && ++older > 500)
+                    {
+                        break; // the log comes in time order but for a few late frames: far enough back
+                    }
+
+                    continue;
+                }
+
+                older = 0;
+                if (w.Actor == actor && (!last.TryGetValue(w.SkillId, out DateTime seen) || w.At > seen))
+                {
+                    last[w.SkillId] = w.At;
+                }
+            }
+        }
+
+        return last;
+    }
+
     /// <summary>A skill used by <paramref name="actor"/> on <paramref name="target"/> (a cast notice or a hit): remembered as what
     /// the actor is aiming at, which is what "the target of the target" reads.</summary>
     public void NoteAim(int actor, int target, DateTime at)

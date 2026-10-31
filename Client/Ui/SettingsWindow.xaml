@@ -656,7 +656,7 @@
                                 <CheckBox x:Name="AutoUploadBossBox" Content="{local:Loc Settings.AutoUploadBoss}"
                                           ToolTip="Uploads the fight to aion2helper.com a few seconds after a boss died, the same as the Upload button. Off by default."/>
                                 <CheckBox x:Name="UploadReplayBox" Content="{local:Loc Settings.UploadReplay}"
-                                          ToolTip="Where your character, the boss and the other monsters were during the fight, for the replay on the fight's page. Other players' positions only with the switch above."/>
+                                          ToolTip="Sends where your character, the boss and the other monsters were during the fight, for the replay on the fight's page on aion2helper.com. Other players' positions only with the switch above. Off by default."/>
                             </StackPanel>
                         </Border>
 <Border Style="{StaticResource SettingsCard}">

@@ -28,9 +28,21 @@ public static class SelfCheckBossTimers
         bool ahead = at45.Count == 1 && at45[0] is { Name: "Roar", In: 55 };
         Console.WriteLine($"  -> next: a seen cast after its interval, an unseen one at its first time={next}; one being cast={casting}; passed unseen left out={passed}; a minute ahead={ahead}");
 
+        // an odd answer is read a cast at a time, never thrown: a whole number written 12.0, a missing name, a text where a number goes
+        var (odd, oddFights) = BossTimers.Parse("{\"fights\":3.0,\"casts\":[{\"id\":987650001.0,\"first\":4},{\"id\":\"x\",\"first\":5},{\"id\":987650002,\"first\":null}]}");
+        bool lenient = oddFights == 3 && odd.Count == 1 && odd[0] is { Id: 987650001, Name: "", First: 4, Every: null };
+        // the wind-ups the timers count from: every one recorded, also the short ones no display caught
+        var combat = new AionDPS.Aion2.Aion2CombatState();
+        combat.NoteWindup(new AionDPS.Aion2.CastNotice(5, 77, 0, t0.AddSeconds(10), 300, 0, 0, 0, 0, false));
+        combat.NoteWindup(new AionDPS.Aion2.CastNotice(5, 77, 0, t0.AddSeconds(40), 300, 0, 0, 0, 0, false));
+        combat.NoteWindup(new AionDPS.Aion2.CastNotice(6, 77, 0, t0.AddSeconds(50), 300, 0, 0, 0, 0, false));
+        var lastOf = combat.LastWindups(5, t0);
+        bool recorded = lastOf.Count == 1 && lastOf[77] == t0.AddSeconds(40) && combat.LastWindups(5, t0.AddSeconds(45)).Count == 0;
+        Console.WriteLine($"  -> an odd answer read leniently={lenient}; the boss's own wind-ups since its start={recorded}");
+
         string json = JsonSerializer.Serialize(new ReportCastUpload(220, 410, "Quake", 987650077), new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
         bool upload = json.Contains("\"i\":987650077", StringComparison.Ordinal);
         Console.WriteLine($"  -> the report's cast bars carry the skill id for the site: {upload}");
-        return parsed && next && casting && passed && ahead && upload;
+        return parsed && next && casting && passed && ahead && upload && lenient && recorded;
     }
 }

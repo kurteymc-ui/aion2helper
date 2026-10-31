@@ -18,9 +18,10 @@ public sealed record BossCalloutFrame(string Boss, IReadOnlyList<BossCallout> Ne
 
 /// <summary>
 /// Boss timers learnt from uploads: every fight the meters send keeps the boss's casts by skill id (src/meter.js, mt_casts), and the site works out per boss
-/// when each cast first comes, how often again, how long it takes. While a boss is fought the meter fetches that once (kept six hours), watches the casts
-/// itself and counts down to the next ones: from the last time it saw a cast, else from the boss's start. A cast whose time passed unseen (a phase that
-/// did not come yet) is left out. The rage comes from the game's own table only (<see cref="Aion2BossRage"/>).
+/// when each cast first comes, how often again, how long it takes. While a boss is fought the meter fetches that once (kept six hours; only with the privacy
+/// policy accepted, the caller says so), and counts down to the next casts from the boss's wind-ups it recorded: from the last time a cast began, else
+/// from the fight's start, which is the first hit on the boss as the uploads count it. A cast whose time passed unseen (a phase that did not come yet) is
+/// left out. The rage comes from the game's own table only (<see cref="Aion2BossRage"/>), from when the game says the boss went into combat.
 /// </summary>
 public static class BossTimers
 {
@@ -32,41 +33,36 @@ public static class BossTimers
     private static readonly Dictionary<int, (DateTime At, IReadOnlyList<BossTimerCast>? Casts, int Fights)> Known = new();
     private static readonly HashSet<int> Loading = new();
 
-    // the fight followed: the boss entity, its start, and when each of its skills was last seen begun
-    private static int _entity = -1;
-    private static DateTime _since;
-    private static readonly Dictionary<int, DateTime> Last = new();
-
     /// <summary>What the site knows of this boss; null until it answered (the first call asks it).</summary>
     public static (IReadOnlyList<BossTimerCast> Casts, int Fights)? For(int npcId)
     {
         lock (Known)
         {
-            if (Known.TryGetValue(npcId, out var hit) && DateTime.UtcNow - hit.At < (hit.Casts is null ? Retry : Keep))
+            bool have = Known.TryGetValue(npcId, out var hit);
+            if (have && DateTime.UtcNow - hit.At < (hit.Casts is null ? Retry : Keep))
             {
                 return hit.Casts is null ? null : (hit.Casts, hit.Fights);
             }
 
-            if (!Loading.Add(npcId))
+            if (Loading.Add(npcId))
             {
-                return null;
+                _ = FetchAsync(npcId, have ? hit : default);
             }
-        }
 
-        _ = FetchAsync(npcId);
-        return null;
+            return have && hit.Casts is not null ? (hit.Casts, hit.Fights) : null; // the older answer while a new one comes
+        }
     }
 
-    private static async Task FetchAsync(int npcId)
+    private static async Task FetchAsync(int npcId, (DateTime At, IReadOnlyList<BossTimerCast>? Casts, int Fights) before)
     {
         IReadOnlyList<BossTimerCast>? casts = null;
         int fights = 0;
         try
         {
-            string body = await Http.GetStringAsync($"{Brand.Api}/api/boss-timers?npc={npcId}");
+            string body = await Http.GetStringAsync($"{Brand.Api}/api/boss-timers?npc={npcId}").ConfigureAwait(false);
             (casts, fights) = Parse(body);
         }
-        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or JsonException or IOException or InvalidOperationException or KeyNotFoundException)
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or JsonException or IOException or InvalidOperationException or KeyNotFoundException or FormatException)
         {
             casts = null;
         }
@@ -74,11 +70,15 @@ public static class BossTimers
         {
             lock (Known)
             {
-                Known[npcId] = (DateTime.UtcNow, casts, fights);
+                // a failed refresh keeps the answer it had (asked again in five minutes)
+                Known[npcId] = casts is null && before.Casts is not null ? (DateTime.UtcNow - Keep + Retry, before.Casts, before.Fights) : (DateTime.UtcNow, casts, fights);
                 Loading.Remove(npcId);
             }
         }
     }
+
+    private static double? Number(JsonElement o, string name) =>
+        o.TryGetProperty(name, out JsonElement v) && v.ValueKind == JsonValueKind.Number && v.TryGetDouble(out double d) && double.IsFinite(d) ? d : null;
 
     /// <summary>The site's answer: {ok, npc, fights, casts: [{id, name, fights, first, every, dur}]}.</summary>
     public static (IReadOnlyList<BossTimerCast> Casts, int Fights) Parse(string body)
@@ -88,56 +88,49 @@ public static class BossTimers
         var list = new List<BossTimerCast>();
         foreach (JsonElement c in root.GetProperty("casts").EnumerateArray())
         {
-            double? every = c.TryGetProperty("every", out JsonElement e) && e.ValueKind == JsonValueKind.Number ? e.GetDouble() : null;
-            list.Add(new BossTimerCast(c.GetProperty("id").GetInt32(), c.GetProperty("name").GetString() ?? "", c.GetProperty("fights").GetInt32(),
-                c.GetProperty("first").GetDouble(), every, c.TryGetProperty("dur", out JsonElement d) && d.ValueKind == JsonValueKind.Number ? d.GetDouble() : 0));
+            // an answer that isn't what it should be is skipped a cast at a time, never thrown
+            if (c.ValueKind != JsonValueKind.Object || Number(c, "id") is not double id || id < 1 || id > int.MaxValue || Number(c, "first") is not double first)
+            {
+                continue;
+            }
+
+            string name = c.TryGetProperty("name", out JsonElement n) && n.ValueKind == JsonValueKind.String ? n.GetString() ?? "" : "";
+            list.Add(new BossTimerCast((int)id, name.Length > 60 ? name[..60] : name, (int)Math.Clamp(Number(c, "fights") ?? 0, 0, int.MaxValue), first,
+                Number(c, "every") is double every && every > 0 ? (double?)every : null, Math.Max(0, Number(c, "dur") ?? 0)));
         }
 
-        return (list, root.TryGetProperty("fights", out JsonElement f) && f.ValueKind == JsonValueKind.Number ? f.GetInt32() : 0);
+        return (list, (int)Math.Clamp(Number(root, "fights") ?? 0, 0, int.MaxValue));
     }
 
-    /// <summary>The callout for the boss being fought now (local time, like the casts); null when no boss is fought or nothing is known of it.</summary>
-    public static BossCalloutFrame? Now(Aion2EntityDirectory dir, DateTime now, string language)
+    /// <summary>The callout for the boss being fought now (local time, like the casts); null when no boss is fought or nothing is known of it.
+    /// <paramref name="firstHit"/>: the fight's start as the uploads count it (the first hit on that boss), null before it was hit; <paramref name="ask"/>:
+    /// whether the site may be asked (the privacy policy accepted).</summary>
+    public static BossCalloutFrame? Now(Aion2EntityDirectory dir, DateTime now, string language, Func<int, DateTime?> firstHit, bool ask)
     {
-        if (Ui.CombatOverlayData.BossHp(dir, now) is not { } boss || dir.BossNpcIdOf(boss.Id) is not int npc || boss.Since is not DateTime since || since > now)
+        if (Ui.CombatOverlayData.BossHp(dir, now) is not { } boss || dir.BossNpcIdOf(boss.Id) is not int npc)
         {
             return null;
         }
 
-        if (boss.Id != _entity || since != _since)
-        {
-            _entity = boss.Id;
-            _since = since;
-            Last.Clear();
-        }
-
-        foreach (CastView view in dir.Combat.Casts(now, TimeSpan.Zero))
-        {
-            if (view.Notice.Actor == boss.Id && view.Notice.Start >= since && (!Last.TryGetValue(view.Notice.SkillId, out DateTime seen) || view.Notice.Start > seen))
-            {
-                Last[view.Notice.SkillId] = view.Notice.Start;
-            }
-        }
-
         string name = Aion2Npcs.NameOf(npc, language) ?? dir.MonsterNameFor(boss.Id) ?? "";
-        TimeSpan? rage = Aion2BossRage.Known(npc) ? since.AddSeconds(Aion2BossRage.SecondsFor(npc)) - now : null;
-        if (For(npc) is not { } known)
+        TimeSpan? rage = Aion2BossRage.Known(npc) && boss.Since is DateTime since && since <= now ? since.AddSeconds(Aion2BossRage.SecondsFor(npc)) - now : null;
+        if (!ask || firstHit(boss.Id) is not DateTime start || start > now || For(npc) is not { } known)
         {
             return rage is null ? null : new BossCalloutFrame(name, Array.Empty<BossCallout>(), rage, 0);
         }
 
-        return new BossCalloutFrame(name, Upcoming(known.Casts, Last, (now - since).TotalSeconds), rage, known.Fights);
+        return new BossCalloutFrame(name, Upcoming(known.Casts, dir.Combat.LastWindups(boss.Id, start), (now - start).TotalSeconds, start), rage, known.Fights);
     }
 
     /// <summary>The casts due within <see cref="Ahead"/> seconds, soonest first: a seen one again after its interval, an unseen one at its first time.
     /// <paramref name="seen"/>: when each skill was last begun; <paramref name="t"/>: seconds since the boss's start.</summary>
-    internal static IReadOnlyList<BossCallout> Upcoming(IReadOnlyList<BossTimerCast> casts, IReadOnlyDictionary<int, DateTime> seen, double t, DateTime? start = null)
+    internal static IReadOnlyList<BossCallout> Upcoming(IReadOnlyList<BossTimerCast> casts, IReadOnlyDictionary<int, DateTime> seen, double t, DateTime origin)
     {
         var due = new List<BossCallout>();
-        DateTime origin = start ?? _since;
         foreach (BossTimerCast c in casts)
         {
-            string label = Aion2SkillNames.NameOf(c.Id) is { } own && own != c.Id.ToString() ? own : c.Name;
+            // the game's own name in the player's language; the uploads' name (another player's language) only for a skill the meter doesn't know
+            string own = Aion2SkillNames.DisplayOf(c.Id), label = own.Length > 0 && own != c.Id.ToString() ? own : c.Name;
             double? at;
             if (seen.TryGetValue(c.Id, out DateTime last))
             {

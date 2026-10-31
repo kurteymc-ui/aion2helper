@@ -764,7 +764,7 @@ public partial class SettingsWindow : Window
         _settings.CheckForUpdates = CheckForUpdatesBox.IsChecked ?? true;
         _settings.AutoUploadProfile = AutoUploadProfileBox.IsChecked ?? false;
         _settings.UploadOtherPlayersProfiles = UploadOtherProfilesBox.IsChecked ?? false;
-        _settings.UploadReplay = UploadReplayBox.IsChecked ?? true;
+        _settings.UploadReplay = UploadReplayBox.IsChecked ?? false;
         _settings.ShareLoginWithLegion = ShareLoginBox.IsChecked ?? false;
         _settings.LoginShareEligible = onDisk.LoginShareEligible;
         _settings.HotkeyHideUi = (string?)HotkeyHideUiBox.Tag ?? "";

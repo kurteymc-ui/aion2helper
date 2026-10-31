@@ -355,13 +355,13 @@ public sealed class ChecklistWindow : Window
         return string.Format(CultureInfo.CurrentCulture, loc["Checklist.In"], span);
     }
 
+    /// <summary>What a reward cube costs in most level-45 content (the site's Odyle Energy guide: 20 to 80 elsewhere).</summary>
+    private const int OdyleClaim = 40;
+
     /// <summary>
     /// Every character on one page: the Odyle energy now (with the recharges since the meter last saw it), when it is full, the daily tasks, Shugo Festival,
     /// Dimensional Invasion, Nightmare, Ascension Trial and the daily dungeon, with the next daily and weekly reset on top. A line opens the character.
     /// </summary>
-    /// <summary>What a reward cube costs in most level-45 content (the site's Odyle Energy guide: 20 to 80 elsewhere).</summary>
-    private const int OdyleClaim = 40;
-
     private void RenderRoster(string language)
     {
         LocalizationManager loc = LocalizationManager.Instance;
