@@ -7784,6 +7784,11 @@
     "de": "Aufgezeichnete Läufe",
     "fr": "Séries enregistrées"
   },
+  "Dummy.RunsOpenHint": {
+    "en": "Click a finished run to open its full report, as for a boss fight. It stays on this PC: dummy runs are never uploaded.",
+    "de": "Klicke auf einen beendeten Lauf, um seinen ganzen Bericht zu öffnen, wie bei einem Bosskampf. Er bleibt auf diesem PC: Puppenläufe werden nie hochgeladen.",
+    "fr": "Clique sur une série terminée pour ouvrir son rapport complet, comme pour un boss. Il reste sur ce PC : les séries sur mannequin ne sont jamais envoyées."
+  },
   "Dummy.RunsNone": {
     "en": "No runs yet. Every Start makes a new run.",
     "de": "Noch keine Läufe. Jeder Start legt einen neuen Lauf an.",
@@ -7885,6 +7890,11 @@
     "en": "Remove run",
     "de": "Lauf entfernen",
     "fr": "Supprimer la série"
+  },
+  "Dummy.OpenRun": {
+    "en": "Open the full report: skills, timeline, buffs and every hit (stays on this PC, nothing is uploaded)",
+    "de": "Ganzen Bericht öffnen: Fertigkeiten, Zeitleiste, Buffs und jeder Treffer (bleibt auf diesem PC, nichts wird hochgeladen)",
+    "fr": "Ouvrir le rapport complet : compétences, chronologie, buffs et chaque coup (reste sur ce PC, rien n’est envoyé)"
   },
   "Dummy.RemoveAsk": {
     "en": "Remove {0}?",

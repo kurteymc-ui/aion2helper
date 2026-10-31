@@ -48,10 +48,14 @@ public sealed class DummyTestWindow : Window
     private readonly StackPanel _result = new();
     private readonly HashSet<int> _selected = new();
 
-    public DummyTestWindow(DummyTestController controller, Action toggleAllOverlays)
+    /// <summary>Opens a finished run's full fight report (the main window builds it); null: the rows cannot be opened.</summary>
+    private readonly Action<DummyRun>? _openRun;
+
+    public DummyTestWindow(DummyTestController controller, Action toggleAllOverlays, Action<DummyRun>? openRun = null)
     {
         _controller = controller;
         _toggleAllOverlays = toggleAllOverlays;
+        _openRun = openRun;
         LocalizationManager loc = LocalizationManager.Instance;
         Title = loc["Dummy.Title"];
         Width = 1180;
@@ -319,8 +323,15 @@ public sealed class DummyTestWindow : Window
 
         // the runs
         var header = Label(loc["Dummy.Runs"], "Brush.Text", 15, true);
-        header.Margin = new Thickness(2, 4, 0, 6);
+        header.Margin = new Thickness(2, 4, 0, _openRun is null ? 6 : 0);
         column.Children.Add(header);
+        if (_openRun is not null)
+        {
+            TextBlock hint = Label(loc["Dummy.RunsOpenHint"], "Brush.TextMuted", 12);
+            hint.Margin = new Thickness(2, 0, 0, 6);
+            column.Children.Add(hint);
+        }
+
         column.Children.Add(_runList);
 
         _capturePage.Children.Add(new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Content = column });
@@ -548,6 +559,44 @@ public sealed class DummyTestWindow : Window
             Button remove = TrashButton(shown);
             Grid.SetColumn(remove, 7);
             row.Children.Add(remove);
+            if (_openRun is not null && run.Closed && run.Events.Count > 0)
+            {
+                // a click on the row (not in the note or on the bin) opens the run's full report, as a boss fight's
+                row.Cursor = Cursors.Hand;
+                row.ToolTip = loc["Dummy.OpenRun"];
+                if (row.Background is null)
+                {
+                    row.Background = Brushes.Transparent;
+                }
+
+                row.MouseEnter += (_, _) => row.SetResourceReference(Panel.BackgroundProperty, "Brush.ControlHover");
+                bool alt = index % 2 == 0;
+                row.MouseLeave += (_, _) =>
+                {
+                    if (alt)
+                    {
+                        row.SetResourceReference(Panel.BackgroundProperty, "Brush.RowAlt");
+                    }
+                    else
+                    {
+                        row.Background = Brushes.Transparent;
+                    }
+                };
+                row.MouseLeftButtonUp += (_, e) =>
+                {
+                    for (DependencyObject? at = e.OriginalSource as DependencyObject; at is not null && at != row; at = at is Visual ? VisualTreeHelper.GetParent(at) : LogicalTreeHelper.GetParent(at))
+                    {
+                        if (at is TextBox or System.Windows.Controls.Primitives.ButtonBase)
+                        {
+                            return;
+                        }
+                    }
+
+                    e.Handled = true;
+                    _openRun(shown);
+                };
+            }
+
             _runList.Children.Add(row);
         }
     }

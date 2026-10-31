@@ -1691,21 +1691,11 @@ public partial class MainWindow : Window
     /// <summary>A dummy parse is over: an entry of the history's training dummy tab (your hits, skills and effects over its exact time).</summary>
     private void LogDummyRun(DummyRun run)
     {
-        if (Headless || run.Events.Count == 0)
+        if (Headless || DummyReportInput(run) is not { } input)
         {
             return;
         }
 
-        var directory = _liveSource?.Entities as Aion2.Aion2EntityDirectory;
-        var names = new Dictionary<int, string>(run.Names);
-        string name = names.GetValueOrDefault(run.PlayerId) ?? directory?.NameFor(run.PlayerId) ?? CompactOverlayOwnName() ?? "You";
-        int? cp = directory?.SeenProfileOf(run.PlayerId)?.CombatPower;
-        int dummy = run.Events.GroupBy(e => e.TargetObjectId).OrderByDescending(g => g.Sum(e => e.Amount)).First().Key;
-        string dummyName = names.GetValueOrDefault(dummy) ?? directory?.MonsterNameFor(dummy) ?? "Training dummy";
-        names[run.PlayerId] = name;
-        var input = new ReportInput(dummyName, run.Start, run.End, new[] { new ReportPlayer(run.PlayerId, name, ResolveClassName(run.PlayerId), cp, true) },
-            run.Events.ToList(), Array.Empty<DamageEvent>(), Array.Empty<AvoidEvent>(),
-            new FightExtras(run.Uses.ToList(), run.Buffs.ToList(), Array.Empty<StaggerEvent>(), names), dummy, null, false, id => names.GetValueOrDefault(id), null);
         string detail = $"{(int)run.Planned.TotalMinutes}:{run.Planned.Seconds:00} parse" + (run.Length < run.Planned - TimeSpan.FromSeconds(1) ? " · ended early" : "");
         _ = Task.Run(() =>
         {
@@ -1718,6 +1708,45 @@ public partial class MainWindow : Window
                 AutoUploadLog.Write("history: a dummy parse could not be saved: " + ex.Message);
             }
         });
+    }
+
+    /// <summary>A dummy run as a fight report's input: the player alone against the dummy hit the most; null for a run without hits.</summary>
+    private ReportInput? DummyReportInput(DummyRun run)
+    {
+        if (run.Events.Count == 0)
+        {
+            return null;
+        }
+
+        var directory = _liveSource?.Entities as Aion2.Aion2EntityDirectory;
+        var names = new Dictionary<int, string>(run.Names);
+        string name = names.GetValueOrDefault(run.PlayerId) ?? directory?.NameFor(run.PlayerId) ?? CompactOverlayOwnName() ?? "You";
+        int? cp = directory?.SeenProfileOf(run.PlayerId)?.CombatPower;
+        int dummy = run.Events.GroupBy(e => e.TargetObjectId).OrderByDescending(g => g.Sum(e => e.Amount)).First().Key;
+        string dummyName = names.GetValueOrDefault(dummy) ?? directory?.MonsterNameFor(dummy) ?? "Training dummy";
+        names[run.PlayerId] = name;
+        return new ReportInput(dummyName, run.Start, run.End, new[] { new ReportPlayer(run.PlayerId, name, ResolveClassName(run.PlayerId), cp, true) },
+            run.Events.ToList(), Array.Empty<DamageEvent>(), Array.Empty<AvoidEvent>(),
+            new FightExtras(run.Uses.ToList(), run.Buffs.ToList(), Array.Empty<StaggerEvent>(), names), dummy, null, false, id => names.GetValueOrDefault(id), null);
+    }
+
+    /// <summary>A finished dummy run's full fight report (skills, timeline, buffs …) as for a boss fight, on this PC only: nothing is uploaded.</summary>
+    private async void OpenDummyRun(DummyRun run)
+    {
+        if (!run.Closed || DummyReportInput(run) is not { } input)
+        {
+            return;
+        }
+
+        try
+        {
+            FightReport report = await Task.Run(() => FightReport.Build(input));
+            new FightReportWindow(report) { Owner = IsVisible ? this : null }.Show();
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or ArgumentException)
+        {
+            AutoUploadLog.Write("dummy: the report of a run could not be built: " + ex.Message);
+        }
     }
 
     private HistoryWindow? _historyWindow;
@@ -5349,7 +5378,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        _dummyWindow = new DummyTestWindow(_dummy, ToggleAllOverlays) { Owner = this };
+        _dummyWindow = new DummyTestWindow(_dummy, ToggleAllOverlays, OpenDummyRun) { Owner = this };
         _dummyWindow.Closed += (_, _) => _dummyWindow = null;
         _dummyWindow.Show();
     }
@@ -6618,7 +6647,7 @@ public partial class MainWindow : Window
                 return Hosted(new AssistWindow(() => _liveSource?.Entities as Aion2EntityDirectory));
             case "dummy" when _dummy is not null:
             {
-                var dummyWindow = new DummyTestWindow(_dummy, ToggleAllOverlays);
+                var dummyWindow = new DummyTestWindow(_dummy, ToggleAllOverlays, OpenDummyRun);
                 var dummyTool = new ToolPage { Content = ThemedChrome.TakeContent(dummyWindow) ?? new Grid(), Cleanup = dummyWindow.Close, CurrentTab = () => dummyWindow.Tab };
                 dummyWindow.TabChanged += dummyTool.RaiseTabChanged;
                 return dummyTool;
