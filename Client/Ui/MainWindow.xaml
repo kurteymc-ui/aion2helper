@@ -875,14 +875,17 @@
                     <Border x:Name="ClientScopeBox" Background="#0AFFFFFF" BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1" CornerRadius="6" Padding="2"
                             Margin="0,0,8,0" VerticalAlignment="Center" Visibility="Collapsed" ToolTip="Whose damage is listed here and on the overlay: everybody, your group, or your corps (two groups).">
                         <StackPanel x:Name="ClientScopeSwitch" Orientation="Horizontal">
-                            <Border Tag="All" Padding="10,3" CornerRadius="4" Cursor="Hand" MouseLeftButtonDown="OnOverlayScopeClicked">
-                                <TextBlock FontSize="12" FontWeight="SemiBold" Text="{local:Loc Main.Scope.All}"/>
+                            <Border Tag="Me" Padding="10,3" CornerRadius="4" Cursor="Hand" MouseLeftButtonDown="OnOverlayScopeClicked">
+                                <TextBlock FontSize="12" FontWeight="SemiBold" Text="Me"/>
                             </Border>
                             <Border Tag="Group" Padding="10,3" CornerRadius="4" Cursor="Hand" MouseLeftButtonDown="OnOverlayScopeClicked">
                                 <TextBlock FontSize="12" FontWeight="SemiBold" Text="{local:Loc Main.Scope.Group}"/>
                             </Border>
                             <Border Tag="Corps" Padding="10,3" CornerRadius="4" Cursor="Hand" MouseLeftButtonDown="OnOverlayScopeClicked">
                                 <TextBlock FontSize="12" FontWeight="SemiBold" Text="{local:Loc Main.Scope.Corps}"/>
+                            </Border>
+                            <Border Tag="All" Padding="10,3" CornerRadius="4" Cursor="Hand" MouseLeftButtonDown="OnOverlayScopeClicked">
+                                <TextBlock FontSize="12" FontWeight="SemiBold" Text="{local:Loc Main.Scope.All}"/>
                             </Border>
                         </StackPanel>
                     </Border>
@@ -1262,14 +1265,17 @@
                 <DockPanel Margin="12,1,10,5">
                     <Border DockPanel.Dock="Right" Background="#0AFFFFFF" BorderBrush="#1FFFFFFF" BorderThickness="1" CornerRadius="6" Padding="2" VerticalAlignment="Center">
                         <StackPanel x:Name="OverlayScopeSwitch" Orientation="Horizontal">
-                            <Border x:Name="OverlayScopeAll" Tag="All" Padding="8,0" CornerRadius="4" Cursor="Hand" MouseLeftButtonDown="OnOverlayScopeClicked">
-                                <TextBlock FontSize="11" FontWeight="SemiBold" Text="{local:Loc Main.Scope.All}"/>
+                            <Border Tag="Me" Padding="7,0" CornerRadius="4" Cursor="Hand" MouseLeftButtonDown="OnOverlayScopeClicked" ToolTip="Only you (picked by itself at a training dummy)">
+                                <TextBlock FontSize="11" FontWeight="SemiBold" Text="Me"/>
                             </Border>
-                            <Border x:Name="OverlayScopeGroup" Tag="Group" Padding="8,0" CornerRadius="4" Cursor="Hand" MouseLeftButtonDown="OnOverlayScopeClicked">
+                            <Border x:Name="OverlayScopeGroup" Tag="Group" Padding="7,0" CornerRadius="4" Cursor="Hand" MouseLeftButtonDown="OnOverlayScopeClicked">
                                 <TextBlock FontSize="11" FontWeight="SemiBold" Text="{local:Loc Main.Scope.Group}"/>
                             </Border>
-                            <Border x:Name="OverlayScopeCorps" Tag="Corps" Padding="8,0" CornerRadius="4" Cursor="Hand" MouseLeftButtonDown="OnOverlayScopeClicked">
+                            <Border x:Name="OverlayScopeCorps" Tag="Corps" Padding="7,0" CornerRadius="4" Cursor="Hand" MouseLeftButtonDown="OnOverlayScopeClicked">
                                 <TextBlock FontSize="11" FontWeight="SemiBold" Text="{local:Loc Main.Scope.Corps}"/>
+                            </Border>
+                            <Border x:Name="OverlayScopeAll" Tag="All" Padding="7,0" CornerRadius="4" Cursor="Hand" MouseLeftButtonDown="OnOverlayScopeClicked" ToolTip="Everybody (picked by itself in dungeons and raids)">
+                                <TextBlock FontSize="11" FontWeight="SemiBold" Text="{local:Loc Main.Scope.All}"/>
                             </Border>
                         </StackPanel>
                     </Border>

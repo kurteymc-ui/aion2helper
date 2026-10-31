@@ -443,6 +443,10 @@ public sealed class MeterSettings
     /// <summary>The meter overlay's look: "Themed" (the site's dark colours with the gold edge) or "Clear" (see-through, nearly no frame).</summary>
     public string OverlayLook { get; set; } = "Themed";
 
+    /// <summary>Whose rows are shown picks itself: everybody in an instance or arena (the raid), only the own character at a training dummy, the
+    /// All / Group / Corps / Me switch's choice elsewhere. A click on the switch holds until the player goes somewhere else.</summary>
+    public bool AutoScope { get; set; } = true;
+
     /// <summary>The meter overlay stays where it is: no moving, no scaling (its buttons still work).</summary>
     public bool MeterOverlayLocked { get; set; }
 

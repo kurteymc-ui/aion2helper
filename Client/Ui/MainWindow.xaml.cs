@@ -144,11 +144,32 @@ public partial class MainWindow : Window
     private PetMapController? _petMapController;
     private bool _autoReset;
     /// <summary>Whose rows are shown: everybody, the own group, or the corps (two groups together).</summary>
-    private enum MeterScope { All, Group, Corps }
+    private enum MeterScope { All, Group, Corps, Me }
+
+    /// <summary>Where the player is, for the automatic choice of whose rows are shown: in an instance or arena everybody (the raid), at a
+    /// training dummy only the own character (the others hitting dummies around are no part of a parse), elsewhere the switch's choice.</summary>
+    private enum ScopeContext { World, Instance, Dummy }
+
+    private ScopeContext _scopeContext = ScopeContext.World;
+
+    /// <summary>A switch clicked in an instance or at a dummy: it holds there until the player leaves (a new place picks automatically again).</summary>
+    private MeterScope? _scopeManual;
+
+    private bool _autoScope = true;
+    private DateTime _lastDummyHit = DateTime.MinValue;
+    private readonly Dictionary<int, bool> _dummyTargets = new();
+
+    /// <summary>Whose rows are shown now: the switch's pick for this place, else the automatic one (instance: all, dummy: you), else the saved choice.</summary>
+    private MeterScope ShownScope => _scopeManual ?? (!_autoScope ? _scope : _scopeContext switch
+    {
+        ScopeContext.Instance => MeterScope.All,
+        ScopeContext.Dummy => MeterScope.Me,
+        _ => _scope,
+    });
 
     /// <summary>The All / Group / Corps filter belongs to the compact overlay (its header carries the switch, the client's toolbar a copy of it):
     /// while the overlay is on, the client lists the same players; the chip overlay always lists everybody whose damage arrives.</summary>
-    private bool ScopeActive => (_hideUiActive || MeterOverlayActive) && _compactOverlay;
+    private bool ScopeActive => ((_hideUiActive || MeterOverlayActive) && _compactOverlay) || (_autoScope && _scopeContext == ScopeContext.Dummy && _scopeManual is null);
 
     // ---- the meter overlay: the compact panel in a window of its own over the game, the main window being the client beside it ----
     private MeterOverlayWindow? _meterOverlay;
@@ -607,6 +628,7 @@ public partial class MainWindow : Window
         _autoReset = settings.AutoResetEnabled;
         _autoResetIdle = TimeSpan.FromSeconds(Math.Clamp(settings.AutoResetSeconds, 1, 600));
         _scope = Enum.TryParse(settings.ViewScope, true, out MeterScope scope) ? scope : MeterScope.Group;
+        _autoScope = settings.AutoScope;
         UpdateScopeControls();
         _compactOverlay = string.Equals(settings.OverlayStyle, "Compact", StringComparison.OrdinalIgnoreCase);
         _compactClickThrough = settings.CompactClickThrough;
@@ -914,6 +936,7 @@ public partial class MainWindow : Window
         FeedSessions(liveBatch);
         NoteArenaLeft(liveBatch);
         bool ownFight = NoteOwnCombat(liveBatch.Damage);
+        UpdateScopeContext();
         // A new stay began (map or instance change) while an older session or the all-sessions view is on show: the view follows
         // into the new stay, which the recorder has just opened. The grid is filled from the recorder, so this batch's hits are in it already.
         // The same when the player fights while the client shows a stored fight and is not in front: the overlay is to show this fight.
@@ -1368,6 +1391,48 @@ public partial class MainWindow : Window
         _meterOverlay.ShowOverlay(MeterOverlayActive && _gameGateOpen && inFight);
     }
 
+    /// <summary>A training dummy (Training Scarecrow, Punching Bag ..., by its name in any language), known per target id.</summary>
+    private bool IsDummyTarget(Aion2.Aion2EntityDirectory directory, int targetId)
+    {
+        if (_dummyTargets.TryGetValue(targetId, out bool known))
+        {
+            return known;
+        }
+
+        if (_dummyTargets.Count > 2000)
+        {
+            _dummyTargets.Clear();
+        }
+
+        string? name = directory.NameFor(targetId) ?? directory.MonsterNameFor(targetId);
+        bool dummy = DummyTargets.IsDummy(name);
+        if (name is not null)
+        {
+            _dummyTargets[targetId] = dummy; // a target not named yet is asked again
+        }
+
+        return dummy;
+    }
+
+    /// <summary>
+    /// Where the player is now, for whose rows are shown: at a dummy (the own character hit one in the last 20 seconds, or a dummy run waits or runs),
+    /// in an instance or arena, or elsewhere. A new place drops the switch's pick for the old one.
+    /// </summary>
+    private void UpdateScopeContext()
+    {
+        bool atDummy = DateTime.Now - _lastDummyHit < TimeSpan.FromSeconds(20) || _dummy?.Model.State is DummyState.Armed or DummyState.Running;
+        ScopeContext context = atDummy ? ScopeContext.Dummy : InInstanceNow() ? ScopeContext.Instance : ScopeContext.World;
+        if (context == _scopeContext)
+        {
+            return;
+        }
+
+        _scopeContext = context;
+        _scopeManual = null;
+        UpdateScopeControls();
+        RefreshRows();
+    }
+
     /// <summary>The player is in an instance or an arena now (the last zone frame said so).</summary>
     private bool InInstanceNow() =>
         _liveSource is Aion2.Aion2PacketCombatSource source && source.CurrentZoneId is > 0 and var zone && (Aion2Zones.IsInstance(zone) || Aion2Zones.IsArena(zone));
@@ -1381,7 +1446,20 @@ public partial class MainWindow : Window
             return false;
         }
 
-        int local = directory.LocalPlayerId;
+        int local = directory.LocalPlayerId >= 0 ? directory.LocalPlayerId : directory.InferLocalPlayer() ?? -1;
+        if (local >= 0)
+        {
+            foreach (DamageEvent ev in events)
+            {
+                if (!ev.IsHeal && ev.SourceObjectId == local && IsDummyTarget(directory, ev.TargetObjectId))
+                {
+                    _lastDummyHit = DateTime.Now;
+                    break;
+                }
+            }
+        }
+
+        local = directory.LocalPlayerId;
         foreach (DamageEvent ev in events)
         {
             if (ev.IsHeal)
@@ -1534,7 +1612,7 @@ public partial class MainWindow : Window
         // The index answers the damage side of every view that asks nothing of a picked target or of the compact overlay's Group/Corps
         // scope: Damage, PvP, Heal, Taken and All in One. The views of one target's fight and the scoped ones still rescan (a boss
         // fight's list follows rules that look at the whole stretch of events, and the scope at who fought what).
-        bool damageIndexed = !ForceFullRefresh && _selectedTargetId is null && !(ScopeActive && _scope != MeterScope.All)
+        bool damageIndexed = !ForceFullRefresh && _selectedTargetId is null && !(ScopeActive && ShownScope != MeterScope.All)
             && (!_pvpOnly || _index.TimeOrdered);
 
         RefreshMobBossFilterItems(!ForceFullRefresh);
@@ -1559,7 +1637,7 @@ public partial class MainWindow : Window
                 ? ShownFightHits(damageOnly, targetId)
                 // The own-fight restriction belongs with the compact overlay's Group / Corps view; everywhere else the
                 // players around one count too, whatever they are fighting.
-                : ScopeActive && _scope != MeterScope.All
+                : ScopeActive && ShownScope != MeterScope.All
                     ? RestrictToEngagedTargets(damageOnly.ToList())
                     : damageOnly.ToList();
 
@@ -1571,7 +1649,7 @@ public partial class MainWindow : Window
             }
         }
 
-        _corpsIds = ScopeActive && _scope != MeterScope.All ? ComputeCorps(filtered) : new HashSet<int>();
+        _corpsIds = ScopeActive && ShownScope != MeterScope.All ? ComputeCorps(filtered) : new HashSet<int>();
 
         // A pure healer never hit the selected target, so `filtered` holds none of their events, yet
         // they belong in the list (and in an upload's roster). Heals inside the shown window by
@@ -1806,22 +1884,27 @@ public partial class MainWindow : Window
     /// </summary>
     private bool IsInScope(int sourceId)
     {
-        if (!ScopeActive || _scope == MeterScope.All || _pvpOnly || _source?.Entities is not Aion2.Aion2EntityDirectory directory
+        if (!ScopeActive || ShownScope == MeterScope.All || _pvpOnly || _source?.Entities is not Aion2.Aion2EntityDirectory directory
             || directory.IsLocalPlayer(sourceId) || directory.InferLocalPlayer() == sourceId)
         {
             return true;
+        }
+
+        if (ShownScope == MeterScope.Me)
+        {
+            return false; // a dummy parse: the own character alone
         }
 
         // No roster seen (the meter started after the group formed; the roster is sent once): the
         // group is unknown, and "only me" would be wrong - until it is read, the group is whoever
         // fights the same monsters.
         bool groupKnown = RosterKnown(directory);
-        if (_scope == MeterScope.Group && !groupKnown)
+        if (ShownScope == MeterScope.Group && !groupKnown)
         {
             return _corpsIds.Contains(sourceId);
         }
 
-        return IsGroupMember(sourceId, directory) || (_scope == MeterScope.Corps && _corpsIds.Contains(sourceId));
+        return IsGroupMember(sourceId, directory) || (ShownScope == MeterScope.Corps && _corpsIds.Contains(sourceId));
     }
 
     /// <summary>Whether a party roster naming anyone besides the local player has been read.</summary>
@@ -1866,6 +1949,15 @@ public partial class MainWindow : Window
 
     private void SetScope(MeterScope scope)
     {
+        // in an instance or at a dummy the click holds for this place only; in the open world it is the saved choice
+        if (_autoScope && _scopeContext != ScopeContext.World)
+        {
+            _scopeManual = scope;
+            UpdateScopeControls();
+            RefreshRows();
+            return;
+        }
+
         if (scope == _scope)
         {
             UpdateScopeControls();
@@ -1896,7 +1988,7 @@ public partial class MainWindow : Window
         ClientScopeBox.Visibility = MeterOverlayActive ? Visibility.Visible : Visibility.Collapsed;
         foreach (Border segment in OverlayScopeSwitch.Children.OfType<Border>().Concat(ClientScopeSwitch.Children.OfType<Border>()))
         {
-            bool selected = segment.Tag as string == _scope.ToString();
+            bool selected = segment.Tag as string == ShownScope.ToString();
             // the chosen one: a gold-tinted pill with gold text; the others quiet words (the site's switches)
             segment.Background = selected ? ScopeOnBrush : Brushes.Transparent;
             if (segment.Child is TextBlock text)
@@ -7453,6 +7545,7 @@ public partial class MainWindow : Window
             opacity,
             new Separator(),
             OverlayItem("Only in dungeons and fights", () => ChangeOverlaySetting(s => s.MeterOverlayAutoHide = !s.MeterOverlayAutoHide), settings.MeterOverlayAutoHide),
+            OverlayItem("Everyone in dungeons, only me at dummies", () => ChangeOverlaySetting(s => s.AutoScope = !s.AutoScope), settings.AutoScope),
             OverlayItem("Party buffs under the names", () => ChangeOverlaySetting(s => s.ShowPartyBuffs = !s.ShowPartyBuffs), settings.ShowPartyBuffs),
             OverlayItem("Click-through (turn off in Settings)", () => ChangeOverlaySetting(s => s.CompactClickThrough = !s.CompactClickThrough), settings.CompactClickThrough),
             new Separator(),
@@ -7857,9 +7950,12 @@ public partial class MainWindow : Window
         }
 
         var lastHits = new DateTime[entries.Count];
+        // at a dummy the fight followed is the own one: the others hitting their dummies around do not pull the list away
+        int onlySource = ScopeActive && ShownScope == MeterScope.Me && directory is not null
+            ? (directory.LocalPlayerId >= 0 ? directory.LocalPlayerId : directory.InferLocalPlayer() ?? -1) : -1;
         foreach (DamageEvent ev in _aggregator.Events)
         {
-            if (ev.IsHeal || !byTarget.TryGetValue(ev.TargetObjectId, out List<int>? slots))
+            if (ev.IsHeal || (onlySource >= 0 && ev.SourceObjectId != onlySource) || !byTarget.TryGetValue(ev.TargetObjectId, out List<int>? slots))
             {
                 continue;
             }
