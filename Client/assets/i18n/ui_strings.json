@@ -14401,5 +14401,45 @@
     "en": "The interactive map shows the pets you picked.",
     "de": "Die interaktive Karte zeigt die Haustiere, die du ausgewählt hast.",
     "fr": "La carte interactive montre les familiers que tu as choisis."
+  },
+  "Look.Rates": {
+    "en": "Raid rates",
+    "de": "Raid-Raten",
+    "fr": "Taux de raid"
+  },
+  "Look.RatesNote": {
+    "en": "Worked out from the party buffs over the fight shown, as the rDPS view does, whatever the meter shows.",
+    "de": "Aus den Gruppen-Buffs im gezeigten Kampf berechnet, wie in der rDPS-Ansicht, egal was der Meter zeigt.",
+    "fr": "Calculés à partir des buffs de groupe du combat affiché, comme la vue rDPS, quel que soit l’affichage du meter."
+  },
+  "Look.ColRdps": {
+    "en": "rDPS",
+    "de": "rDPS",
+    "fr": "rDPS"
+  },
+  "Look.ColRdpsTip": {
+    "en": "rDPS: the player’s damage per second without other people’s buffs, plus what their own buffs added to the others.",
+    "de": "rDPS: Schaden pro Sekunde des Spielers ohne die Buffs anderer, plus was seine eigenen Buffs den anderen brachten.",
+    "fr": "rDPS : les dégâts par seconde du joueur sans les buffs des autres, plus ce que ses propres buffs ont apporté aux autres."
+  },
+  "Look.ColNdps": {
+    "en": "nDPS",
+    "de": "nDPS",
+    "fr": "nDPS"
+  },
+  "Look.ColNdpsTip": {
+    "en": "nDPS: the player’s damage per second without the buffs other people put on them.",
+    "de": "nDPS: Schaden pro Sekunde des Spielers ohne die Buffs, die andere auf ihn legten.",
+    "fr": "nDPS : les dégâts par seconde du joueur sans les buffs que les autres lui ont mis."
+  },
+  "Look.ColGiven": {
+    "en": "Given",
+    "de": "Gegeben",
+    "fr": "Donné"
+  },
+  "Look.ColGivenTip": {
+    "en": "What the player’s buffs added to the others’ damage per second (rDPS minus nDPS).",
+    "de": "Was die Buffs des Spielers dem Schaden pro Sekunde der anderen hinzufügten (rDPS minus nDPS).",
+    "fr": "Ce que les buffs du joueur ont ajouté aux dégâts par seconde des autres (rDPS moins nDPS)."
   }
 }

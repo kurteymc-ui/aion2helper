@@ -1419,7 +1419,7 @@ internal static class Program
                     "look-wide" => new Ui.MeterSettings
                     {
                         MeterBarStyle = "capsule", MeterFont = "bahnschrift", MeterColumnTitles = true,
-                        MeterColumns = new() { "rank", "icon", "cp", "support", "crit", "back", "front", "perfect", "dps", "share", "total" },
+                        MeterColumns = new() { "rank", "icon", "cp", "support", "crit", "back", "front", "perfect", "rdps", "given", "dps", "share", "total" },
                     },
                     "look-thread" => new Ui.MeterSettings
                     {

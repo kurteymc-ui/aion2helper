@@ -138,6 +138,31 @@ public sealed class PlayerRow : INotifyPropertyChanged
 
     private double? _rdps;
 
+    /// <summary>nDPS (Combat/RaidDps): the player's rate without the buffs other people put on them; null until worked out.</summary>
+    public double? Ndps
+    {
+        get => _ndps;
+        set { if (_ndps == value) { return; } _ndps = value; OnPropertyChanged(); OnPropertyChanged(nameof(NdpsText)); }
+    }
+
+    private double? _ndps;
+
+    /// <summary>What this player's buffs added to the others' damage per second (rDPS − nDPS); null until worked out.</summary>
+    public double? Given
+    {
+        get => _given;
+        set { if (_given == value) { return; } _given = value; OnPropertyChanged(); OnPropertyChanged(nameof(GivenText)); }
+    }
+
+    private double? _given;
+
+    /// <summary>The meter's optional rate columns (Meter look): rDPS, nDPS and what the buffs gave, short.</summary>
+    public string RdpsText => Rdps is double v ? Compact((long)Math.Round(v)) : "–";
+
+    public string NdpsText => Ndps is double v ? Compact((long)Math.Round(v)) : "–";
+
+    public string GivenText => Given is double v && v >= 0.5 ? "+" + Compact((long)Math.Round(v)) : "–";
+
     /// <summary>The party buffs on this player right now ("Undefeated Mantra · Wind of Power"), empty when none or switched off.</summary>
     public string BuffLine
     {
@@ -163,6 +188,7 @@ public sealed class PlayerRow : INotifyPropertyChanged
 
     private void RateChanged()
     {
+        OnPropertyChanged(nameof(RdpsText));
         OnPropertyChanged(nameof(DpsDisplay));
         OnPropertyChanged(nameof(DpsCompact));
         OnPropertyChanged(nameof(RateOrHealDisplay));

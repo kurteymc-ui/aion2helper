@@ -241,6 +241,8 @@ public partial class MainWindow
             {
                 Name = x.Name, ClassName = x.Cls, Damage = x.Dmg, Dps = x.Dps, SharePercent = 100.0 * x.Dmg / total, FillPercent = 100.0 * x.Dmg / sample[0].Dmg, Rank = rank,
                 CombatPowerText = PlayerRow.Compact(162_000 + 8_700 * (7 - rank)),
+                Rdps = x.Dps * (x.Cls is "Chanter" or "Cleric" ? 1.55 : 1.02), Ndps = x.Dps * (x.Cls is "Chanter" or "Cleric" ? 0.97 : 0.86),
+                Given = x.Cls is "Chanter" or "Cleric" ? x.Dps * 0.58 : x.Dps * 0.16,
                 Hits = new HitStats { Direct = 400 + rank * 37, Crit = (400 + rank * 37) * x.Crit / 100, Kinded = 400, Back = 4 * x.Back, Front = 4 * x.Front, Perfect = 4 * x.Perfect, Double = 4 * x.Double, Parry = rank == 4 ? 12 : 4 },
             };
             var badges = new List<SupportBadge>
@@ -521,6 +523,13 @@ public partial class MainWindow
             own.Children.Add(Check(loc["Look.Own." + id], loc[column.TipKey], shown.Contains(id), on => Toggle(column.Id, on)));
         }
 
+        var rates = new WrapPanel();
+        foreach (string id in new[] { "rdps", "ndps", "given" })
+        {
+            MeterColumn column = MeterLook.Columns.First(c => c.Id == id);
+            rates.Children.Add(Check(loc[column.TitleKey], loc[column.TipKey], shown.Contains(id), on => Toggle(column.Id, on)));
+        }
+
         var kinds = new WrapPanel();
         foreach (string id in new[] { "crit", "back", "front", "perfect", "double", "parry", "hits" })
         {
@@ -538,6 +547,7 @@ public partial class MainWindow
         left.Children.Add(Section(loc["Look.Columns"],
             Sub(loc["Look.NameSide"]), nameSide,
             Sub(loc["Look.Numbers"]), own,
+            Sub(loc["Look.Rates"]), Note(loc["Look.RatesNote"]), rates,
             Sub(loc["Look.HitKinds"]), Note(loc["Look.HitKindsNote"]), kinds,
             Sub(loc["Look.Support"]), Check(loc["Look.ColSupportLong"], loc["Look.ColSupportTip"], shown.Contains("support"), on => Toggle("support", on)),
             Note(loc["Look.SupportNote"]),

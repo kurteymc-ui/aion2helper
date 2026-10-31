@@ -2472,7 +2472,9 @@ public partial class MainWindow : Window
             row.RdpsView = on;
         }
 
-        if (!on || span is not (DateTime from, DateTime to) || to <= from || _source?.Entities is not Aion2.Aion2EntityDirectory directory)
+        // the meter's rDPS / nDPS / given columns (Meter look) want the same figures in every damage view
+        bool wanted = on || (!_pvpOnly && (_meterLook.Has("rdps") || _meterLook.Has("ndps") || _meterLook.Has("given")));
+        if (!wanted || span is not (DateTime from, DateTime to) || to <= from || _source?.Entities is not Aion2.Aion2EntityDirectory directory)
         {
             return;
         }
@@ -2507,7 +2509,10 @@ public partial class MainWindow : Window
             Dictionary<int, RaidDpsResult> results = RaidDps.Compute(participants, onBoss, (to - from).TotalSeconds);
             foreach (PlayerRow row in players)
             {
-                row.Rdps = results.TryGetValue(row.ObjectId, out RaidDpsResult r) ? r.Rdps : row.Dps;
+                bool known = results.TryGetValue(row.ObjectId, out RaidDpsResult r);
+                row.Rdps = known ? r.Rdps : row.Dps;
+                row.Ndps = known ? r.Ndps : row.Dps;
+                row.Given = known ? r.Given : null;
             }
         }
         catch (Exception ex) when (ex is InvalidOperationException or ArgumentException)
@@ -7933,6 +7938,14 @@ public partial class MainWindow : Window
             }),
             DummyMenu(settings),
             new Separator(),
+            OverlayItem("Meter look: bars, fonts, columns…", () =>
+            {
+                ShowClient();
+                if (_shellBuilt)
+                {
+                    ShowShellPage("meterlook");
+                }
+            }),
             OverlayItem("A2H colours", () => ChangeOverlaySetting(s => s.OverlayLook = "Themed"), !_overlayClear),
             OverlayItem("See-through", () => ChangeOverlaySetting(s => s.OverlayLook = "Clear"), _overlayClear),
             opacity,
