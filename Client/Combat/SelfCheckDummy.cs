@@ -223,11 +223,54 @@ public static class SelfCheckDummy
                 && curve is { LowLevel: 18, HighLevel: 22, Runs: 3 } && Math.Abs(curve.PercentPerLevel - 5) < 0.6 && curve.IdpsPerLevel is > 0
                 && DummyComparison.LevelCurves(new[] { l18, atLevel(Make(1100, 5, 14), 18) }, levelMultipliers).Count == 0; // one level only: no curve
             Console.WriteLine($"  -> levels: the differing skill is named, none differ for equal runs, unknown levels say so, 18/20/22 give +5 % a level, one level gives no curve: {levels}");
-            return ok && parse && clock && chains && rates && steadyRates && targets && welch && skills && noise && levels;
+            bool auto = AutoRuns();
+            return ok && parse && clock && chains && rates && steadyRates && targets && welch && skills && noise && levels && auto;
         }
         finally
         {
             File.Delete(path);
         }
+    }
+
+    /// <summary>Automatic runs: a hit on a dummy starts one; hits on anything else or by others do not; the hits right after the time is up do not start the
+    /// next one, a pause of a few seconds does; a run the player walked away from is dropped.</summary>
+    private static bool AutoRuns()
+    {
+        const int you = 1, other = 2, dummy = 100, mob = 200;
+        DateTime t0 = new(2026, 10, 31, 9, 0, 0);
+        var test = new DummyTest();
+        bool IsDummy(int id) => id == dummy;
+        bool IsOwn(int id) => id == you;
+        TimeSpan minute = TimeSpan.FromMinutes(1);
+        void Feed(params DamageEvent[] events)
+        {
+            test.FeedAuto(events, IsOwn, IsDummy, minute, "auto");
+            test.Feed(events, IsOwn);
+        }
+
+        Feed(new DamageEvent(t0, you, mob, 10, false), new DamageEvent(t0.AddSeconds(1), other, dummy, 10, false));
+        bool notOthers = test.State == DummyState.Idle;
+        Feed(new DamageEvent(t0.AddSeconds(5), you, dummy, 10, false));
+        bool starts = test.State == DummyState.Running && test.IsAuto && test.Current is { Start: var start, Planned: var planned } && start == t0.AddSeconds(5) && planned == minute;
+        for (int i = 1; i <= 69; i++)
+        {
+            Feed(new DamageEvent(t0.AddSeconds(5 + i), you, dummy, 10, false));
+            test.Tick(t0.AddSeconds(5 + i + 0.5));
+        }
+
+        bool finished = test.Runs.Count == 1 && test.Runs[0].Events.Count == 61 && test.State == DummyState.Finished;
+        // still hitting ten seconds after the time: no new run; after a pause of 6 s the next hit starts run 2
+        test.Tick(t0.AddSeconds(75));
+        Feed(new DamageEvent(t0.AddSeconds(75), you, dummy, 10, false));
+        bool noChain = test.Runs.Count == 1;
+        Feed(new DamageEvent(t0.AddSeconds(81), you, dummy, 10, false));
+        bool second = test.Runs.Count == 2 && test.State == DummyState.Running && test.Current?.Number == 2;
+        // walked away: no hit for 15 s, the run is dropped and its number used again
+        test.Tick(t0.AddSeconds(97));
+        bool dropped = test.Runs.Count == 1 && test.State == DummyState.Idle;
+        Feed(new DamageEvent(t0.AddSeconds(120), you, dummy, 10, false));
+        bool renumbered = test.Current?.Number == 2;
+        Console.WriteLine($"  -> automatic runs: a hit on a dummy starts one (not others' hits or other targets), none chained at once, a pause starts the next, a run walked away from is dropped: {notOthers && starts && finished && noChain && second && dropped && renumbered}");
+        return notOthers && starts && finished && noChain && second && dropped && renumbered;
     }
 }

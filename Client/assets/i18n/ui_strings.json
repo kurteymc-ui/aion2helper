@@ -1093,7 +1093,7 @@
     "ko": "이 단축키 삭제"
   },
   "Main.Tray.ToggleUi": {
-    "en": "Show / hide UI",
+    "en": "Show / hide the overlay",
     "de": "UI anzeigen / verstecken",
     "fr": "Afficher / masquer l'interface",
     "es": "Mostrar / ocultar la interfaz",
@@ -13255,5 +13255,50 @@
     "en": ", about {0} iDPS",
     "de": ", etwa {0} iDPS",
     "fr": ", environ {0} iDPS"
+  },
+  "Dummy.AutoNote": {
+    "en": "Auto"
+  },
+  "Dummy.AutoTitle": {
+    "en": "Dummy parse"
+  },
+  "Dummy.AutoDropped": {
+    "en": "Run dropped: no hits for 15 s"
+  },
+  "Main.Overlay.OpenClient": {
+    "en": "Open the meter window (history, settings, fight report)"
+  },
+  "Main.Overlay.HideOverlay": {
+    "en": "Hide the overlay (the eye button or Ctrl+Alt+H brings it back)"
+  },
+  "Main.CloseToTray.Title": {
+    "en": "A2HMeter keeps running"
+  },
+  "Main.CloseToTray.Text": {
+    "en": "The window goes to the tray and the meter keeps running over the game.\n\nOpen it again from the tray icon or the overlay's window button. App → Exit ends the meter."
+  },
+  "Settings.MeterOverlayOn": {
+    "en": "Show the meter overlay over the game"
+  },
+  "Settings.MeterOverlayAutoHide": {
+    "en": "Only in dungeons and while you fight (it hides itself between fights)"
+  },
+  "Settings.MeterOverlayHide": {
+    "en": "Hide it after this long without a fight"
+  },
+  "Settings.MeterOverlay.Hint": {
+    "en": "The overlay is a window of its own over the game; this window is the client (history, settings, fight report) and can go to the tray. The eye button or Ctrl+Alt+H shows or hides the overlay."
+  },
+  "Settings.Card.Dummy": {
+    "en": "Training dummy"
+  },
+  "Settings.DummyAutoStart": {
+    "en": "Start a timed parse by itself when you hit a training dummy"
+  },
+  "Settings.DummyLength": {
+    "en": "Parse length"
+  },
+  "Settings.DummyAutoStart.Hint": {
+    "en": "Hit any Training Scarecrow or Punching Bag: the clock starts with your first hit and the run is saved when the time is up (Tools → Dummy test lists and compares the runs). Stop hitting for 15 seconds and the run is dropped; after a run, pause 5 seconds and the next hit starts a new one."
   }
 }

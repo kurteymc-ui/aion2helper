@@ -285,6 +285,10 @@ public sealed class MeterSettings
     /// <summary>The length of the last dummy test run, in seconds (the field in the dummy test window starts with it).</summary>
     public int DummyTestSeconds { get; set; } = 120;
 
+    /// <summary>The player's own hit on a training dummy (Training Scarecrow, Punching Bag ..., see DummyTargets) starts a run of
+    /// <see cref="DummyTestSeconds"/> by itself; it is saved with the other runs when the time is up.</summary>
+    public bool DummyAutoStart { get; set; } = true;
+
     /// <summary>The combat overlay (see CombatOverlayWindow): the boss cast bar, the target of the target and the healer's target in one frame.
     /// Off until switched on; every element has its own place and size inside the frame (<see cref="CombatElements"/>, in the frame's own units).</summary>
     /// <summary>The overlays step aside while a game menu is open (the game shows the mouse cursor then). Only works in the control mode that hides the cursor while playing; off until switched on.</summary>
@@ -424,6 +428,25 @@ public sealed class MeterSettings
 
     /// <summary>Scale of the compact overlay, 0.7 to 2, set by its corner grip.</summary>
     public double OverlayScale { get; set; } = 1.0;
+
+    /// <summary>The meter overlay: the compact panel in a window of its own over the game, beside the client window (history, settings, the fight
+    /// report). On by default; the eye button, its hotkey and the tray menu switch it.</summary>
+    public bool MeterOverlayOn { get; set; } = true;
+
+    /// <summary>The overlay shows itself in instances and while the player fights (hits or is hit), and steps aside in the open world
+    /// <see cref="MeterOverlayHideSeconds"/> after the last fight. Off: it stays up while the game is in front.</summary>
+    public bool MeterOverlayAutoHide { get; set; } = true;
+
+    /// <summary>Seconds without combat before the overlay steps aside outside instances (10 to 600).</summary>
+    public int MeterOverlayHideSeconds { get; set; } = 30;
+
+    /// <summary>Where the meter overlay was put (null = beside the client window at the first start).</summary>
+    public double? MeterOverlayLeft { get; set; }
+
+    public double? MeterOverlayTop { get; set; }
+
+    /// <summary>The note that the client window's ✕ only hides it (the meter goes on in the tray) was shown once.</summary>
+    public bool CloseToTrayHintShown { get; set; }
 
     /// <summary>The boss's health bar in the compact overlay (current / full, %, HP check mark).</summary>
     public bool ShowBossHp { get; set; } = true;

@@ -105,6 +105,11 @@ public sealed class DummyTestController : IDisposable
     private int _ticks;
     private IEntityDirectory? _entities;
 
+    /// <summary>When an automatic run was last dropped (the player stopped hitting the dummy): the overlay says so for a few seconds.</summary>
+    private DateTime _droppedAt = DateTime.MinValue;
+
+    private static readonly TimeSpan DroppedShown = TimeSpan.FromSeconds(5);
+
     public DummyTest Model { get; } = new();
 
     public DummyTestController(Func<Aion2EntityDirectory?> directory)
@@ -113,6 +118,7 @@ public sealed class DummyTestController : IDisposable
         Model.Load(DummyStore.Load(DummyStore.DefaultPath));
         Model.Capture = CaptureRun;
         Model.Changed += () => TrySave();
+        Model.AutoDropped += () => _droppedAt = DateTime.Now;
         _timer.Tick += (_, _) => Tick();
         _timer.Start();
     }
@@ -129,6 +135,24 @@ public sealed class DummyTestController : IDisposable
     public void Feed(CombatBatch batch, IEntityDirectory? entities)
     {
         _entities = entities;
+        // a hit on a training dummy starts a timed run by itself (Settings: the length, and whether it does)
+        if (_settings.DummyAutoStart && batch.Damage.Count > 0 && entities is not null && _directory() is { } dir)
+        {
+            var known = new Dictionary<int, bool>();
+            bool IsDummy(int id)
+            {
+                if (!known.TryGetValue(id, out bool dummy))
+                {
+                    known[id] = dummy = DummyTargets.IsDummy(dir.NameFor(id) ?? dir.MonsterNameFor(id));
+                }
+
+                return dummy;
+            }
+
+            Model.FeedAuto(batch.Damage, entities.IsLocalPlayer, IsDummy, TimeSpan.FromSeconds(Math.Clamp(_settings.DummyTestSeconds, 10, 3600)),
+                LocalizationManager.Instance["Dummy.AutoNote"]);
+        }
+
         if (Model.State is DummyState.Armed or DummyState.Running or DummyState.Finished && batch.Damage.Count > 0 && entities is not null)
         {
             Model.Feed(batch.Damage, entities.IsLocalPlayer);
@@ -216,7 +240,8 @@ public sealed class DummyTestController : IDisposable
     private void UpdateOverlay(DateTime now)
     {
         bool locked = _settings.DummyOverlayLocked;
-        bool wanted = _settings.ShowDummyOverlay && (Model.State != DummyState.Idle || !locked);
+        bool dropped = Model.State == DummyState.Idle && now - _droppedAt < DroppedShown;
+        bool wanted = _settings.ShowDummyOverlay && (Model.State != DummyState.Idle || dropped || !locked);
         if (!wanted)
         {
             _overlay?.ShowOverlay(false);
@@ -241,7 +266,7 @@ public sealed class DummyTestController : IDisposable
     private DummyOverlayData DataFor(DateTime now)
     {
         LocalizationManager loc = LocalizationManager.Instance;
-        string header = loc["Dummy.Title"] + (Model.Current is { } current && Model.State != DummyState.Armed ? $" · {string.Format(loc["Dummy.RunNumber"], current.Number)}" : "");
+        string header = loc[Model.IsAuto ? "Dummy.AutoTitle" : "Dummy.Title"] + (Model.Current is { } current && Model.State != DummyState.Armed ? $" · {string.Format(loc["Dummy.RunNumber"], current.Number)}" : "");
         switch (Model.State)
         {
             case DummyState.Armed:
@@ -251,7 +276,9 @@ public sealed class DummyTestController : IDisposable
             case DummyState.Finished:
                 return new DummyOverlayData(header, loc["Dummy.Finished"], Done, loc["Dummy.FinishedHint"], Stats(Model.Current, now), 0);
             default:
-                return new DummyOverlayData(loc["Dummy.Title"], Clock(TimeSpan.FromSeconds(_settings.DummyTestSeconds)), Calm, loc["Dummy.OverlaySample"], "");
+                return now - _droppedAt < DroppedShown
+                    ? new DummyOverlayData(loc["Dummy.Title"], "–:––", Calm, loc["Dummy.AutoDropped"], "", 0)
+                    : new DummyOverlayData(loc["Dummy.Title"], Clock(TimeSpan.FromSeconds(_settings.DummyTestSeconds)), Calm, loc["Dummy.OverlaySample"], "");
         }
     }
 

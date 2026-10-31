@@ -146,9 +146,24 @@ public partial class MainWindow : Window
     /// <summary>Whose rows are shown: everybody, the own group, or the corps (two groups together).</summary>
     private enum MeterScope { All, Group, Corps }
 
-    /// <summary>The All / Group / Corps filter belongs to the compact transparent overlay only (its header carries the
-    /// switch); the normal window and the chip overlay always list everybody whose damage arrives.</summary>
-    private bool ScopeActive => _hideUiActive && _compactOverlay;
+    /// <summary>The All / Group / Corps filter belongs to the compact overlay (its header carries the switch, the client's toolbar a copy of it):
+    /// while the overlay is on, the client lists the same players; the chip overlay always lists everybody whose damage arrives.</summary>
+    private bool ScopeActive => (_hideUiActive || MeterOverlayActive) && _compactOverlay;
+
+    // ---- the meter overlay: the compact panel in a window of its own over the game, the main window being the client beside it ----
+    private MeterOverlayWindow? _meterOverlay;
+    private bool _meterOverlayOn = true;
+    private bool _meterOverlayAutoHide = true;
+    private TimeSpan _meterOverlayHideAfter = TimeSpan.FromSeconds(30);
+
+    /// <summary>The last moment the own character hit something or was hit (local time): the overlay stays up a while after it.</summary>
+    private DateTime _lastOwnCombat = DateTime.MinValue;
+
+    /// <summary>The eye button showed the overlay outside a fight: it stays up until then, as if a fight had just been.</summary>
+    private DateTime _overlayPeekUntil = DateTime.MinValue;
+
+    /// <summary>The compact panel lives in its own overlay window and Settings have it on.</summary>
+    private bool MeterOverlayActive => _meterOverlay is not null && _meterOverlayOn && _compactOverlay;
 
     private MeterScope _scope = MeterScope.Group;
 
@@ -583,6 +598,11 @@ public partial class MainWindow : Window
         UpdateScopeControls();
         _compactOverlay = string.Equals(settings.OverlayStyle, "Compact", StringComparison.OrdinalIgnoreCase);
         _compactClickThrough = settings.CompactClickThrough;
+        _meterOverlayOn = settings.MeterOverlayOn;
+        _meterOverlayAutoHide = settings.MeterOverlayAutoHide;
+        _meterOverlayHideAfter = TimeSpan.FromSeconds(Math.Clamp(settings.MeterOverlayHideSeconds, 10, 600));
+        _meterOverlay?.SetClickThrough(_compactClickThrough);
+        UpdateScopeControls();
         SetCompactOverlayScale(settings.OverlayScale);
         // Both overlay looks paint their dark backgrounds with this brush (DynamicResource); the
         // theme's own is the same colour at 60 %.
@@ -725,7 +745,7 @@ public partial class MainWindow : Window
         switch (action)
         {
             case HotkeyAction.ToggleHideUi:
-                SetHideUi();
+                ToggleOverlay();
                 break;
             case HotkeyAction.TogglePause:
                 SetPaused(!_paused);
@@ -872,9 +892,11 @@ public partial class MainWindow : Window
         CombatBatch liveBatch = _liveSource?.Poll(_paused) ?? CombatBatch.Empty;
         FeedSessions(liveBatch);
         NoteArenaLeft(liveBatch);
+        bool ownFight = NoteOwnCombat(liveBatch.Damage);
         // A new stay began (map or instance change) while an older session or the all-sessions view is on show: the view follows
         // into the new stay, which the recorder has just opened. The grid is filled from the recorder, so this batch's hits are in it already.
-        bool followed = liveBatch.ZoneChanges.Count > 0 && (_historyMode || _sessionView == SessionView.All);
+        // The same when the player fights while the client shows a stored fight and is not in front: the overlay is to show this fight.
+        bool followed = (liveBatch.ZoneChanges.Count > 0 || (ownFight && MeterOverlayActive && !IsActive)) && (_historyMode || _sessionView == SessionView.All);
         if (followed)
         {
             _sessionView = SessionView.Current;
@@ -973,6 +995,8 @@ public partial class MainWindow : Window
             NativeOverlay.KeepOnTop(new System.Windows.Interop.WindowInteropHelper(this).Handle);
         }
 
+        _meterOverlay?.KeepOnTop();
+
         // The timetable overlay always sits above the meter: raised right after it, in the same tick.
         _timetable?.RaiseToFront();
         _hotkeyOverlay?.RaiseToFront();
@@ -1022,7 +1046,8 @@ public partial class MainWindow : Window
             }
 
             RefreshRows();
-            if (events.Count > 0 && _hideUiActive && _compactOverlay)
+            // nobody picks a target on the overlay: it follows the newest fight, unless the player is working in the client
+            if (events.Count > 0 && _compactOverlay && (_hideUiActive || (MeterOverlayActive && !IsActive)))
             {
                 FollowNewestRun();
             }
@@ -1278,7 +1303,129 @@ public partial class MainWindow : Window
             }
             _gateTimer.Tick += (_, _) => OnGateTick();
             _gateTimer.Start();
+            CreateMeterOverlay();
         }
+    }
+
+    /// <summary>Moves the compact panel out of this window into the overlay window over the game; this window stays the client. The panel's
+    /// fields, handlers and bindings go with it, so everything that fills it works unchanged.</summary>
+    private void CreateMeterOverlay()
+    {
+        if (_meterOverlay is not null || CompactOverlayPanel.Parent is not Panel host)
+        {
+            return;
+        }
+
+        if (_hideUiActive)
+        {
+            SetHideUi(); // the window's own overlay look ends: the panel moves out
+        }
+
+        host.Children.Remove(CompactOverlayPanel);
+        _meterOverlay = new MeterOverlayWindow(CompactOverlayPanel, Resources);
+        _meterOverlay.SetClickThrough(_compactClickThrough);
+        UpdateScopeControls();
+        RefreshRows();
+        RefreshUpdateBadge();
+        UpdateMeterOverlay();
+    }
+
+    /// <summary>
+    /// A few times a second (with the game gate): the overlay is on screen while it is switched on, the game (or this app) is in front and, with
+    /// "show only in fights", the player is in an instance or fought in the last half minute (Settings: how long) - or the eye button just asked for it.
+    /// </summary>
+    private void UpdateMeterOverlay()
+    {
+        if (_meterOverlay is null)
+        {
+            return;
+        }
+
+        DateTime now = DateTime.Now;
+        bool inFight = !_meterOverlayAutoHide || InInstanceNow() || now - _lastOwnCombat < _meterOverlayHideAfter || now < _overlayPeekUntil
+            || _meterOverlay.IsMouseOver;
+        _meterOverlay.ShowOverlay(MeterOverlayActive && _gameGateOpen && inFight);
+    }
+
+    /// <summary>The player is in an instance or an arena now (the last zone frame said so).</summary>
+    private bool InInstanceNow() =>
+        _liveSource is Aion2.Aion2PacketCombatSource source && source.CurrentZoneId is > 0 and var zone && (Aion2Zones.IsInstance(zone) || Aion2Zones.IsArena(zone));
+
+    /// <summary>Notes a poll's own fighting: a hit by or on the own character (heals do not count: regeneration and potions would keep the overlay up
+    /// for ever). Before the own character is known, any player's hit counts. True when there was some.</summary>
+    private bool NoteOwnCombat(IReadOnlyList<DamageEvent> events)
+    {
+        if (events.Count == 0 || _liveSource?.Entities is not Aion2.Aion2EntityDirectory directory)
+        {
+            return false;
+        }
+
+        int local = directory.LocalPlayerId;
+        foreach (DamageEvent ev in events)
+        {
+            if (ev.IsHeal)
+            {
+                continue;
+            }
+
+            if (local >= 0 ? ev.SourceObjectId == local || ev.TargetObjectId == local : directory.IsKnownPlayer(ev.SourceObjectId))
+            {
+                _lastOwnCombat = DateTime.Now;
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>The eye button, its hotkey and the tray: with the overlay off it comes on; on but stepped aside between fights it shows now (until a
+    /// fight's time would be over); on screen it goes off. In the chip look the window itself turns into the overlay, as before.</summary>
+    private void ToggleOverlay()
+    {
+        if (_meterOverlay is null || !_compactOverlay)
+        {
+            SetHideUi();
+            return;
+        }
+
+        var settings = MeterSettings.Load();
+        if (_meterOverlayOn && _meterOverlay.Wanted)
+        {
+            _meterOverlayOn = false;
+            _overlayPeekUntil = DateTime.MinValue;
+        }
+        else
+        {
+            _meterOverlayOn = true;
+            _overlayPeekUntil = DateTime.Now + _meterOverlayHideAfter;
+            FollowNewestRun();
+        }
+
+        settings.MeterOverlayOn = _meterOverlayOn;
+        settings.Save();
+        _settingsWindow?.SyncMeterOverlay(_meterOverlayOn);
+        UpdateScopeControls();
+        RefreshRows(); // the scope applies only while the overlay is on
+        RefreshUpdateBadge();
+        UpdateMeterOverlay();
+    }
+
+    /// <summary>Brings the client window back (from the tray, minimized or behind the game).</summary>
+    private void ShowClient()
+    {
+        if (!IsVisible || WindowState == WindowState.Minimized)
+        {
+            if (_trayIcon is not null)
+            {
+                _trayIcon.Restore();
+                return;
+            }
+
+            Show();
+            WindowState = WindowState.Normal;
+        }
+
+        Activate();
     }
 
     /// <summary>
@@ -1320,6 +1467,7 @@ public partial class MainWindow : Window
 
         _liveSource?.Dispose();
         _overlay?.Dispose();
+        _meterOverlay?.Close();
         _hotkeys?.Dispose();
         _gateTimer.Stop();
         _timetable?.Close();
@@ -1724,7 +1872,8 @@ public partial class MainWindow : Window
     /// <summary>Marks the chosen scope on the compact overlay's three-way switch.</summary>
     private void UpdateScopeControls()
     {
-        foreach (Border segment in OverlayScopeSwitch.Children.OfType<Border>())
+        ClientScopeBox.Visibility = MeterOverlayActive ? Visibility.Visible : Visibility.Collapsed;
+        foreach (Border segment in OverlayScopeSwitch.Children.OfType<Border>().Concat(ClientScopeSwitch.Children.OfType<Border>()))
         {
             bool selected = segment.Tag as string == _scope.ToString();
             // the chosen one: a gold-tinted pill with gold text; the others quiet words (the site's switches)
@@ -4911,7 +5060,7 @@ public partial class MainWindow : Window
                 new (string?, Action?)[]
                 {
                     (loc["Main.Tray.Show"], () => _trayIcon?.Restore()),
-                    (loc["Main.Tray.ToggleUi"], SetHideUi),
+                    (loc["Main.Tray.ToggleUi"], ToggleOverlay),
                     (loc["Main.Tray.StreamLink"], CopyStreamLink),
                     (loc["Main.MenuApp.CheckForUpdates"], () => _ = RunUpdateCheck(announceResult: true)),
                     (null, null),
@@ -6493,8 +6642,36 @@ public partial class MainWindow : Window
 
     private void OnMinimizeClicked(object sender, RoutedEventArgs e) => WindowState = WindowState.Minimized;
 
+    /// <summary>The client's own ✕: while the overlay is on, the client goes to the tray and the meter goes on over the game (said once); the
+    /// App menu's Exit and the tray's Exit end it. Without the overlay it ends the meter, as before.</summary>
+    private void OnTitleCloseClicked(object sender, RoutedEventArgs e)
+    {
+        if (!MeterOverlayActive || _trayIcon is null)
+        {
+            Close();
+            return;
+        }
+
+        var settings = MeterSettings.Load();
+        if (!settings.CloseToTrayHintShown)
+        {
+            settings.CloseToTrayHintShown = true;
+            settings.Save();
+            var loc = LocalizationManager.Instance;
+            ThemedMessageBox.Show(this, loc["Main.CloseToTray.Text"], loc["Main.CloseToTray.Title"], MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+
+        _trayIcon.HideWindow();
+    }
+
     private void OnHideUiClicked(object sender, RoutedEventArgs e)
     {
+        if (_meterOverlay is not null && _compactOverlay)
+        {
+            ToggleOverlay();
+            return;
+        }
+
         var settings = MeterSettings.Load();
         if (!_hideUiActive && !settings.HideUiHintDismissed)
         {
@@ -6654,6 +6831,8 @@ public partial class MainWindow : Window
             _gameGateOpen = inGame;
             ShowOverlayPanels();
         }
+
+        UpdateMeterOverlay();
 
         if ((DateTime.UtcNow - _gateSettingsAt).TotalSeconds >= 1)
         {
@@ -6869,6 +7048,13 @@ public partial class MainWindow : Window
     /// <summary>Settings changed while Hide UI is up: switches to the look now chosen.</summary>
     private void ApplyOverlayLook()
     {
+        if (_meterOverlay is not null && _compactOverlay)
+        {
+            // the compact look lives in the overlay window: the client comes back as a window
+            SetHideUi();
+            return;
+        }
+
         ShowOverlayPanels();
         ShowInTaskbar = true;
         FitWindowToCompactOverlay(_compactOverlay);
@@ -6885,7 +7071,10 @@ public partial class MainWindow : Window
     {
         // outside the game (a browser in front, the desktop) the overlay is not drawn; its window stays, so the taskbar button still brings it back
         OverlayContent.Visibility = _hideUiActive && !_compactOverlay && _gameGateOpen ? Visibility.Visible : Visibility.Collapsed;
-        CompactOverlayPanel.Visibility = _hideUiActive && _compactOverlay && _gameGateOpen ? Visibility.Visible : Visibility.Collapsed;
+        if (_meterOverlay is null)
+        {
+            CompactOverlayPanel.Visibility = _hideUiActive && _compactOverlay && _gameGateOpen ? Visibility.Visible : Visibility.Collapsed;
+        }
 
         // The chips let every click through to the game. The compact panel takes clicks (a player's
         // skills, dragging it into place) unless "click-through" is chosen in Settings; the window is
@@ -6915,10 +7104,10 @@ public partial class MainWindow : Window
         // still new enough, the status row and the restart prompt carry it.
         string? full = _clientOutdated ? loc["Overlay.OutdatedBadge"] : null;
         string? small = _clientOutdated ? loc["Overlay.OutdatedBadgeShort"] : null;
-        bool show = full is not null && _hideUiActive && _gameGateOpen;
+        bool show = full is not null && (_hideUiActive || MeterOverlayActive) && _gameGateOpen;
         var brush = (Brush)FindResource(_clientOutdated ? "Brush.Warning" : "Brush.Accent");
-        OverlayUpdateBadge.Visibility = show && !_compactOverlay ? Visibility.Visible : Visibility.Collapsed;
         CompactUpdateBadge.Visibility = show && _compactOverlay ? Visibility.Visible : Visibility.Collapsed;
+        OverlayUpdateBadge.Visibility = show && !_compactOverlay && _hideUiActive ? Visibility.Visible : Visibility.Collapsed;
         OverlayUpdateBadge.Background = brush;
         CompactUpdateBadge.Background = brush;
         OverlayUpdateBadgeText.Text = full ?? "";
@@ -6951,10 +7140,18 @@ public partial class MainWindow : Window
 
     private void OnCompactOverlayDrag(object sender, MouseButtonEventArgs e)
     {
-        if (e.ButtonState == MouseButtonState.Pressed)
+        if (e.ButtonState != MouseButtonState.Pressed)
         {
-            DragMove();
+            return;
         }
+
+        if (_meterOverlay is not null)
+        {
+            _meterOverlay.DragFromHeader();
+            return;
+        }
+
+        DragMove();
     }
 
     /// <summary>A click on a player's line in the compact overlay: that player's skill breakdown.</summary>
@@ -6968,6 +7165,7 @@ public partial class MainWindow : Window
 
     private void OnOverlaySettingsClicked(object sender, MouseButtonEventArgs e)
     {
+        ShowClient();
         OnSettingsClicked(sender, new RoutedEventArgs());
         e.Handled = true;
     }
@@ -6985,15 +7183,33 @@ public partial class MainWindow : Window
         e.Handled = true;
     }
 
+    /// <summary>The overlay's window button: the client (history, settings, the fight report) comes to the front.</summary>
     private void OnOverlayMinimizeClicked(object sender, MouseButtonEventArgs e)
     {
-        WindowState = WindowState.Minimized;
+        if (_meterOverlay is null)
+        {
+            WindowState = WindowState.Minimized;
+        }
+        else
+        {
+            ShowClient();
+        }
+
         e.Handled = true;
     }
 
+    /// <summary>The overlay's ✕: the overlay goes off (the eye button, its hotkey or the tray bring it back); the meter goes on recording.</summary>
     private void OnOverlayCloseClicked(object sender, MouseButtonEventArgs e)
     {
-        Close();
+        if (_meterOverlay is null)
+        {
+            Close();
+        }
+        else if (_meterOverlay.Wanted)
+        {
+            ToggleOverlay();
+        }
+
         e.Handled = true;
     }
 

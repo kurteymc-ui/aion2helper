@@ -593,8 +593,44 @@
 <Border Style="{StaticResource SettingsCard}">
                             <StackPanel>
                                 <TextBlock Style="{StaticResource CardTitle}" Text="{local:Loc Settings.Card.DisplayCompact}"/>
+                                <CheckBox x:Name="MeterOverlayOnBox" Content="{local:Loc Settings.MeterOverlayOn}"/>
+                                <CheckBox x:Name="MeterOverlayAutoHideBox" Content="{local:Loc Settings.MeterOverlayAutoHide}" Margin="0,6,0,0"
+                                          IsEnabled="{Binding IsChecked, ElementName=MeterOverlayOnBox}"/>
+                                <Grid Margin="0,6,0,2">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="170"/></Grid.ColumnDefinitions>
+                                    <TextBlock Text="{local:Loc Settings.MeterOverlayHide}" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,10,0"/>
+                                    <ComboBox Grid.Column="1" x:Name="MeterOverlayHideBox" Margin="0,2" HorizontalAlignment="Stretch"
+                                              IsEnabled="{Binding IsChecked, ElementName=MeterOverlayAutoHideBox}">
+                                        <ComboBoxItem Content="10 s" Tag="10"/>
+                                        <ComboBoxItem Content="20 s" Tag="20"/>
+                                        <ComboBoxItem Content="30 s" Tag="30"/>
+                                        <ComboBoxItem Content="1 min" Tag="60"/>
+                                        <ComboBoxItem Content="2 min" Tag="120"/>
+                                        <ComboBoxItem Content="5 min" Tag="300"/>
+                                    </ComboBox>
+                                </Grid>
+                                <TextBlock Style="{StaticResource CardHint}" Text="{local:Loc Settings.MeterOverlay.Hint}" Margin="0,4,0,8"/>
                                 <CheckBox x:Name="CompactClickThroughBox" Content="{local:Loc Settings.CompactClickThrough}"/>
                                 <TextBlock Style="{StaticResource CardHint}" Text="{local:Loc Settings.CompactClickThrough.Hint}" Margin="0,8,0,0"/>
+                            </StackPanel>
+                        </Border>
+<Border Style="{StaticResource SettingsCard}">
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource CardTitle}" Text="{local:Loc Settings.Card.Dummy}"/>
+                                <CheckBox x:Name="DummyAutoStartBox" Content="{local:Loc Settings.DummyAutoStart}"/>
+                                <Grid Margin="0,6,0,2">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="170"/></Grid.ColumnDefinitions>
+                                    <TextBlock Text="{local:Loc Settings.DummyLength}" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,10,0"/>
+                                    <ComboBox Grid.Column="1" x:Name="DummyLengthBox" Margin="0,2" HorizontalAlignment="Stretch">
+                                        <ComboBoxItem Content="30 s" Tag="30"/>
+                                        <ComboBoxItem Content="1 min" Tag="60"/>
+                                        <ComboBoxItem Content="2 min" Tag="120"/>
+                                        <ComboBoxItem Content="3 min" Tag="180"/>
+                                        <ComboBoxItem Content="5 min" Tag="300"/>
+                                        <ComboBoxItem Content="10 min" Tag="600"/>
+                                    </ComboBox>
+                                </Grid>
+                                <TextBlock Style="{StaticResource CardHint}" Text="{local:Loc Settings.DummyAutoStart.Hint}" Margin="0,4,0,0"/>
                             </StackPanel>
                         </Border>
                     </StackPanel>

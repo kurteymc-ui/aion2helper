@@ -690,7 +690,7 @@
                         </Grid>
                     </Button>
                         <Button x:Name="HideUiButton" Style="{StaticResource ToolbarIconButton}" Click="OnHideUiClicked" Padding="6,5" Margin="1,0"
-                                ToolTip="Overlay mode: transparent, click-through, shows a small DPS chip per player. Ctrl+Alt+H brings the UI back.">
+                                ToolTip="Shows or hides the meter overlay over the game (Ctrl+Alt+H). It appears by itself in dungeons and while you fight.">
                             <Path Data="M1,12 C1,12 4.5,5 12,5 19.5,5 23,12 23,12 23,12 19.5,19 12,19 4.5,19 1,12 1,12 Z
                                         M12,15 A3,3 0 1 0 12,9 3,3 0 1 0 12,15 Z"
                                   Fill="{DynamicResource Brush.Text}" Width="18" Height="14" Stretch="Uniform"/>
@@ -699,7 +699,7 @@
                         <Button Click="OnMinimizeClicked" Style="{StaticResource ToolbarIconButton}" Padding="0" Margin="1,0" ToolTip="Minimise">
                             <Path Data="M1,6 L11,6" Width="12" Height="12" Stretch="None" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Stroke="{DynamicResource Brush.TextMuted}"/>
                         </Button>
-                        <Button Click="OnCloseClicked" Style="{StaticResource ToolbarIconButton}" Padding="0" Margin="1,0" ToolTip="Close">
+                        <Button Click="OnTitleCloseClicked" Style="{StaticResource ToolbarIconButton}" Padding="0" Margin="1,0" ToolTip="Close the window (the meter keeps running over the game while the overlay is on; App → Exit ends it)">
                             <Path Data="M1.5,1.5 L10.5,10.5 M10.5,1.5 L1.5,10.5" Width="12" Height="12" Stretch="None" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Stroke="{DynamicResource Brush.TextMuted}"/>
                         </Button>
                     </StackPanel>
@@ -861,6 +861,21 @@
                               ToolTip="Filter by target. 'All' sums damage across every target seen. Type in the dropdown to search.">
                         <ComboBoxItem Content="{local:Loc Main.FilterAllTargets}"/>
                     </ComboBox>
+                    <!-- Whose rows: the overlay's All / Group / Corps switch, here too while the overlay is on (both show the same list). -->
+                    <Border x:Name="ClientScopeBox" Background="#0AFFFFFF" BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1" CornerRadius="999" Padding="2"
+                            Margin="0,0,8,0" VerticalAlignment="Center" Visibility="Collapsed" ToolTip="Whose damage is listed here and on the overlay: everybody, your group, or your corps (two groups).">
+                        <StackPanel x:Name="ClientScopeSwitch" Orientation="Horizontal">
+                            <Border Tag="All" Padding="10,3" CornerRadius="999" Cursor="Hand" MouseLeftButtonDown="OnOverlayScopeClicked">
+                                <TextBlock FontSize="12" FontWeight="SemiBold" Text="{local:Loc Main.Scope.All}"/>
+                            </Border>
+                            <Border Tag="Group" Padding="10,3" CornerRadius="999" Cursor="Hand" MouseLeftButtonDown="OnOverlayScopeClicked">
+                                <TextBlock FontSize="12" FontWeight="SemiBold" Text="{local:Loc Main.Scope.Group}"/>
+                            </Border>
+                            <Border Tag="Corps" Padding="10,3" CornerRadius="999" Cursor="Hand" MouseLeftButtonDown="OnOverlayScopeClicked">
+                                <TextBlock FontSize="12" FontWeight="SemiBold" Text="{local:Loc Main.Scope.Corps}"/>
+                            </Border>
+                        </StackPanel>
+                    </Border>
                     <ComboBox x:Name="SourceFilter" SelectedIndex="0" Margin="0,0,8,0" MinWidth="0"
                               ToolTip="Not wired up yet (display filter only).">
                         <ComboBoxItem Content="{local:Loc Main.FilterAllGroups}"/>
@@ -1193,11 +1208,11 @@
                             <Setter Property="VerticalAlignment" Value="Center"/>
                         </Style>
                     </DockPanel.Resources>
-                    <Border DockPanel.Dock="Right" Style="{StaticResource OverlayIconButton}" MouseLeftButtonDown="OnOverlayCloseClicked" ToolTip="{local:Loc Main.Overlay.Close}">
+                    <Border DockPanel.Dock="Right" Style="{StaticResource OverlayIconButton}" MouseLeftButtonDown="OnOverlayCloseClicked" ToolTip="{local:Loc Main.Overlay.HideOverlay}">
                         <TextBlock Text="&#xE8BB;" Style="{StaticResource OverlayIconGlyph}"/>
                     </Border>
-                    <Border DockPanel.Dock="Right" Style="{StaticResource OverlayIconButton}" MouseLeftButtonDown="OnOverlayMinimizeClicked" ToolTip="{local:Loc Main.Overlay.Minimize}">
-                        <TextBlock Text="&#xE921;" Style="{StaticResource OverlayIconGlyph}"/>
+                    <Border DockPanel.Dock="Right" Style="{StaticResource OverlayIconButton}" MouseLeftButtonDown="OnOverlayMinimizeClicked" ToolTip="{local:Loc Main.Overlay.OpenClient}">
+                        <TextBlock Text="&#xE8A7;" Style="{StaticResource OverlayIconGlyph}"/>
                     </Border>
                     <Border DockPanel.Dock="Right" Style="{StaticResource OverlayIconButton}" MouseLeftButtonDown="OnOverlaySettingsClicked" ToolTip="{local:Loc Main.Overlay.Settings}">
                         <TextBlock Text="&#xE713;" Style="{StaticResource OverlayIconGlyph}"/>

@@ -149,6 +149,11 @@ public partial class SettingsWindow : Window
         AutoBossViewBox.IsChecked = settings.AutoBossView;
         AutoBossSecondsBox.Text = Math.Clamp(settings.AutoBossSeconds, 0, 600).ToString();
         CompactClickThroughBox.IsChecked = settings.CompactClickThrough;
+        MeterOverlayOnBox.IsChecked = settings.MeterOverlayOn;
+        MeterOverlayAutoHideBox.IsChecked = settings.MeterOverlayAutoHide;
+        SelectNearest(MeterOverlayHideBox, settings.MeterOverlayHideSeconds);
+        DummyAutoStartBox.IsChecked = settings.DummyAutoStart;
+        SelectNearest(DummyLengthBox, settings.DummyTestSeconds);
         HideDuringMenusBox.IsChecked = settings.HideDuringMenus;
         StreamOverlayOnBox.IsChecked = settings.StreamOverlayOn;
         StreamShowNamesBox.IsChecked = settings.StreamShowNames;
@@ -207,6 +212,36 @@ public partial class SettingsWindow : Window
     /// ThemeBox's/FontSizeBox's XAML.</summary>
     private void OnDigitsOnly(object sender, System.Windows.Input.TextCompositionEventArgs e) =>
         e.Handled = !e.Text.All(char.IsDigit);
+
+    /// <summary>Picks the step whose number (its tag) is nearest to <paramref name="value"/>; a length set elsewhere (the dummy window takes any) gets a step of its own.</summary>
+    private static void SelectNearest(ComboBox box, int value)
+    {
+        var steps = box.Items.OfType<ComboBoxItem>().Where(i => int.TryParse(i.Tag as string, out _)).ToList();
+        if (steps.FirstOrDefault(i => int.Parse((string)i.Tag) == value) is { } exact)
+        {
+            box.SelectedItem = exact;
+            return;
+        }
+
+        if (steps.Count == 0)
+        {
+            return;
+        }
+
+        if (box.Name == "DummyLengthBox" && value is >= 10 and <= 3600)
+        {
+            var own = new ComboBoxItem { Content = value % 60 == 0 ? $"{value / 60} min" : value >= 60 ? $"{value / 60}:{value % 60:00} min" : $"{value} s", Tag = value.ToString() };
+            int at = steps.Count(i => int.Parse((string)i.Tag) < value);
+            box.Items.Insert(box.Items.IndexOf(steps[Math.Min(at, steps.Count - 1)]) + (at >= steps.Count ? 1 : 0), own);
+            box.SelectedItem = own;
+            return;
+        }
+
+        box.SelectedItem = steps.OrderBy(i => Math.Abs(int.Parse((string)i.Tag) - value)).First();
+    }
+
+    /// <summary>The overlay was switched on or off by its eye button or hotkey while this window is open.</summary>
+    public void SyncMeterOverlay(bool on) => MeterOverlayOnBox.IsChecked = on;
 
     private static void SelectComboItem(ComboBox box, string tag)
     {
@@ -665,7 +700,9 @@ public partial class SettingsWindow : Window
         _settings.DummyOverlayScale = onDisk.DummyOverlayScale;
         _settings.DummyOverlayWidth = onDisk.DummyOverlayWidth;
         _settings.DummyOverlayHeight = onDisk.DummyOverlayHeight;
-        _settings.DummyTestSeconds = onDisk.DummyTestSeconds;
+        _settings.MeterOverlayLeft = onDisk.MeterOverlayLeft;
+        _settings.MeterOverlayTop = onDisk.MeterOverlayTop;
+        _settings.CloseToTrayHintShown = onDisk.CloseToTrayHintShown;
         _settings.ShowCraftOverlay = onDisk.ShowCraftOverlay;
         _settings.CraftOverlayLocked = onDisk.CraftOverlayLocked;
         _settings.CraftOverlayLeft = onDisk.CraftOverlayLeft;
@@ -823,6 +860,11 @@ public partial class SettingsWindow : Window
         _settings.AutoBossView = AutoBossViewBox.IsChecked ?? false;
         _settings.AutoBossSeconds = int.TryParse(AutoBossSecondsBox.Text, out int bossSeconds) ? Math.Clamp(bossSeconds, 0, 600) : 10;
         _settings.CompactClickThrough = CompactClickThroughBox.IsChecked ?? false;
+        _settings.MeterOverlayOn = MeterOverlayOnBox.IsChecked ?? true;
+        _settings.MeterOverlayAutoHide = MeterOverlayAutoHideBox.IsChecked ?? true;
+        _settings.MeterOverlayHideSeconds = int.TryParse((MeterOverlayHideBox.SelectedItem as ComboBoxItem)?.Tag as string, out int hideSeconds) ? hideSeconds : 30;
+        _settings.DummyAutoStart = DummyAutoStartBox.IsChecked ?? true;
+        _settings.DummyTestSeconds = int.TryParse((DummyLengthBox.SelectedItem as ComboBoxItem)?.Tag as string, out int dummySeconds) ? dummySeconds : _settings.DummyTestSeconds;
         _settings.HideDuringMenus = HideDuringMenusBox.IsChecked ?? false;
         _settings.StreamOverlayOn = StreamOverlayOnBox.IsChecked ?? false;
         _settings.StreamShowNames = StreamShowNamesBox.IsChecked ?? false;

@@ -68,7 +68,16 @@ public sealed class DummyTest
     /// <summary>How long "Finished" stays on the overlay.</summary>
     public static readonly TimeSpan FinishedShown = TimeSpan.FromSeconds(20);
 
+    /// <summary>Automatic runs: after a run the player has to stop hitting the dummies this long before the next hit starts a new one, so the hits
+    /// that go on right after the time is up do not start the next run at once.</summary>
+    public static readonly TimeSpan AutoRestartGap = TimeSpan.FromSeconds(5);
+
+    /// <summary>An automatic run in which the player stopped hitting the dummies this long (walked away, died, went on elsewhere) is dropped: it would
+    /// be no whole parse of the planned time.</summary>
+    public static readonly TimeSpan AutoAbandonAfter = TimeSpan.FromSeconds(15);
+
     private readonly List<DummyRun> _runs = new();
+    private DateTime _lastDummyHit = DateTime.MinValue;
     private int _nextNumber = 1;
     private TimeSpan _planned = TimeSpan.FromMinutes(2);
     private string _note = "";
@@ -95,6 +104,41 @@ public sealed class DummyTest
 
     public bool CanStart => State != DummyState.Running;
 
+    /// <summary>The run waiting or running was started by a hit on a training dummy (<see cref="FeedAuto"/>), not by the Start button.</summary>
+    public bool IsAuto { get; private set; }
+
+    /// <summary>Raised when an automatic run was dropped because the player stopped hitting the dummies (<see cref="AutoAbandonAfter"/>).</summary>
+    public event Action? AutoDropped;
+
+    /// <summary>
+    /// Automatic runs: the player's own hit on a training dummy (<paramref name="isDummy"/>) starts a run of <paramref name="planned"/> by itself
+    /// when nothing waits or runs and the player paused at the dummies for <see cref="AutoRestartGap"/>; the clock starts with that hit. Called with
+    /// a poll's events before <see cref="Feed"/>, which then records them.
+    /// </summary>
+    public void FeedAuto(IReadOnlyList<DamageEvent> events, Func<int, bool> isOwn, Func<int, bool> isDummy, TimeSpan planned, string note)
+    {
+        foreach (DamageEvent ev in events.OrderBy(e => e.Timestamp))
+        {
+            if (ev.IsHeal || !isOwn(ev.SourceObjectId) || !isDummy(ev.TargetObjectId))
+            {
+                continue;
+            }
+
+            bool rested = ev.Timestamp - _lastDummyHit >= AutoRestartGap;
+            if (ev.Timestamp > _lastDummyHit)
+            {
+                _lastDummyHit = ev.Timestamp;
+            }
+
+            bool free = State == DummyState.Idle || (State == DummyState.Finished && _current is not { Closed: false });
+            if (free && rested && planned > TimeSpan.Zero && (_current is null || ev.Timestamp > _current.End))
+            {
+                Arm(planned, note, ev.Timestamp);
+                IsAuto = true;
+            }
+        }
+    }
+
     /// <summary>Waits for the first own hit, skill or effect; from then on <paramref name="planned"/> counts down.</summary>
     public void Arm(TimeSpan planned, string note, DateTime now)
     {
@@ -106,6 +150,7 @@ public sealed class DummyTest
         _planned = planned;
         _note = note;
         _armedAt = now;
+        IsAuto = false;
         _current = null;
         State = DummyState.Armed;
         Changed?.Invoke();
@@ -194,6 +239,20 @@ public sealed class DummyTest
     /// <summary>Moves the clock on: ends a run whose time is up, closes it a moment later, and clears the "Finished" after a while.</summary>
     public void Tick(DateTime now)
     {
+        // an automatic run the player walked away from: dropped, it is no parse of the planned time
+        if (IsAuto && State == DummyState.Running && _current is { } dropped && now - (_lastDummyHit > dropped.Start ? _lastDummyHit : dropped.Start) >= AutoAbandonAfter
+            && now < dropped.End)
+        {
+            _runs.Remove(dropped);
+            _current = null;
+            _nextNumber = Math.Max(1, dropped.Number);
+            IsAuto = false;
+            State = DummyState.Idle;
+            Changed?.Invoke();
+            AutoDropped?.Invoke();
+            return;
+        }
+
         if (State == DummyState.Running && _current is { } run && now >= run.End)
         {
             Finish(now);
