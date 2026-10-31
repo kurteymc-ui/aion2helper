@@ -537,6 +537,8 @@ public sealed class MeterSettings
     public bool CubeSoundEnabled { get; set; }
     /// <summary>A Hidden Cube coming into range brings the pet map back when it is hidden (the hotkey, the module's switch or the map's own switch), until 10 seconds after the last cube is gone, without saving the switch (Stacy's idea, 17 October 2026). Only where the map shows cubes. Off by default.</summary>
     public bool ShowMapOnCube { get; set; }
+    /// <summary>A line on the meter while a Hidden Cube is in range ("Hidden Cube nearby · 42 m"). On by default.</summary>
+    public bool CubeOverlayAlert { get; set; } = true;
     /// <summary>The militia guards ("Wachmann") of the other side's maps as red badges with a skull and a danger zone on the map, and an arrow on its edge for one out of view (Stacy's idea, 17 October 2026). On by default; only the maps of the other side show any.</summary>
     public bool ShowGuards { get; set; } = true;
     public string CubeSound { get; set; } = "ping";
@@ -607,6 +609,14 @@ public sealed class MeterSettings
 
     /// <summary>The pets whose monsters the pet map shows (pet ids). Empty until the player picks some.</summary>
     public List<int> PetMapPets { get; set; } = new();
+
+    /// <summary>The map shows every pet the player still needs (all but those at the top level, from the collection the game sends) instead of
+    /// <see cref="PetMapPets"/>. Null (never switched): on while no pet was picked by hand.</summary>
+    public bool? PetMapAutoPets { get; set; }
+
+    /// <summary>Whether the map follows the collection (see <see cref="PetMapAutoPets"/>).</summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    public bool PetMapAuto => PetMapAutoPets ?? PetMapPets.Count == 0;
 
     /// <summary>Width of the region list on the Region tab of the pet settings (the player drags the splitter).</summary>
     public double PetRegionListWidth { get; set; } = 185;

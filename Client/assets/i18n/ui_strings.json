@@ -13746,5 +13746,180 @@
   "Shell.LayoutPetList": {
     "en": "Pet list",
     "de": "Haustierliste"
+  },
+  "Cubes.Title": {
+    "en": "Cube finder",
+    "de": "Würfelfinder",
+    "fr": "Détecteur de cubes"
+  },
+  "Cubes.Lede": {
+    "en": "The game tells the meter about a Hidden Cube once you come within about 100 m of it. The meter can then show a line on the meter, play a sound that beeps faster the closer you get, and bring up the interactive map with the cube on it. Nothing is sent anywhere.",
+    "de": "Das Spiel meldet dem Meter einen versteckten Würfel, sobald du ihm auf etwa 100 m nahe kommst. Dann kann der Meter eine Zeile im Meter zeigen, einen Ton spielen, der schneller piept, je näher du kommst, und die interaktive Karte mit dem Würfel aufrufen. Nichts wird irgendwohin gesendet.",
+    "fr": "Le jeu signale un cube caché au meter dès que tu t’en approches à environ 100 m. Le meter peut alors afficher une ligne dans le meter, jouer un son qui bipe plus vite à mesure que tu t’approches, et afficher la carte interactive avec le cube. Rien n’est envoyé nulle part."
+  },
+  "Cubes.Now": {
+    "en": "Right now",
+    "de": "Gerade jetzt",
+    "fr": "En ce moment"
+  },
+  "Cubes.NoGame": {
+    "en": "Not reading the game yet",
+    "de": "Das Spiel wird noch nicht gelesen",
+    "fr": "Le jeu n’est pas encore lu"
+  },
+  "Cubes.NoGameHow": {
+    "en": "Start AION 2 with the meter running. A cube shows up here once the game announces one near you.",
+    "de": "Starte AION 2, während der Meter läuft. Ein Würfel erscheint hier, sobald das Spiel einen in deiner Nähe meldet.",
+    "fr": "Lance AION 2 avec le meter ouvert. Un cube apparaît ici dès que le jeu en signale un près de toi."
+  },
+  "Cubes.None": {
+    "en": "No Hidden Cube in range",
+    "de": "Kein versteckter Würfel in Reichweite",
+    "fr": "Aucun cube caché à portée"
+  },
+  "Cubes.LineOne": {
+    "en": "Hidden Cube nearby",
+    "de": "Versteckter Würfel in der Nähe",
+    "fr": "Cube caché à proximité"
+  },
+  "Cubes.LineMany": {
+    "en": "{0} Hidden Cubes nearby",
+    "de": "{0} versteckte Würfel in der Nähe",
+    "fr": "{0} cubes cachés à proximité"
+  },
+  "Cubes.Metres": {
+    "en": "{0} m",
+    "de": "{0} m",
+    "fr": "{0} m"
+  },
+  "Cubes.Seen": {
+    "en": "Cubes that came into range since the meter started: {0}",
+    "de": "Würfel in Reichweite seit dem Start des Meters: {0}",
+    "fr": "Cubes arrivés à portée depuis le lancement du meter : {0}"
+  },
+  "Cubes.Switches": {
+    "en": "When a cube is near",
+    "de": "Wenn ein Würfel in der Nähe ist",
+    "fr": "Quand un cube est proche"
+  },
+  "Cubes.Line": {
+    "en": "Show a line on the meter",
+    "de": "Eine Zeile im Meter zeigen",
+    "fr": "Afficher une ligne dans le meter"
+  },
+  "Cubes.LineTip": {
+    "en": "“Hidden Cube nearby · 42 m” under the meter’s total while a cube is in range.",
+    "de": "„Versteckter Würfel in der Nähe · 42 m“ unter der Summe des Meters, solange ein Würfel in Reichweite ist.",
+    "fr": "« Cube caché à proximité · 42 m » sous le total du meter tant qu’un cube est à portée."
+  },
+  "Cubes.Sound": {
+    "en": "Play a sound",
+    "de": "Einen Ton spielen",
+    "fr": "Jouer un son"
+  },
+  "Cubes.SoundTip": {
+    "en": "A chime when a cube comes into range, then beeps that come faster the closer you get (like a parking sensor), and a falling tone when you walk away from it.",
+    "de": "Ein Klang, wenn ein Würfel in Reichweite kommt, dann Pieptöne, die schneller werden, je näher du kommst (wie eine Einparkhilfe), und ein fallender Ton, wenn du dich entfernst.",
+    "fr": "Un carillon quand un cube arrive à portée, puis des bips de plus en plus rapides à mesure que tu t’approches (comme un radar de recul), et un son descendant quand tu t’éloignes."
+  },
+  "Cubes.Volume": {
+    "en": "Volume",
+    "de": "Lautstärke",
+    "fr": "Volume"
+  },
+  "Cubes.Test": {
+    "en": "Test",
+    "de": "Testen",
+    "fr": "Tester"
+  },
+  "Cubes.Map": {
+    "en": "Show the interactive map",
+    "de": "Die interaktive Karte zeigen",
+    "fr": "Afficher la carte interactive"
+  },
+  "Cubes.MapTip": {
+    "en": "The map comes up with the cube on it, even while it is switched off, and goes away 10 seconds after the last cube is gone.",
+    "de": "Die Karte erscheint mit dem Würfel darauf, auch wenn sie ausgeschaltet ist, und verschwindet 10 Sekunden nach dem letzten Würfel wieder.",
+    "fr": "La carte s’affiche avec le cube, même désactivée, et disparaît 10 secondes après le dernier cube."
+  },
+  "Cubes.Mark": {
+    "en": "Always mark Hidden Cubes on the interactive map",
+    "de": "Versteckte Würfel immer auf der interaktiven Karte markieren",
+    "fr": "Toujours marquer les cubes cachés sur la carte interactive"
+  },
+  "Cubes.MarkTip": {
+    "en": "A gold dot for each cube in range, and the places cubes can be, whenever the map is open.",
+    "de": "Ein goldener Punkt für jeden Würfel in Reichweite und die Orte, an denen Würfel sein können, wann immer die Karte offen ist.",
+    "fr": "Un point doré pour chaque cube à portée, et les endroits où des cubes peuvent se trouver, dès que la carte est ouverte."
+  },
+  "Cubes.OpenMap": {
+    "en": "Open the interactive map →",
+    "de": "Interaktive Karte öffnen →",
+    "fr": "Ouvrir la carte interactive →"
+  },
+  "Cubes.Note": {
+    "en": "The game only announces a cube within about 100 m, so the meter cannot see cubes farther away.",
+    "de": "Das Spiel meldet einen Würfel nur im Umkreis von etwa 100 m, weiter entfernte Würfel kann der Meter nicht sehen.",
+    "fr": "Le jeu ne signale un cube qu’à environ 100 m : le meter ne peut pas voir les cubes plus lointains."
+  },
+  "PetMap.ListNothing": {
+    "en": "Nothing picked yet",
+    "de": "Noch nichts ausgewählt",
+    "fr": "Rien de choisi pour l’instant"
+  },
+  "PetMap.ListNothingHow": {
+    "en": "Pick pets (Pets) or collectibles (Gathering)",
+    "de": "Wähle Haustiere (Haustiere) oder Sammelbares (Sammeln)",
+    "fr": "Choisis des familiers (Familiers) ou des récoltes (Récolte)"
+  },
+  "PetMap.StatusNoGame": {
+    "en": "The game is not being read yet: start AION 2 with the meter running and the map follows you.",
+    "de": "Das Spiel wird noch nicht gelesen: Starte AION 2, während der Meter läuft, und die Karte folgt dir.",
+    "fr": "Le jeu n’est pas encore lu : lance AION 2 avec le meter ouvert et la carte te suit."
+  },
+  "PetMap.StatusNoMap": {
+    "en": "Waiting for your position: walk a few steps or fight a monster, and the map finds where you are.",
+    "de": "Warte auf deine Position: Geh ein paar Schritte oder kämpfe gegen ein Monster, dann findet die Karte, wo du bist.",
+    "fr": "En attente de ta position : fais quelques pas ou combats un monstre, et la carte trouve où tu es."
+  },
+  "PetMap.StatusInstance": {
+    "en": "This instance has no map in the meter.",
+    "de": "Für diese Instanz hat der Meter keine Karte.",
+    "fr": "Le meter n’a pas de carte pour cette instance."
+  },
+  "PetMap.StatusLastPlace": {
+    "en": "Your last known place (?): it moves again when the game sends your position.",
+    "de": "Dein letzter bekannter Ort (?): Er bewegt sich wieder, sobald das Spiel deine Position sendet.",
+    "fr": "Ta dernière position connue (?) : elle bouge à nouveau quand le jeu envoie ta position."
+  },
+  "PetMap.StatusNothing": {
+    "en": "No pets or collectibles picked: the map shows the land and you. Pick them under Pets and Gathering.",
+    "de": "Keine Haustiere oder Sammelobjekte ausgewählt: Die Karte zeigt das Land und dich. Wähle sie unter Haustiere und Sammeln.",
+    "fr": "Aucun familier ni récolte choisi : la carte montre le terrain et toi. Choisis-les sous Familiers et Récolte."
+  },
+  "PetMap.StatusAuto": {
+    "en": "Pets you still need on this map: {0} (from your pet collection).",
+    "de": "Haustiere, die dir auf dieser Karte noch fehlen: {0} (aus deiner Sammlung).",
+    "fr": "Familiers qu’il te manque sur cette carte : {0} (d’après ta collection)."
+  },
+  "Settings.PetMap.Auto": {
+    "en": "Every pet I still need (from my pet collection)",
+    "de": "Jedes Haustier, das mir noch fehlt (aus meiner Sammlung)",
+    "fr": "Chaque familier qu’il me manque (d’après ma collection)"
+  },
+  "Settings.PetMap.AutoTip": {
+    "en": "The meter reads your pet collection from the game by itself: the map shows every pet you have not brought to the top level yet. Untick to pick pets yourself.",
+    "de": "Der Meter liest deine Haustiersammlung selbst aus dem Spiel: Die Karte zeigt jedes Haustier, das noch nicht auf der höchsten Stufe ist. Abwählen, um selbst auszuwählen.",
+    "fr": "Le meter lit ta collection de familiers dans le jeu tout seul : la carte montre chaque familier pas encore au niveau maximum. Décoche pour les choisir toi-même."
+  },
+  "Settings.PetMap.CollectionRead": {
+    "en": "Your collection as last read from the game: {0} pets, {1} at the top level.",
+    "de": "Deine Sammlung, zuletzt aus dem Spiel gelesen: {0} Haustiere, {1} auf der höchsten Stufe.",
+    "fr": "Ta collection lue en dernier dans le jeu : {0} familiers, {1} au niveau maximum."
+  },
+  "Settings.PetMap.CollectionNone": {
+    "en": "Your pet collection has not been read yet. The game sends it when you log in or change map: with the meter running, teleport or go to character selection and back once.",
+    "de": "Deine Haustiersammlung wurde noch nicht gelesen. Das Spiel sendet sie beim Einloggen oder Kartenwechsel: Teleportiere dich, während der Meter läuft, oder geh einmal zur Charakterauswahl und zurück.",
+    "fr": "Ta collection de familiers n’a pas encore été lue. Le jeu l’envoie à la connexion ou au changement de carte : avec le meter ouvert, téléporte-toi ou va une fois à la sélection de personnage et reviens."
   }
 }

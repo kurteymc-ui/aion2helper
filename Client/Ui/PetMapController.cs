@@ -302,7 +302,7 @@ public sealed class PetMapController : IDisposable
             _lastCubeBeep = DateTime.UtcNow; // the next radar beep waits its turn after the chime
         }
 
-        if (settings.ShowMapOnCube && settings.PetMapGatherItems.Contains("Hidden Cube"))
+        if (settings.ShowMapOnCube)
         {
             _cubeMapOverride = true;
             _cubesGoneAt = null;
@@ -404,9 +404,17 @@ public sealed class PetMapController : IDisposable
         var states = directory?.LocalPetStates ?? Array.Empty<Aion2PetState>();
         // before the game's pet list has arrived (the meter started after the login) the levels saved at the last login stand in
         var maxPets = states.Count > 0 ? states.Where(s => s.Level >= Aion2Pets.TopLevel).Select(s => s.PetId).ToHashSet() : _savedMax;
-        var chosen = settings.PetMapPets.Where(id => !maxPets.Contains(id)).ToHashSet();
+        // every pet still needed (the collection decides), or the pets picked by hand
+        bool auto = settings.PetMapAuto;
+        var chosen = (auto ? Aion2Pets.AllPetIds : settings.PetMapPets).Where(id => !maxPets.Contains(id)).ToHashSet();
         // only what the player's own faction can use (an earlier pick of the other side's plants no longer counts)
         var gatherKinds = Aion2Gather.Items().Where(i => settings.PetMapGatherItems.Contains(i.Key) && i.IsFor(_faction)).Select(i => i.Key).ToHashSet();
+        if (_cubeMapOverride)
+        {
+            gatherKinds.Add("Hidden Cube"); // the map came for a cube: it shows it
+        }
+
+        bool nothing = chosen.Count == 0 && gatherKinds.Count == 0;
         UpdateShopOpen(directory);
         var offeredRows = ShopRows(directory, states);
         _inShop = _shopOpen && offeredRows.Count > 0;
@@ -420,11 +428,13 @@ public sealed class PetMapController : IDisposable
             _list.ApplyStoredOpacity();
         }
 
-        if (chosen.Count == 0 && gatherKinds.Count == 0)
+        if (nothing && _mapViews.Count == 0)
         {
+            // nothing picked and no tool page open: the overlays have nothing to show (the tool page's map still shows the land and the player)
             if (shopRows.Count == 0)
             {
                 ShowEmpty(mapLocked, listLocked);
+                Status = StatusOf(directory, inInstance, known: false, nothing: true, auto, 0);
                 return;
             }
 
@@ -488,8 +498,8 @@ public sealed class PetMapController : IDisposable
             _y += (ty - _y) * 0.22;
         }
 
-        // without a known map the list names everything chosen (no distances); with one, only what stands on it
-        var petsHere = _current is null ? chosen.OrderBy(i => i).ToList() : _points.Select(p => p.PetId).Distinct().OrderBy(i => i).ToList();
+        // without a known map the list names everything chosen (no distances; not the whole collection); with one, only what stands on it
+        var petsHere = _current is null ? (auto ? new List<int>() : chosen.OrderBy(i => i).ToList()) : _points.Select(p => p.PetId).Distinct().OrderBy(i => i).ToList();
         var colors = petsHere.Select((id, i) => (id, i)).ToDictionary(t => t.id, t => PetMapPalette.Of(t.i));
         var live = known
             ? directory!.LiveMobs().SelectMany(m => Aion2Pets.PetsOfNpc(m.NpcId).Where(chosen.Contains).Select(pet => (pet, m.X, m.Y))).ToList()
@@ -508,18 +518,26 @@ public sealed class PetMapController : IDisposable
         {
             // the militia guards, on the open maps of the other side only (they are friendly at home)
             var guards = settings.ShowGuards && known && Aion2Guards.IsHostileMap(_current.Table, _faction) ? directory!.LiveGuards() : null;
-            _map.Render(_current, _x, _y, Math.Clamp(settings.PetMapRadius, 50, 500), Math.Clamp(settings.PetMapOpacity, 0.0, 1.0), _pointsShown, live, colors, _gather, known, settings.ShowPetArrows, settings.ShowGatherArrows, guards);
+            if (!nothing)
+            {
+                _map.Render(_current, _x, _y, Math.Clamp(settings.PetMapRadius, 50, 500), Math.Clamp(settings.PetMapOpacity, 0.0, 1.0), _pointsShown, live, colors, _gather, known, settings.ShowPetArrows, settings.ShowGatherArrows, guards);
+            }
+
             foreach (var view in _mapViews)
             {
                 view.MeHeading = _heading;
-                view.Render(_current, _x, _y, Math.Clamp(settings.PetMapRadius, 50, 500), Math.Clamp(settings.PetMapOpacity, 0.0, 1.0), _pointsShown, live, colors, _gather, known, settings.ShowPetArrows, settings.ShowGatherArrows, guards);
+                // the page's map is a card on the app's page: the land in full, whatever the overlay's see-through setting
+                view.Render(_current, _x, _y, Math.Clamp(settings.PetMapRadius, 50, 500), 1.0, _pointsShown, live, colors, _gather, known, settings.ShowPetArrows, settings.ShowGatherArrows, guards);
             }
-            ShowMap(true);
+
+            ShowMap(!nothing || !mapLocked);
         }
         else
         {
             ShowMap(!mapLocked);
         }
+
+        Status = StatusOf(directory, inInstance, known, nothing, auto, petsHere.Count);
 
         bool menuNow = InMenu;
         if (++_ticks % 10 == 0 || _lastTarget != (tx, ty) || _lastKnownFlag != known || _lastMenu != menuNow)
@@ -529,12 +547,43 @@ public sealed class PetMapController : IDisposable
             _lastKnownFlag = known;
             // a game menu is open: the list stays only for the shop's pets (no chosen pets, no collectibles), the map steps aside
             var rows = InMenu ? shopRows : shopRows.Concat(Rows(petsHere, colors, tx, ty, states, live, known, gatherKinds)).ToList();
-            RenderList(rows.Take(_list.RowCapacity).ToList()); // only what fits in the frame (plus a reserve)
+            if (nothing && rows.Count == 0)
+            {
+                // nothing picked: samples on the overlay while it is placed, a word on the tool page why the list is empty
+                _list.Render(listLocked ? rows : SampleRows());
+                var hint = new List<(Color, string, string, string, bool)> { (Color.FromRgb(0x9D, 0xB3, 0xC2), LocalizationManager.Instance["PetMap.ListNothing"], LocalizationManager.Instance["PetMap.ListNothingHow"], "", true) };
+                foreach (var view in _listViews)
+                {
+                    view.Render(hint);
+                }
+            }
+            else
+            {
+                RenderList(rows.Take(_list.RowCapacity).ToList()); // only what fits in the frame (plus a reserve)
+            }
+
             // in an instance with no pet or collectible to place (no distance in any row) and no shop prices the list has nothing to say: it stays hidden
             _listUseless = inInstance && !InMenu && rows.All(r => string.IsNullOrEmpty(r.Item4));
         }
 
-        ShowList((!InMenu || shopRows.Count > 0) && !_listUseless);
+        ShowList(nothing && shopRows.Count == 0 ? !listLocked && !InMenu : (!InMenu || shopRows.Count > 0) && !_listUseless);
+    }
+
+    /// <summary>What the tool page says above its map: why it is empty, or what it shows (updated with every tick; empty while the map shows what was picked).</summary>
+    public string Status { get; private set; } = "";
+
+    private string StatusOf(Aion2EntityDirectory? directory, bool inInstance, bool known, bool nothing, bool auto, int petsHere)
+    {
+        var loc = LocalizationManager.Instance;
+        string where = directory is null || (directory.LocalPlayerId < 0 && directory.BestPosition is null)
+            ? loc["PetMap.StatusNoGame"]
+            : _current is null
+                ? loc[inInstance ? "PetMap.StatusInstance" : "PetMap.StatusNoMap"]
+                : !known ? loc["PetMap.StatusLastPlace"] : "";
+        string what = nothing ? loc["PetMap.StatusNothing"]
+            : auto && _current is not null ? string.Format(loc["PetMap.StatusAuto"], petsHere)
+            : "";
+        return string.Join("  ", new[] { where, what }.Where(t => t.Length > 0));
     }
 
     /// <summary>

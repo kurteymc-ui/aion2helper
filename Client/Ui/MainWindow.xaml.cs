@@ -914,7 +914,7 @@ public partial class MainWindow : Window
         }
 
         MeterSettings settings = MeterSettings.Load();
-        if (settings.ShowPetMap || !settings.ShowMapOnCube || !settings.PetMapGatherItems.Contains("Hidden Cube"))
+        if (settings.ShowPetMap || !settings.ShowMapOnCube)
         {
             return;
         }
@@ -6743,7 +6743,21 @@ public partial class MainWindow : Window
                 var (map, list) = _petMapController.CreateViews();
                 var stack = new StackPanel();
                 stack.Children.Add(ModulePage.Caption(loc["Settings.PetMap.CardMap"]));
-                stack.Children.Add(map.DetachBody()!);
+                // why the map is empty (no game read yet, no position, nothing picked) or what it shows, as the controller sees it
+                var mapStatus = new TextBlock { TextWrapping = TextWrapping.Wrap, FontSize = 12.5, Margin = new Thickness(0, 0, 0, 8), MaxWidth = 560, HorizontalAlignment = HorizontalAlignment.Left };
+                mapStatus.SetResourceReference(TextBlock.ForegroundProperty, "Brush.TextMuted");
+                var statusTimer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(700) };
+                statusTimer.Tick += (_, _) =>
+                {
+                    string text = _petMapController?.Status ?? "";
+                    mapStatus.Text = text;
+                    mapStatus.Visibility = text.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
+                };
+                statusTimer.Start();
+                stack.Children.Add(mapStatus);
+                var mapCard = new Border { Child = map.DetachBody()!, CornerRadius = new CornerRadius(6), ClipToBounds = true, HorizontalAlignment = HorizontalAlignment.Left };
+                mapCard.SetResourceReference(Border.BackgroundProperty, "Brush.Control");
+                stack.Children.Add(mapCard);
                 stack.Children.Add(ModulePage.Caption(loc["Settings.PetMap.CardList"]));
                 stack.Children.Add(list.DetachBody()!);
                 var page = new ModulePage(loc["Settings.Nav.PetMap"], stack, s => s.ShowPetMap, (s, v) => s.ShowPetMap = v, s => s.HotkeyPetMap, hotkeys, settingsPage, applied);
@@ -6753,8 +6767,9 @@ public partial class MainWindow : Window
                     Cleanup = () =>
                     {
                         page.Stop();
+                        statusTimer.Stop();
                         _petMapController?.RemoveViews(map, list);
-                        if (!MeterSettings.Load().ShowPetMap && _petMapController is { HasViews: false, CubeMapOverride: false })
+                        if (MeterSettings.Load() is { ShowPetMap: false, CubeSoundEnabled: false } && _petMapController is { HasViews: false, CubeMapOverride: false })
                         {
                             _petMapController.Dispose();
                             _petMapController = null;
@@ -6763,6 +6778,8 @@ public partial class MainWindow : Window
                 };
             }
 
+            case "cubes":
+                return BuildCubesPage();
             case "petmap.pets":
             case "petmap.gather":
             {
@@ -7385,6 +7402,7 @@ public partial class MainWindow : Window
 
         UpdateOverlayDummy();
         UpdateOverlayBossCallout();
+        UpdateOverlayCubeCallout();
         UpdateMeterOverlay();
 
         if ((DateTime.UtcNow - _gateSettingsAt).TotalSeconds >= 1)
@@ -7446,8 +7464,8 @@ public partial class MainWindow : Window
         }
 
         _petMapController?.ClearCubeOverride(); // the settings were applied: a map shown for a cube goes back to what they say
-        // the pet map (with its list) has its own switch
-        if (settings.ShowPetMap)
+        // the pet map (with its list) has its own switch; the cube finder's sound runs in it too, with the map's switch off as well (nothing is shown then)
+        if (settings.ShowPetMap || settings.CubeSoundEnabled)
         {
             _petMapController ??= new PetMapController(() => _source?.Entities as Aion2EntityDirectory);
             _petMapController.ApplyLocked(settings.PetFarmLocked);

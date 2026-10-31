@@ -42,7 +42,7 @@ public partial class MainWindow
         };
         var glyphs = new Dictionary<string, string>
         {
-            ["assist"] = "", ["combat"] = "", ["petmap"] = "", ["petmap.pets"] = "", ["petmap.gather"] = "", ["loot"] = "",
+            ["assist"] = "", ["combat"] = "", ["petmap"] = "", ["petmap.pets"] = "", ["petmap.gather"] = "", ["cubes"] = "", ["loot"] = "",
             ["craft"] = "", ["timetable"] = "", ["boss"] = "", ["attributes"] = "", ["statcalc"] = "", ["analyzer"] = "",
             ["stream"] = "", ["network"] = "", ["theme"] = "",
         };

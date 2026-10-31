@@ -518,12 +518,19 @@ public sealed class Aion2EntityDirectory : IEntityDirectory
     /// <summary>A pet joined the collection.</summary>
     public void NotePetAdded(int petId, int level)
     {
+        bool added = false;
         lock (_gate)
         {
             if (_petStates is not null && _petStates.All(p => p.PetId != petId))
             {
                 _petStates = _petStates.Append(new Aion2PetState(petId, level, 0)).ToList();
+                added = true;
             }
+        }
+
+        if (added)
+        {
+            NotifyCharacterChanged(); // kept in the character file like a level or progress change
         }
     }
 

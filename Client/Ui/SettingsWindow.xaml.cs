@@ -640,6 +640,7 @@ public partial class SettingsWindow : Window
             s.OverlayOpacities[OverlayPlaces.PetInfo] = PetInfoOpacity.Fraction;
             s.ShowPetArrows = ShowPetArrowsBox.IsChecked ?? true;
             s.PetMapPets = _petPicked.OrderBy(i => i).ToList();
+            s.PetMapAutoPets = PetAutoBox.IsChecked ?? false;
             s.PetRegionListWidth = PetRegionLeftColumn.Width.Value;
             s.PetRareMax = (int)PetRareMaxSlider.Value;
             s.PetRareInstanceMin = (int)PetRareInstanceSlider.Value;
@@ -795,6 +796,7 @@ public partial class SettingsWindow : Window
         _settings.PetMapRadius = (int)PetMapRadiusSlider.Value;
         _settings.PetMapOpacity = PetMapOpacity.Fraction;
         _settings.PetMapPets = _petPicked.OrderBy(i => i).ToList();
+        _settings.PetMapAutoPets = PetAutoBox.IsChecked ?? false;
         _settings.PetRegionListWidth = PetRegionLeftColumn.Width.Value;
         _settings.PetRareMax = (int)PetRareMaxSlider.Value;
         _settings.PetRareInstanceMin = (int)PetRareInstanceSlider.Value;
@@ -1315,6 +1317,19 @@ public partial class SettingsWindow : Window
     private Dictionary<int, int> _petLevels = new();
     private Dictionary<int, int> _petProgress = new();
 
+    private void OnPetAutoChanged(object sender, RoutedEventArgs e) => ShowPetAuto();
+
+    /// <summary>With the collection deciding, the pets cannot be picked by hand: the lists stay, dimmed and locked.</summary>
+    private void ShowPetAuto()
+    {
+        bool auto = PetAutoBox.IsChecked == true;
+        foreach (FrameworkElement part in new FrameworkElement[] { PetTabBar, PetTypePanel, PetRegionPanel, PetRarePanel })
+        {
+            part.IsEnabled = !auto;
+            part.Opacity = auto ? 0.45 : 1.0;
+        }
+    }
+
     private void InitPetMap(MeterSettings settings)
     {
         _petPicked = settings.PetMapPets.ToHashSet();
@@ -1324,6 +1339,12 @@ public partial class SettingsWindow : Window
         var savedPets = Aion2CharacterStore.Load(Aion2CharacterStore.DefaultPath)?.Pets ?? new();
         _petLevels = savedPets.ToDictionary(p => p.Id, p => p.Level);
         _petProgress = savedPets.ToDictionary(p => p.Id, p => p.Progress);
+        // the collection is read from the game by itself (at login and on a map change); until then the map cannot know which pets are done
+        PetCollectionText.Text = savedPets.Count > 0
+            ? string.Format(LocalizationManager.Instance["Settings.PetMap.CollectionRead"], savedPets.Count, savedPets.Count(p => p.Level >= Aion2Pets.TopLevel))
+            : LocalizationManager.Instance["Settings.PetMap.CollectionNone"];
+        PetAutoBox.IsChecked = settings.PetMapAuto;
+        ShowPetAuto();
         PetRegionLeftColumn.Width = new GridLength(Math.Clamp(settings.PetRegionListWidth, 120, 600));
         ShowPetMapBox.IsChecked = settings.ShowPetMap;
         ShowPetArrowsBox.IsChecked = settings.ShowPetArrows;

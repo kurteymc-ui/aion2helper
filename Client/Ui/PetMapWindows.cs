@@ -154,9 +154,13 @@ public abstract class MovableOverlay : Window, IOverlayPlace
     }
 
     /// <summary>The size the body really has (in its own units, the frame's scaling excluded).</summary>
-    protected double BodyWidth => _bodyHost.ActualWidth;
+    /// <remarks>A view's body is laid out in the tool page, not in this never shown window (whose own size stays 0): its own size counts there,
+    /// the whole view until it has been laid out.</remarks>
+    protected double BodyWidth => _detached is FrameworkElement shown ? (shown.ActualWidth > 0 ? shown.ActualWidth : double.PositiveInfinity) : _bodyHost.ActualWidth;
 
-    protected double BodyHeight => _bodyHost.ActualHeight;
+    protected double BodyHeight => _detached is FrameworkElement shown ? (shown.ActualHeight > 0 ? shown.ActualHeight : double.PositiveInfinity) : _bodyHost.ActualHeight;
+
+    private UIElement? _detached;
 
     /// <summary>Takes the content out of a window that is never shown, to put it into a tool's own window (a live view): the window keeps rendering into it.</summary>
     public UIElement? DetachBody()
@@ -164,6 +168,7 @@ public abstract class MovableOverlay : Window, IOverlayPlace
         _isView = true;
         UIElement? body = _shiftHost.Child;
         _shiftHost.Child = null;
+        _detached = body;
         return body;
     }
 

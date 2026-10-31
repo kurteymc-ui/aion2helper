@@ -327,9 +327,9 @@ public sealed class DummyTestWindow : Window
         column.Children.Add(header);
         if (_openRun is not null)
         {
-            TextBlock hint = Label(loc["Dummy.RunsOpenHint"], "Brush.TextMuted", 12);
-            hint.Margin = new Thickness(2, 0, 0, 6);
-            column.Children.Add(hint);
+            TextBlock openHint = Label(loc["Dummy.RunsOpenHint"], "Brush.TextMuted", 12);
+            openHint.Margin = new Thickness(2, 0, 0, 6);
+            column.Children.Add(openHint);
         }
 
         column.Children.Add(_runList);
