@@ -1188,7 +1188,7 @@
                             <StackPanel>
                                 <TextBlock Style="{StaticResource CardTitle}" Text="{local:Loc Settings.PetMap.Mobs}"/>
                                 <CheckBox x:Name="PetAutoBox" Content="{local:Loc Settings.PetMap.Auto}" ToolTip="{local:Loc Settings.PetMap.AutoTip}" Checked="OnPetAutoChanged" Unchecked="OnPetAutoChanged"/>
-                                <TextBlock x:Name="PetCollectionText" TextWrapping="Wrap" FontSize="11.5" Margin="24,2,0,10" Foreground="{DynamicResource Brush.TextSubtle}"/>
+                                <TextBlock x:Name="PetCollectionText" TextWrapping="Wrap" FontSize="11.5" Margin="0,2,60,10" Foreground="{DynamicResource Brush.TextSubtle}"/>
                                 <Border x:Name="PetTabBar" BorderThickness="0,0,0,1" BorderBrush="{DynamicResource Brush.Border}" Margin="0,0,0,10">
                                     <StackPanel Orientation="Horizontal">
                                         <ToggleButton x:Name="PetTabType" Style="{StaticResource PetTab}" Content="{local:Loc Settings.PetTab.Type}" IsChecked="True" Click="OnPetTabClick"/>

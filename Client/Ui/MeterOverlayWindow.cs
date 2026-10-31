@@ -41,11 +41,46 @@ public sealed class MeterOverlayWindow : Window, IOverlayPlace
         panel.Opacity = 0;
         Content = panel;
         PlaceFromSettings();
+        // growing upwards (Meter look): the bottom edge stays where it is when lines come and go
+        SizeChanged += (_, e) =>
+        {
+            if (!e.HeightChanged)
+            {
+                return;
+            }
+
+            if (_growUp && _bottom is double bottom && double.IsFinite(bottom))
+            {
+                Top = bottom - e.NewSize.Height;
+            }
+            else if (double.IsFinite(Top))
+            {
+                _bottom = Top + e.NewSize.Height;
+            }
+        };
         SourceInitialized += (_, _) =>
         {
             _native = new NativeOverlay(this);
             _native.SetClickThrough(_clickThrough);
         };
+    }
+
+    private bool _growUp;
+    private double? _bottom;
+
+    /// <summary>The meter grows upwards: its bottom edge stays put (Meter look).</summary>
+    public bool GrowUp
+    {
+        get => _growUp;
+        set
+        {
+            if (value && !_growUp && double.IsFinite(Top))
+            {
+                _bottom = Top + ActualHeight;
+            }
+
+            _growUp = value;
+        }
     }
 
     /// <summary>Whether the overlay is meant to be on screen right now (it may still be fading out).</summary>
@@ -119,6 +154,8 @@ public sealed class MeterOverlayWindow : Window, IOverlayPlace
         var settings = MeterSettings.Load();
         settings.MeterOverlayLeft = Left;
         settings.MeterOverlayTop = Top;
+        _bottom = Top + ActualHeight;
+        settings.MeterOverlayBottom = _bottom;
         settings.Save();
     }
 
@@ -145,6 +182,7 @@ public sealed class MeterOverlayWindow : Window, IOverlayPlace
     {
         Left = left;
         Top = top;
+        _bottom = top + ActualHeight;
         if (save)
         {
             SavePlace();
@@ -164,6 +202,13 @@ public sealed class MeterOverlayWindow : Window, IOverlayPlace
         {
             left = savedLeft;
             top = savedTop;
+            // growing upwards, the bottom edge it was left with counts (the height is a different one at the start)
+            if (settings.MeterGrowUp && settings.MeterOverlayBottom is double savedBottom && double.IsFinite(savedBottom))
+            {
+                _growUp = true;
+                _bottom = savedBottom;
+                top = savedBottom - ActualHeight;
+            }
         }
 
         Left = left;

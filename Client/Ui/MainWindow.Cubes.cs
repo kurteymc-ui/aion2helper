@@ -133,6 +133,7 @@ public partial class MainWindow
             text.Children.Add(ShellText(title, "Brush.Text", 13.5, bold: true));
             TextBlock small = Wrapped(tip, "Brush.TextMuted", 12);
             small.Margin = new Thickness(0, 2, 0, 0);
+            small.MaxWidth = 700; // the check box gives its content all the room it asks for: the text wraps by itself only below this
             text.Children.Add(small);
             var box = new CheckBox { IsChecked = on, Content = text, Margin = new Thickness(0, 0, 0, 12), VerticalContentAlignment = VerticalAlignment.Top };
             box.Click += (_, _) => Save(s => set(s, box.IsChecked == true));

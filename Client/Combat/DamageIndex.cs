@@ -23,10 +23,14 @@ public sealed class DamageIndex
         public DateTime First = DateTime.MaxValue;
         public DateTime Last = DateTime.MinValue;
 
+        /// <summary>How the direct hits landed (crit, back, front …), for the meter's optional columns.</summary>
+        public HitStats Kinds;
+
         internal void Add(DamageEvent ev)
         {
             Sum += ev.Amount;
             Hits++;
+            Kinds.Add(ev);
             if (ev.Estimated)
             {
                 EstimatedSum += ev.Amount;
@@ -228,6 +232,7 @@ public sealed class DamageIndex
             stats.Sum += part.Sum;
             stats.Hits += part.Hits;
             stats.EstimatedSum += part.EstimatedSum;
+            stats.Kinds.Merge(part.Kinds);
             stats.First = part.First < stats.First ? part.First : stats.First;
             stats.Last = part.Last > stats.Last ? part.Last : stats.Last;
             PvpFirst = part.First < PvpFirst ? part.First : PvpFirst;

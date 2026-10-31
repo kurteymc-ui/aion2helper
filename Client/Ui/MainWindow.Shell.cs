@@ -38,7 +38,7 @@ public partial class MainWindow
         var main = new List<ShellItem>
         {
             new("home", loc["Shell.Home"], ""), new("meter", loc["Shell.Meter"], ""), new("history", loc["Shell.History"], ""),
-            new("characters", loc["Shell.Characters"], ""), new("dummy", loc["Shell.Dummy"], ""), new("overlays", loc["Shell.Overlays"], ""),
+            new("characters", loc["Shell.Characters"], ""), new("dummy", loc["Shell.Dummy"], ""), new("overlays", loc["Shell.Overlays"], ""), new("meterlook", loc["Shell.MeterLook"], ""),
         };
         var glyphs = new Dictionary<string, string>
         {
@@ -242,6 +242,7 @@ public partial class MainWindow
         {
             "home" => BuildHomePage(),
             "overlays" => BuildOverlaysPage(),
+            "meterlook" => BuildMeterLookPage(),
             "history" => HostWindow(new HistoryWindow()),
             "characters" => HostTool("checklist"),
             _ => HostTool(id),

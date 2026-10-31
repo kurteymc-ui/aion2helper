@@ -33,6 +33,7 @@ public partial class MainWindow : Window
 {
     private readonly ObservableCollection<PlayerRow> _rows = new();
     private ListCollectionView? _playersView;
+    private ListCollectionView? _overlayView;
 
     /// <summary>Running totals over the events (see DamageIndex); the refresh takes in what is new instead of rescanning.</summary>
     private readonly DamageIndex _index = new();
@@ -357,6 +358,13 @@ public partial class MainWindow : Window
         playersView.SortDescriptions.Add(new SortDescription(nameof(PlayerRow.SortKey), ListSortDirection.Descending));
         playersView.IsLiveSorting = true;
         playersView.LiveSortingProperties.Add(nameof(PlayerRow.SortKey));
+        // the meter over the game sorts on its own: its best line may stand at the bottom (Meter look)
+        _overlayView = new ListCollectionView(_rows);
+        _overlayView.SortDescriptions.Add(new SortDescription(nameof(PlayerRow.SortKey), ListSortDirection.Descending));
+        _overlayView.IsLiveSorting = true;
+        _overlayView.LiveSortingProperties.Add(nameof(PlayerRow.SortKey));
+        CompactOverlayRows.ItemsSource = _overlayView;
+        MeterRowView.RowClicked += ShowPlayerDetails;
 
         _pollTimer.Tick += OnPollTimerTick;
 
@@ -630,6 +638,7 @@ public partial class MainWindow : Window
     /// <summary>Re-reads the display settings - called once at startup and again after Settings is saved.</summary>
     private void RefreshCharacterSettings(MeterSettings settings)
     {
+        ApplyMeterLook(settings);
         _showShareBars = settings.ShowShareBars;
         _showPartyBuffs = settings.ShowPartyBuffs;
         _showDamageTaken = settings.ShowDamageTaken;
@@ -1401,6 +1410,7 @@ public partial class MainWindow : Window
         host.Children.Remove(CompactOverlayPanel);
         _meterOverlay = new MeterOverlayWindow(CompactOverlayPanel, Resources);
         _meterOverlay.SetClickThrough(_compactClickThrough);
+        _meterOverlay.GrowUp = _meterGrowUp;
         // the layout editor scales the meter like its own corner grip does
         _meterOverlay.ScaleOf = () => CompactOverlayScale.ScaleX;
         _meterOverlay.Rescale = (scale, save) =>
@@ -1943,6 +1953,8 @@ public partial class MainWindow : Window
         if (_healMode && !_pvpOnly)
         {
             RefreshHealRows(filteredSpan);
+            ClearHitStats();
+            UpdateSupportBadges(filteredSpan);
             RankRows();
             UpdateHpCheck(OnSelectedTarget(filtered));
             UpdateCompactOverlay(filtered, shownSummary);
@@ -1952,6 +1964,8 @@ public partial class MainWindow : Window
         if (_takenMode && !_pvpOnly)
         {
             RefreshTakenRows(filteredSpan);
+            ClearHitStats();
+            UpdateSupportBadges(filteredSpan);
             RankRows();
             UpdateHpCheck(OnSelectedTarget(filtered));
             UpdateCompactOverlay(filtered, shownSummary);
@@ -2038,9 +2052,11 @@ public partial class MainWindow : Window
         // hits) the per-player rescans, one of them sorting, froze the meter once a second.
         Dictionary<int, long> damageById = new();
         Dictionary<int, long> estimatedById = new();
+        Dictionary<int, HitStats> hitsById = new(); // how the hits landed: the meter's optional columns (crit, back, front …)
         foreach (DamageEvent hit in filtered)
         {
             damageById[hit.SourceObjectId] = damageById.GetValueOrDefault(hit.SourceObjectId) + hit.Amount;
+            System.Runtime.InteropServices.CollectionsMarshal.GetValueRefOrAddDefault(hitsById, hit.SourceObjectId, out _).Add(hit);
             if (hit.Estimated)
             {
                 estimatedById[hit.SourceObjectId] = estimatedById.GetValueOrDefault(hit.SourceObjectId) + hit.Amount;
@@ -2099,6 +2115,7 @@ public partial class MainWindow : Window
             row.IsEstimated = damageIndexed
                 ? (_pvpOnly ? _index.PvpBySource : _index.BySource).GetValueOrDefault(sourceId) is { } indexed && indexed.EstimatedSum * 2 > indexed.Sum
                 : estimatedById.GetValueOrDefault(sourceId) * 2 > row.Damage;
+            row.Hits = damageIndexed ? (_pvpOnly ? _index.PvpBySource : _index.BySource).GetValueOrDefault(sourceId)?.Kinds ?? default : hitsById.GetValueOrDefault(sourceId);
             // PVP mode's rate must come from the SAME PVP-only event set row.Damage above was
             // just summed from, not the unfiltered full history - same reasoning as the
             // Mob/Boss-filtered iDPS case below (see BuildEncounterUpload's own remarks on the
@@ -2127,6 +2144,7 @@ public partial class MainWindow : Window
 
         UpdateRaidDps(filteredSpan);
         UpdatePartyBuffs();
+        UpdateSupportBadges(filteredSpan);
                 // Rank and share are relative to what is on screen, so they are settled once every row's
         // damage for this refresh is known - and by damage, not by the grid's current sort order.
         RankRows();
@@ -2366,6 +2384,7 @@ public partial class MainWindow : Window
         // Live sorting alone left the list in the previous mode's order after a switch (PVE -> PVP kept the
         // PVE ranking); sorting explicitly here covers every mode, since each refresh ends in RankRows.
         _playersView?.Refresh();
+        _overlayView?.Refresh();
         if (_rows.Count > 0 && _rows[0].RdpsView)
         {
             // the rDPS view: rank, share and bar by rDPS (what each player made possible)
@@ -7887,14 +7906,6 @@ public partial class MainWindow : Window
     }
 
     /// <summary>A click on a player's line in the compact overlay: that player's skill breakdown.</summary>
-    private void OnCompactOverlayRowClicked(object sender, MouseButtonEventArgs e)
-    {
-        if ((sender as FrameworkElement)?.DataContext is PlayerRow row)
-        {
-            ShowPlayerDetails(row);
-        }
-    }
-
     /// <summary>The meter's own menu: its look (the site's colours or see-through), how opaque, click-through, when it shows, and the way to everything else.</summary>
     private void OnOverlaySettingsClicked(object sender, MouseButtonEventArgs e)
     {
@@ -8117,6 +8128,7 @@ public partial class MainWindow : Window
         OverlayRateHeader.Text = _allMode ? strings["Main.Overlay.ColDamage"] : _healMode ? "HPS" : _takenMode ? "DTPS" : _mode == MeterMode.Raid ? "rDPS" : "DPS";
         OverlayShareHeader.Text = _allMode ? strings["Main.Overlay.ColHeal"] : "%";
         OverlayTotalHeader.Text = _allMode ? strings["Main.Overlay.ColTaken"] : strings["Main.Overlay.ColTotal"];
+        MeterTitles.Instance.Set(OverlayRateHeader.Text, OverlayShareHeader.Text, OverlayTotalHeader.Text);
         bool capturing = (_source as Aion2.Aion2PacketCombatSource)?.ServerFingerprint is not null;
         OverlayStateDot.Fill = _paused ? Brushes.Orange : capturing ? OverlayLiveBrush : Brushes.Gray;
         OverlayStateText.Text = _paused ? "Paused" : capturing ? (CompactOverlayOwnName() is { } own ? "Live   " + own : "Live") : "Waiting for the game";

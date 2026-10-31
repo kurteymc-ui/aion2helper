@@ -1404,6 +1404,38 @@ internal static class Program
         {
             window.CompactOverlayPanel.Visibility = System.Windows.Visibility.Visible;
             panel = window.CompactOverlayPanel;
+            if (kind.StartsWith("look-", StringComparison.Ordinal))
+            {
+                // the meter in other looks (Overlays → Meter look): the page's sample players, with hit kinds and support buffs
+                rows.Clear();
+                foreach (Ui.PlayerRow sampleRow in Ui.MainWindow.SampleMeterRows())
+                {
+                    rows.Add(sampleRow);
+                }
+
+                window.OverlayTotalRateText.Text = Ui.PlayerRow.Compact((long)rows.Sum(r => r.Dps ?? 0));
+                window.ApplyMeterLook(kind switch
+                {
+                    "look-wide" => new Ui.MeterSettings
+                    {
+                        MeterBarStyle = "capsule", MeterFont = "bahnschrift", MeterColumnTitles = true,
+                        MeterColumns = new() { "rank", "icon", "cp", "support", "crit", "back", "front", "perfect", "dps", "share", "total" },
+                    },
+                    "look-thread" => new Ui.MeterSettings
+                    {
+                        MeterBarStyle = "thread", MeterRowSize = "compact", MeterFont = "mono", MeterShowTotal = false, MeterBestLast = true,
+                        MeterColumns = new() { "icon", "classcolor", "crit", "back", "dps", "total" },
+                    },
+                    _ => new Ui.MeterSettings
+                    {
+                        MeterBarStyle = "frame", MeterRowSize = "roomy", MeterFont = "condensed", MeterTextScale = 1.1, MeterHeaderButtons = "hover", MeterShowStatus = false,
+                        MeterColumns = new() { "rank", "icon", "dps", "share" },
+                    },
+                });
+                // the rows are sorted by the view: one pass so the order of the look is drawn
+                System.Windows.Threading.Dispatcher.CurrentDispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.ContextIdle);
+            }
+
             if (kind == "callout")
             {
                 // the boss timers line: one cast coming now, the next in 12 s, the enrage in 48 s

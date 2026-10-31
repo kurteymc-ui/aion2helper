@@ -607,6 +607,44 @@ public sealed class MeterSettings
 
     public double PetMapOpacity { get; set; } = 0.7;
 
+    // ---- the meter's look (Overlays → Meter look; MeterLook) ----
+
+    /// <summary>The bars behind the lines: glow (the class colour fading out, a bright line under it), flat, thread, capsule, frame.</summary>
+    public string MeterBarStyle { get; set; } = "glow";
+
+    /// <summary>The height of a line: compact, normal, roomy.</summary>
+    public string MeterRowSize { get; set; } = "normal";
+
+    /// <summary>The meter's font (MeterLook.Fonts).</summary>
+    public string MeterFont { get; set; } = "segoe";
+
+    /// <summary>The meter's text size, 0.85 to 1.3 of the normal one.</summary>
+    public double MeterTextScale { get; set; } = 1.0;
+
+    /// <summary>The columns and parts of a line that are shown (MeterLook.Columns, NameParts); null: the usual ones.</summary>
+    public List<string>? MeterColumns { get; set; }
+
+    /// <summary>A line of titles over the columns.</summary>
+    public bool MeterColumnTitles { get; set; }
+
+    /// <summary>The buttons in the meter's head: "always", or "hover" (only while the mouse is over the meter).</summary>
+    public string MeterHeaderButtons { get; set; } = "always";
+
+    /// <summary>The line with the group's total (and Me / Group / All).</summary>
+    public bool MeterShowTotal { get; set; } = true;
+
+    /// <summary>The status line under the list (the game being read, the ping).</summary>
+    public bool MeterShowStatus { get; set; } = true;
+
+    /// <summary>The meter grows upwards: its bottom edge stays where it is when lines come and go.</summary>
+    public bool MeterGrowUp { get; set; }
+
+    /// <summary>Where the meter's bottom edge was left (growing upwards keeps it there).</summary>
+    public double? MeterOverlayBottom { get; set; }
+
+    /// <summary>The best line at the bottom instead of at the top.</summary>
+    public bool MeterBestLast { get; set; }
+
     /// <summary>The pets whose monsters the pet map shows (pet ids). Empty until the player picks some.</summary>
     public List<int> PetMapPets { get; set; } = new();
 

@@ -418,6 +418,65 @@ public sealed class PlayerRow : INotifyPropertyChanged
         set { if (_pvpDisplay == value) { return; } _pvpDisplay = value; OnPropertyChanged(); OnPropertyChanged(nameof(HasSecondaryInfo)); }
     }
 
+    private Combat.HitStats _hits;
+
+    /// <summary>How this player's direct hits landed in the fight shown (the meter's optional columns); empty outside the damage views.</summary>
+    public Combat.HitStats Hits
+    {
+        get => _hits;
+        set
+        {
+            if (_hits.Equals(value))
+            {
+                return;
+            }
+
+            _hits = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(CritText));
+            OnPropertyChanged(nameof(BackText));
+            OnPropertyChanged(nameof(FrontText));
+            OnPropertyChanged(nameof(PerfectText));
+            OnPropertyChanged(nameof(DoubleText));
+            OnPropertyChanged(nameof(ParryText));
+            OnPropertyChanged(nameof(HitsText));
+        }
+    }
+
+    private static string Percent(double? value) => value is double v ? v.ToString("0", System.Globalization.CultureInfo.CurrentCulture) + "%" : "–";
+
+    public string CritText => Percent(_hits.CritPercent);
+
+    public string BackText => Percent(_hits.BackPercent);
+
+    public string FrontText => Percent(_hits.FrontPercent);
+
+    public string PerfectText => Percent(_hits.PerfectPercent);
+
+    public string DoubleText => Percent(_hits.DoublePercent);
+
+    public string ParryText => Percent(_hits.ParryPercent);
+
+    public string HitsText => _hits.Direct > 0 ? Compact(_hits.Direct) : "–";
+
+    private IReadOnlyList<SupportBadge> _supportBadges = Array.Empty<SupportBadge>();
+
+    /// <summary>The party buffs of the supports (Cleric, Chanter …) on this player over the fight shown, with their uptime (the meter's optional column).</summary>
+    public IReadOnlyList<SupportBadge> SupportBadges
+    {
+        get => _supportBadges;
+        set
+        {
+            if (ReferenceEquals(_supportBadges, value) || (_supportBadges.Count == value.Count && _supportBadges.SequenceEqual(value)))
+            {
+                return;
+            }
+
+            _supportBadges = value;
+            OnPropertyChanged();
+        }
+    }
+
     public PlayerRow(int objectId)
     {
         ObjectId = objectId;
@@ -437,4 +496,10 @@ public sealed class PlayerRow : INotifyPropertyChanged
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(HasExtraInfo)));
         }
     }
+}
+
+/// <summary>One party buff on a player over the fight shown: its icon, the share of the fight it was on, and the colour of the class that gave it.</summary>
+public sealed record SupportBadge(string Name, System.Windows.Media.ImageSource? Icon, int Percent, System.Windows.Media.Brush Edge, string Tip)
+{
+    public string PercentText => Percent + "%";
 }

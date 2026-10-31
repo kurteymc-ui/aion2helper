@@ -13921,5 +13921,350 @@
     "en": "Your pet collection has not been read yet. The game sends it when you log in or change map: with the meter running, teleport or go to character selection and back once.",
     "de": "Deine Haustiersammlung wurde noch nicht gelesen. Das Spiel sendet sie beim Einloggen oder Kartenwechsel: Teleportiere dich, während der Meter läuft, oder geh einmal zur Charakterauswahl und zurück.",
     "fr": "Ta collection de familiers n’a pas encore été lue. Le jeu l’envoie à la connexion ou au changement de carte : avec le meter ouvert, téléporte-toi ou va une fois à la sélection de personnage et reviens."
+  },
+  "Shell.MeterLook": {
+    "en": "Meter look",
+    "de": "Meter-Aussehen",
+    "fr": "Apparence du meter"
+  },
+  "Look.Title": {
+    "en": "Meter look",
+    "de": "Meter-Aussehen",
+    "fr": "Apparence du meter"
+  },
+  "Look.Lede": {
+    "en": "How the meter over the game looks: its bars, lines, font and columns. Every change shows in the preview and on the meter at once.",
+    "de": "Wie der Meter über dem Spiel aussieht: Balken, Zeilen, Schrift und Spalten. Jede Änderung erscheint sofort in der Vorschau und im Meter.",
+    "fr": "L’apparence du meter au-dessus du jeu : barres, lignes, police et colonnes. Chaque changement apparaît tout de suite dans l’aperçu et dans le meter."
+  },
+  "Look.Preview": {
+    "en": "Preview",
+    "de": "Vorschau",
+    "fr": "Aperçu"
+  },
+  "Look.PreviewNote": {
+    "en": "Made-up players. The meter keeps its size, opacity and place from the Overlays page.",
+    "de": "Erfundene Spieler. Größe, Deckkraft und Platz des Meters kommen von der Seite Overlays.",
+    "fr": "Joueurs inventés. Le meter garde sa taille, son opacité et sa place de la page Overlays."
+  },
+  "Look.SampleBoss": {
+    "en": "Sample fight",
+    "de": "Beispielkampf",
+    "fr": "Combat d’exemple"
+  },
+  "Look.SampleStatus": {
+    "en": "Reading the game",
+    "de": "Liest das Spiel",
+    "fr": "Lecture du jeu"
+  },
+  "Look.Bars": {
+    "en": "Bars",
+    "de": "Balken",
+    "fr": "Barres"
+  },
+  "Look.Bar.glow": {
+    "en": "Glow",
+    "de": "Leuchten",
+    "fr": "Lueur"
+  },
+  "Look.Bar.flat": {
+    "en": "Flat",
+    "de": "Flach",
+    "fr": "Plat"
+  },
+  "Look.Bar.thread": {
+    "en": "Thread",
+    "de": "Faden",
+    "fr": "Fil"
+  },
+  "Look.Bar.capsule": {
+    "en": "Capsule",
+    "de": "Kapsel",
+    "fr": "Capsule"
+  },
+  "Look.Bar.frame": {
+    "en": "Frame",
+    "de": "Rahmen",
+    "fr": "Cadre"
+  },
+  "Look.Lines": {
+    "en": "Lines",
+    "de": "Zeilen",
+    "fr": "Lignes"
+  },
+  "Look.Size.compact": {
+    "en": "Compact",
+    "de": "Kompakt",
+    "fr": "Compact"
+  },
+  "Look.Size.normal": {
+    "en": "Normal",
+    "de": "Normal",
+    "fr": "Normal"
+  },
+  "Look.Size.roomy": {
+    "en": "Roomy",
+    "de": "Geräumig",
+    "fr": "Aéré"
+  },
+  "Look.BestLast": {
+    "en": "Best player at the bottom",
+    "de": "Bester Spieler unten",
+    "fr": "Meilleur joueur en bas"
+  },
+  "Look.GrowUp": {
+    "en": "Grow upwards",
+    "de": "Nach oben wachsen",
+    "fr": "S’agrandir vers le haut"
+  },
+  "Look.GrowUpTip": {
+    "en": "The meter’s bottom edge stays where you put it; new lines push it up.",
+    "de": "Die Unterkante des Meters bleibt, wo du sie hingestellt hast; neue Zeilen schieben ihn nach oben.",
+    "fr": "Le bord inférieur du meter reste où tu l’as mis ; les nouvelles lignes le poussent vers le haut."
+  },
+  "Look.Text": {
+    "en": "Text",
+    "de": "Text",
+    "fr": "Texte"
+  },
+  "Look.TextSize": {
+    "en": "Text size",
+    "de": "Textgröße",
+    "fr": "Taille du texte"
+  },
+  "Look.ClassColor": {
+    "en": "Names in their class colour",
+    "de": "Namen in ihrer Klassenfarbe",
+    "fr": "Noms dans la couleur de leur classe"
+  },
+  "Look.Columns": {
+    "en": "Columns",
+    "de": "Spalten",
+    "fr": "Colonnes"
+  },
+  "Look.NameSide": {
+    "en": "Beside the name",
+    "de": "Neben dem Namen",
+    "fr": "À côté du nom"
+  },
+  "Look.ColRank": {
+    "en": "Rank",
+    "de": "Rang",
+    "fr": "Rang"
+  },
+  "Look.ColIcon": {
+    "en": "Class icon",
+    "de": "Klassensymbol",
+    "fr": "Icône de classe"
+  },
+  "Look.ColCp": {
+    "en": "Combat power",
+    "de": "Kampfkraft",
+    "fr": "Puissance de combat"
+  },
+  "Look.ColName": {
+    "en": "Name",
+    "de": "Name",
+    "fr": "Nom"
+  },
+  "Look.Numbers": {
+    "en": "The meter’s numbers",
+    "de": "Die Zahlen des Meters",
+    "fr": "Les chiffres du meter"
+  },
+  "Look.Own.dps": {
+    "en": "DPS",
+    "de": "DPS",
+    "fr": "DPS"
+  },
+  "Look.Own.share": {
+    "en": "Share",
+    "de": "Anteil",
+    "fr": "Part"
+  },
+  "Look.Own.total": {
+    "en": "Total",
+    "de": "Gesamt",
+    "fr": "Total"
+  },
+  "Look.ColDpsTip": {
+    "en": "Damage per second (rDPS, HPS … as the mode says; the damage in All in One).",
+    "de": "Schaden pro Sekunde (rDPS, HPS … je nach Modus; der Schaden in Alles in einem).",
+    "fr": "Dégâts par seconde (rDPS, HPS … selon le mode ; les dégâts dans Tout en un)."
+  },
+  "Look.ColShareTip": {
+    "en": "The player’s share of the group’s total (the healing in All in One).",
+    "de": "Der Anteil des Spielers an der Summe der Gruppe (die Heilung in Alles in einem).",
+    "fr": "La part du joueur dans le total du groupe (les soins dans Tout en un)."
+  },
+  "Look.ColTotalTip": {
+    "en": "The player’s total (the damage taken in All in One).",
+    "de": "Die Summe des Spielers (der erlittene Schaden in Alles in einem).",
+    "fr": "Le total du joueur (les dégâts subis dans Tout en un)."
+  },
+  "Look.HitKinds": {
+    "en": "How the hits landed",
+    "de": "Wie die Treffer landeten",
+    "fr": "Comment les coups ont porté"
+  },
+  "Look.HitKindsNote": {
+    "en": "Shares of the player’s direct hits in the fight shown (damage over time not counted). Back, front, perfect, double and parried are read from each hit as the game sends it.",
+    "de": "Anteile der direkten Treffer des Spielers im gezeigten Kampf (Schaden über Zeit nicht gezählt). Rücken, Front, perfekt, doppelt und pariert werden aus jedem Treffer gelesen, wie das Spiel ihn sendet.",
+    "fr": "Parts des coups directs du joueur dans le combat affiché (dégâts sur la durée non comptés). Dos, face, parfait, double et paré sont lus dans chaque coup tel que le jeu l’envoie."
+  },
+  "Look.ColCrit": {
+    "en": "Crit",
+    "de": "Krit",
+    "fr": "Crit"
+  },
+  "Look.ColCritTip": {
+    "en": "Critical hits: share of the direct hits.",
+    "de": "Kritische Treffer: Anteil der direkten Treffer.",
+    "fr": "Coups critiques : part des coups directs."
+  },
+  "Look.ColBack": {
+    "en": "Back",
+    "de": "Rücken",
+    "fr": "Dos"
+  },
+  "Look.ColBackTip": {
+    "en": "Back attacks: share of the hits that landed from behind.",
+    "de": "Rückenangriffe: Anteil der Treffer von hinten.",
+    "fr": "Attaques de dos : part des coups portés par derrière."
+  },
+  "Look.ColFront": {
+    "en": "Front",
+    "de": "Front",
+    "fr": "Face"
+  },
+  "Look.ColFrontTip": {
+    "en": "Front attacks: share of the hits that landed from the front.",
+    "de": "Frontangriffe: Anteil der Treffer von vorn.",
+    "fr": "Attaques de face : part des coups portés de face."
+  },
+  "Look.ColPerfect": {
+    "en": "Perfect",
+    "de": "Perfekt",
+    "fr": "Parfait"
+  },
+  "Look.ColPerfectTip": {
+    "en": "Perfect hits: share of the hits.",
+    "de": "Perfekte Treffer: Anteil der Treffer.",
+    "fr": "Coups parfaits : part des coups."
+  },
+  "Look.ColDouble": {
+    "en": "Double",
+    "de": "Doppelt",
+    "fr": "Double"
+  },
+  "Look.ColDoubleTip": {
+    "en": "Double hits: share of the hits.",
+    "de": "Doppeltreffer: Anteil der Treffer.",
+    "fr": "Coups doubles : part des coups."
+  },
+  "Look.ColParry": {
+    "en": "Parried",
+    "de": "Pariert",
+    "fr": "Parés"
+  },
+  "Look.ColParryTip": {
+    "en": "Parried hits: share of the hits the target parried.",
+    "de": "Parierte Treffer: Anteil der Treffer, die das Ziel pariert hat.",
+    "fr": "Coups parés : part des coups que la cible a parés."
+  },
+  "Look.ColHits": {
+    "en": "Hits",
+    "de": "Treffer",
+    "fr": "Coups"
+  },
+  "Look.ColHitsTip": {
+    "en": "The number of direct hits.",
+    "de": "Die Zahl der direkten Treffer.",
+    "fr": "Le nombre de coups directs."
+  },
+  "Look.Support": {
+    "en": "Support",
+    "de": "Unterstützung",
+    "fr": "Soutien"
+  },
+  "Look.ColSupport": {
+    "en": "Buffs",
+    "de": "Buffs",
+    "fr": "Buffs"
+  },
+  "Look.ColSupportLong": {
+    "en": "Support buff uptimes",
+    "de": "Laufzeit der Unterstützungs-Buffs",
+    "fr": "Durée des buffs de soutien"
+  },
+  "Look.ColSupportTip": {
+    "en": "The party buffs on each player over the fight shown, with the share of the fight each was on.",
+    "de": "Die Gruppen-Buffs auf jedem Spieler im gezeigten Kampf, mit dem Anteil des Kampfes, in dem sie aktiv waren.",
+    "fr": "Les buffs de groupe sur chaque joueur pendant le combat affiché, avec la part du combat où chacun était actif."
+  },
+  "Look.SupportNote": {
+    "en": "The party buffs rDPS counts (the Cleric’s and the Chanter’s, the Gladiator’s and the Templar’s), each framed in the colour of the class that gave it; the four longest show.",
+    "de": "Die Gruppen-Buffs, die rDPS zählt (die des Klerikers und des Kantors, des Gladiators und des Templers), jeweils in der Farbe der Klasse, die ihn gab; die vier längsten erscheinen.",
+    "fr": "Les buffs de groupe que compte le rDPS (ceux du Clerc et de l’Aède, du Gladiateur et du Templier), chacun encadré de la couleur de la classe qui l’a donné ; les quatre plus longs s’affichent."
+  },
+  "Look.SupportBuff": {
+    "en": "Party buff",
+    "de": "Gruppen-Buff",
+    "fr": "Buff de groupe"
+  },
+  "Look.SupportTip": {
+    "en": "{0}: on for {1}% of the fight, from {2}",
+    "de": "{0}: {1}% des Kampfes aktiv, von {2}",
+    "fr": "{0} : actif {1}% du combat, de {2}"
+  },
+  "Look.Titles": {
+    "en": "Column titles over the lines",
+    "de": "Spaltentitel über den Zeilen",
+    "fr": "Titres des colonnes au-dessus des lignes"
+  },
+  "Look.Around": {
+    "en": "Around the list",
+    "de": "Rund um die Liste",
+    "fr": "Autour de la liste"
+  },
+  "Look.ShowTotal": {
+    "en": "The group’s total (and Me / Group / All)",
+    "de": "Die Summe der Gruppe (und Ich / Gruppe / Alle)",
+    "fr": "Le total du groupe (et Moi / Groupe / Tous)"
+  },
+  "Look.ShowStatus": {
+    "en": "Status line (game being read, ping)",
+    "de": "Statuszeile (Spiel wird gelesen, Ping)",
+    "fr": "Ligne d’état (lecture du jeu, ping)"
+  },
+  "Look.ShowStatusTip": {
+    "en": "The grip that sizes the meter sits on this line; without it, size the meter on the Overlays page.",
+    "de": "Der Griff zum Vergrößern sitzt auf dieser Zeile; ohne sie stellst du die Größe auf der Seite Overlays ein.",
+    "fr": "La poignée qui redimensionne le meter est sur cette ligne ; sans elle, règle la taille sur la page Overlays."
+  },
+  "Look.Buttons": {
+    "en": "Buttons in the meter’s head",
+    "de": "Schaltflächen im Kopf des Meters",
+    "fr": "Boutons dans l’en-tête du meter"
+  },
+  "Look.Buttons.always": {
+    "en": "Always",
+    "de": "Immer",
+    "fr": "Toujours"
+  },
+  "Look.Buttons.hover": {
+    "en": "Only under the mouse",
+    "de": "Nur unter der Maus",
+    "fr": "Seulement sous la souris"
+  },
+  "Look.Reset": {
+    "en": "Back to the usual look",
+    "de": "Zurück zum üblichen Aussehen",
+    "fr": "Revenir à l’apparence habituelle"
+  },
+  "Look.ResetAsk": {
+    "en": "Put the meter back to its usual look? Its size and place stay.",
+    "de": "Den Meter auf sein übliches Aussehen zurücksetzen? Größe und Platz bleiben.",
+    "fr": "Remettre le meter à son apparence habituelle ? Sa taille et sa place restent."
   }
 }
