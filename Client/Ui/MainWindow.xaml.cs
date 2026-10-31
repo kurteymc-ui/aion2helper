@@ -572,6 +572,7 @@ public partial class MainWindow : Window
     private void RefreshCharacterSettings(MeterSettings settings)
     {
         _showShareBars = settings.ShowShareBars;
+        _showPartyBuffs = settings.ShowPartyBuffs;
         _showDamageTaken = settings.ShowDamageTaken;
         _showBossHp = settings.ShowBossHp;
         _autoBossView = settings.AutoBossView;
@@ -1601,6 +1602,7 @@ public partial class MainWindow : Window
         }
 
         UpdateRaidDps(filteredSpan);
+        UpdatePartyBuffs();
                 // Rank and share are relative to what is on screen, so they are settled once every row's
         // damage for this refresh is known - and by damage, not by the grid's current sort order.
         RankRows();
@@ -1857,6 +1859,40 @@ public partial class MainWindow : Window
     }
 
     private DateTime _rdpsAt = DateTime.MinValue;
+    private DateTime _partyBuffsAt = DateTime.MinValue;
+    private bool _showPartyBuffs = true;
+
+    /// <summary>Once a second: the party buffs running on each shown player now (Settings: show party buffs), as a line under the name.</summary>
+    private void UpdatePartyBuffs()
+    {
+        if (DateTime.UtcNow - _partyBuffsAt < TimeSpan.FromSeconds(1) && !Headless)
+        {
+            return;
+        }
+
+        _partyBuffsAt = DateTime.UtcNow;
+        bool show = _showPartyBuffs && ViewingLive && _source?.Entities is Aion2.Aion2EntityDirectory;
+        var directory = _source?.Entities as Aion2.Aion2EntityDirectory;
+        DateTime now = DateTime.Now;
+        foreach (PlayerRow row in _rows)
+        {
+            if (!show || row.IsEnemy || directory is null)
+            {
+                row.BuffLine = "";
+                continue;
+            }
+
+            var names = directory.Combat.BuffsOn(row.ObjectId, now)
+                .Select(b => (Base: RaidDps.DisplayBase(b.SkillId), b.SkillId))
+                .Where(b => RaidDps.IsSynergy(b.Base))
+                .GroupBy(b => b.Base)
+                .Select(g => Aion2.Protocol.Aion2SkillNames.Display(Aion2.Protocol.Aion2SkillNames.NameOf(g.First().SkillId)))
+                .Where(n => !string.IsNullOrWhiteSpace(n))
+                .Distinct()
+                .ToList();
+            row.BuffLine = string.Join(" · ", names);
+        }
+    }
 
     /// <summary>The class prefix of a class's skill codes (11 Gladiator .. 18 Chanter, 19 Brawler), for RaidDps.</summary>
     private static int JobPrefixOf(string? className) => className switch

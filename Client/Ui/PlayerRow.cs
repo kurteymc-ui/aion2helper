@@ -129,6 +129,17 @@ public sealed class PlayerRow : INotifyPropertyChanged
 
     private double? _rdps;
 
+    /// <summary>The party buffs on this player right now ("Undefeated Mantra · Wind of Power"), empty when none or switched off.</summary>
+    public string BuffLine
+    {
+        get => _buffLine;
+        set { if (_buffLine == value) { return; } _buffLine = value; OnPropertyChanged(); OnPropertyChanged(nameof(HasBuffLine)); }
+    }
+
+    private string _buffLine = "";
+
+    public bool HasBuffLine => _buffLine.Length > 0;
+
     /// <summary>The rDPS view: the rate shown (and the order) is rDPS instead of DPS.</summary>
     public bool RdpsView
     {

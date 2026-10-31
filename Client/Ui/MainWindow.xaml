@@ -1060,6 +1060,8 @@
                                                        Height="24" Width="24" Margin="4,0,8,0" ToolTip="{Binding Faction}"/>
                                                 <StackPanel Grid.Column="2" VerticalAlignment="Center">
                                                     <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="14" TextTrimming="CharacterEllipsis"/>
+                                                    <TextBlock Text="{Binding BuffLine}" FontSize="11" Foreground="#E6C88F" Opacity="0.85" TextTrimming="CharacterEllipsis"
+                                                   Visibility="{Binding HasBuffLine, Converter={StaticResource BoolToVis}}"/>
                                                     <local:AllLine FontSize="10.5" TextElement.Foreground="{DynamicResource Brush.Text}" Opacity="0.85"/>
                                                 </StackPanel>
                                                 <Grid Grid.Column="3" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="10,0,0,0" ToolTip="Damage this player received in the shown window">
@@ -1302,6 +1304,8 @@
                                     <StackPanel Grid.Column="1" VerticalAlignment="Center">
                                         <TextBlock Text="{Binding NameDisplay}" Foreground="{DynamicResource Brush.OverlayText}" FontWeight="SemiBold"
                                                    FontSize="13.5" TextTrimming="CharacterEllipsis"/>
+                                        <TextBlock Text="{Binding BuffLine}" FontSize="10.5" Foreground="#E6C88F" Opacity="0.85" TextTrimming="CharacterEllipsis"
+                                                   Visibility="{Binding HasBuffLine, Converter={StaticResource BoolToVis}}"/>
                                         <local:AllLine FontSize="9.5" TextElement.Foreground="{DynamicResource Brush.OverlayText}"/>
                                     </StackPanel>
                                     <TextBlock Grid.Column="2" Text="{Binding TotalOrTakenCompact}" Style="{StaticResource AllTakenSubtle}" FontSize="12.5"
