@@ -365,8 +365,41 @@ public static class SelfCheckTickets
             && bareRemote is { Name: "Heimdall", ItemLevel: 40, Attributes: null } && bareRemote.Gear.Count == 0
             && AionDPS.Upload.RemoteCharacterClient.Parse(nothing.RootElement) is null;
         Console.WriteLine($"  -> the server's answer for another character read (equipment with stones and god stone, attributes, wings, pet, titles; a character without a profile; no player)={remoteRead}");
+        // the Odyle energy between two logins (the roster): +15 every 3 hours up to the cap, also offline, on the character's own recharge clock once the meter saw a tick
         Aion2Tickets.Reset();
-        bool ok = missionsReset && missionsStale && stamped && firstLogin && sameDay && newcomer && maskBit2 && startedInGame && relogKeeps && remoteRead && listRead && listedEntries && deletedGone && listKept && membership && premiumKnown && plainCaps && ticketFrame && noTicket && ticketAlone && passFrame && passLevels && lostTomorrow && rules && dungeonRefill && korean && locks && missionsRead && ticks && keptUntilReset && dailyCleared && weeklyCleared && resetTimes && cooldownOk && shortKeeps && rateNotYet && rateOk && jumpOk && restartOk && listOk && truncated && gain && used && refill && notYet && bound && changed && refills && Aion2Tickets.Catalog.Count == 70;
+        Aion2Tickets.ReceiveList(entries, t0);
+        Aion2Tickets.NoteCharacter("Aahz", 1304, t0.AddSeconds(4));
+        Aion2Tickets.ReceiveUpdate(new TicketReading(Aion2Tickets.OdyleId, new TicketValue(400, 10, 0)), t0.AddSeconds(5), 3);   // used: no tick
+        bool noTickYet = !Aion2Tickets.Snapshot().First(c => c.Name == "Aahz").Tickets.ContainsKey(Aion2Tickets.OdyleTickId);
+        Aion2Tickets.ReceiveUpdate(new TicketReading(Aion2Tickets.OdyleId, new TicketValue(415, 10, 0)), t0.AddSeconds(6), 2);   // the regular refill: +15
+        TicketValue learnt = Aion2Tickets.Snapshot().First(c => c.Name == "Aahz").Tickets.GetValueOrDefault(Aion2Tickets.OdyleTickId);
+        bool tickLearnt = noTickYet && learnt.Count == 15 && learnt.TimeMs == new DateTimeOffset(t0.AddSeconds(6).ToUniversalTime()).ToUnixTimeMilliseconds();
+        Aion2Tickets.ReceiveList(entries, t0.AddSeconds(900)); // a relog keeps the clock (the list has none)
+        Aion2Tickets.NoteCharacter("Aahz", 1304, t0.AddSeconds(904));
+        tickLearnt = tickLearnt && Aion2Tickets.Snapshot().First(c => c.Name == "Aahz").Tickets.GetValueOrDefault(Aion2Tickets.OdyleTickId).Count == 15;
+        DateTime seenUtc = new(2026, 10, 30, 10, 0, 0, DateTimeKind.Utc), clockUtc = new(2026, 10, 30, 8, 30, 0, DateTimeKind.Utc);
+        long future = new DateTimeOffset(seenUtc.AddDays(20)).ToUnixTimeMilliseconds(), past = new DateTimeOffset(seenUtc.AddDays(-2)).ToUnixTimeMilliseconds();
+        var alt = new TicketCharacter("Alt", 1304, seenUtc, new Dictionary<int, TicketValue>
+        {
+            [Aion2Tickets.OdyleId] = new(400, 30, 0), [Aion2Tickets.OdyleTickId] = new(15, 0, new DateTimeOffset(clockUtc).ToUnixTimeMilliseconds()), [Aion2Tickets.PremiumId] = new(0, 0, future),
+        }, Level: 45);
+        // 7 hours later (17:00): the ticks of 11:30 and 14:30 came; the next is 17:30; 410 to the cap of 840 is 28 ticks
+        Aion2Tickets.OdyleState? later = Aion2Tickets.OdyleNow(alt, seenUtc.AddHours(7), online: false);
+        bool projected = later is { Count: 430, Bonus: 30, Cap: 840, Estimated: true, PerTick: 15, Full: false } && later.NextTick == new DateTime(2026, 10, 30, 17, 30, 0, DateTimeKind.Utc)
+            && later.FullAt == later.NextTick + TimeSpan.FromHours(3 * 27);
+        // logged in now: what the game said, nothing added; without a clock: whole 3 hours since the reading; without the membership: the cap is 560, and no recharge above it
+        bool liveExact = Aion2Tickets.OdyleNow(alt, seenUtc.AddHours(7), online: true) is { Count: 400, Estimated: false };
+        var noClock = alt with { Tickets = alt.Tickets.Where(t => t.Key != Aion2Tickets.OdyleTickId).ToDictionary(t => t.Key, t => t.Value) };
+        bool withoutClock = Aion2Tickets.OdyleNow(noClock, seenUtc.AddHours(7), online: false) is { Count: 430 } wc && wc.NextTick == seenUtc.AddHours(9);
+        var plain = alt with { Tickets = new Dictionary<int, TicketValue>(alt.Tickets) { [Aion2Tickets.PremiumId] = new(0, 0, past), [Aion2Tickets.OdyleId] = new(550, 0, 0) } };
+        bool capped = Aion2Tickets.OdyleNow(plain, seenUtc.AddHours(7), online: false) is { Count: 560, Cap: 560, Full: true, FullAt: null, NextTick: null }
+            && Aion2Tickets.OdyleNow(plain with { Tickets = new Dictionary<int, TicketValue>(plain.Tickets) { [Aion2Tickets.OdyleId] = new(600, 0, 0) } }, seenUtc.AddHours(30), online: false) is { Count: 600, Full: true };
+        bool lockedOdyle = Aion2Tickets.OdyleNow(alt with { Level = 20 }, seenUtc.AddHours(7), online: false) is null;
+        Console.WriteLine($"  -> Odyle recharge: a regular refill sets the clock (kept over a relog)={tickLearnt}, +15 every 3 hours on that clock with next tick and full time={projected}, online as the game says={liveExact}, without a clock every 3 hours from the reading={withoutClock}, 560 without the membership and nothing above the cap={capped}, below level 22 none={lockedOdyle}");
+        bool odyleOk = tickLearnt && projected && liveExact && withoutClock && capped && lockedOdyle;
+
+        Aion2Tickets.Reset();
+        bool ok = odyleOk && missionsReset && missionsStale && stamped && firstLogin && sameDay && newcomer && maskBit2 && startedInGame && relogKeeps && remoteRead && listRead && listedEntries && deletedGone && listKept && membership && premiumKnown && plainCaps && ticketFrame && noTicket && ticketAlone && passFrame && passLevels && lostTomorrow && rules && dungeonRefill && korean && locks && missionsRead && ticks && keptUntilReset && dailyCleared && weeklyCleared && resetTimes && cooldownOk && shortKeeps && rateNotYet && rateOk && jumpOk && restartOk && listOk && truncated && gain && used && refill && notYet && bound && changed && refills && Aion2Tickets.Catalog.Count == 70;
         Console.WriteLine(ok ? "  -> OK" : "  -> FAILED");
         ServerTime.Reset();
         return ok;

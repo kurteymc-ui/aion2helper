@@ -35,6 +35,8 @@ jobs:
             @('render-overlay', 'chips.png', 'chips'),
             @('render-overlay', 'menu.png', 'menu'),
             @('render-overlay', 'menu-dummy.png', 'menu-dummy'),
+            @('render-checklist', 'roster.png', 'roster'),
+            @('render-checklist', 'checklist.png', 'character'),
             @('render-details', 'details-skills.png', 'skills'),
             @('render-details', 'details-buffs.png', 'buffs'),
             @('render-settings', 'settings.png', 'Interface'),

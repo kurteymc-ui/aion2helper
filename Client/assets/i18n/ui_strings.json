@@ -13300,5 +13300,109 @@
   },
   "Settings.DummyAutoStart.Hint": {
     "en": "Hit any Training Scarecrow or Punching Bag: the clock starts with your first hit and the run is saved when the time is up (Tools → Dummy test lists and compares the runs). Stop hitting for 15 seconds and the run is dropped; after a run, pause 5 seconds and the next hit starts a new one."
+  },
+  "Checklist.Roster": {
+    "en": "All characters",
+    "de": "Alle Charaktere"
+  },
+  "Checklist.RosterCount": {
+    "en": "{0} characters at once",
+    "de": "{0} Charaktere auf einen Blick"
+  },
+  "Checklist.HoursMinutes": {
+    "en": "{0} h {1} m",
+    "de": "{0} Std {1} Min"
+  },
+  "Checklist.MinutesOnly": {
+    "en": "{0} m",
+    "de": "{0} Min"
+  },
+  "Checklist.In": {
+    "en": "in {0}",
+    "de": "in {0}"
+  },
+  "Checklist.Ago": {
+    "en": "{0} ago",
+    "de": "vor {0}"
+  },
+  "Checklist.DailyReset": {
+    "en": "Daily reset",
+    "de": "Täglicher Reset"
+  },
+  "Checklist.WeeklyReset": {
+    "en": "Weekly reset",
+    "de": "Wöchentlicher Reset"
+  },
+  "Checklist.RosterOdyle": {
+    "en": "Odyle Energy of all characters",
+    "de": "Odenergie aller Charaktere"
+  },
+  "Checklist.RosterFullOne": {
+    "en": "1 full: its recharge is wasted",
+    "de": "1 voll: die Aufladung verfällt"
+  },
+  "Checklist.RosterFullMany": {
+    "en": "{0} full: their recharge is wasted",
+    "de": "{0} voll: die Aufladung verfällt"
+  },
+  "Checklist.RosterOdyleHead": {
+    "en": "Odyle Energy",
+    "de": "Odenergie"
+  },
+  "Checklist.RosterOdyleTip": {
+    "en": "Basic energy now / the cap (840 with Special Quai, else 560); the charged energy (stones) small behind. \"~\": worked out from the +15 every 3 hours since the meter last saw it.",
+    "de": "Basisenergie jetzt / Obergrenze (840 mit Quai-Premium, sonst 560); die geladene Energie (Steine) klein dahinter. \"~\": aus den +15 alle 3 Stunden seit dem letzten Stand berechnet."
+  },
+  "Checklist.RosterFullHead": {
+    "en": "Full",
+    "de": "Voll"
+  },
+  "Checklist.RosterFullTip": {
+    "en": "When the basic energy reaches the cap: from then on its recharge is lost. Spend some before.",
+    "de": "Wann die Basisenergie die Obergrenze erreicht: ab dann verfällt die Aufladung. Vorher etwas ausgeben."
+  },
+  "Checklist.RosterTasks": {
+    "en": "Daily tasks",
+    "de": "Pflicht-aufgaben"
+  },
+  "Checklist.RosterTasksTip": {
+    "en": "The mandatory tasks of the day, handed in of five",
+    "de": "Die Pflichtaufgaben des Tages, abgegeben von fünf"
+  },
+  "Checklist.RosterUnknown": {
+    "en": "Not seen yet: log in with this character once while the meter runs",
+    "de": "Noch nicht gesehen: einmal mit diesem Charakter einloggen, während der Meter läuft"
+  },
+  "Checklist.RosterLocked": {
+    "en": "Opens at level {0}",
+    "de": "Ab Stufe {0}"
+  },
+  "Checklist.RosterSeen": {
+    "en": "seen {0}",
+    "de": "gesehen {0}"
+  },
+  "Checklist.RosterOdyleLine": {
+    "en": "Basic energy {0} of {1}, charged energy {2}. It recharges by {3} every 3 hours, also offline, up to the cap.",
+    "de": "Basisenergie {0} von {1}, geladene Energie {2}. Sie lädt alle 3 Stunden um {3} auf, auch offline, bis zur Obergrenze."
+  },
+  "Checklist.RosterFull": {
+    "en": "Full",
+    "de": "Voll"
+  },
+  "Checklist.RosterFullWaste": {
+    "en": "At the cap: the recharge is lost until you spend some",
+    "de": "An der Obergrenze: die Aufladung verfällt, bis du etwas ausgibst"
+  },
+  "Checklist.RosterFullAt": {
+    "en": "Full at {0}",
+    "de": "Voll um {0}"
+  },
+  "Checklist.RosterNextTick": {
+    "en": "next +{0} at {1}",
+    "de": "nächste +{0} um {1}"
+  },
+  "Checklist.RosterNote": {
+    "en": "Each character as the meter last saw it (at its login and while it played), with what came back since: the Odyle Energy +15 every 3 hours up to the cap (also offline), the counters at the daily and weekly resets. \"~\" marks a number worked out that way; logging the character in shows the game's own. Once the meter has seen a character's recharge, its ticks land on the right minutes. Click a line for everything of that character.",
+    "de": "Jeder Charakter, wie der Meter ihn zuletzt gesehen hat (beim Login und beim Spielen), mit dem, was seitdem zurückkam: die Odenergie +15 alle 3 Stunden bis zur Obergrenze (auch offline), die Zähler bei den täglichen und wöchentlichen Resets. \"~\" markiert so berechnete Zahlen; ein Login mit dem Charakter zeigt die des Spiels. Hat der Meter eine Aufladung des Charakters gesehen, liegen seine Ticks auf der richtigen Minute. Eine Zeile anklicken für alles zu diesem Charakter."
   }
 }

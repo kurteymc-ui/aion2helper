@@ -197,7 +197,10 @@ internal static class Program
 
         if (args.Length > 1 && args[0] == "render-checklist")
         {
-            RunRenderChecklistMode(args[1], args.Length > 2 ? args[2] : "");
+            // render-checklist <out.png> [language | roster | character]: the page of all characters (roster) or of one (character)
+            string third = args.Length > 2 ? args[2] : "";
+            bool page = third is "roster" or "character";
+            RunRenderChecklistMode(args[1], page ? "" : third, page ? third : "");
             return;
         }
 
@@ -1281,10 +1284,11 @@ internal static class Program
                 menu.Style = menuStyle;
             }
 
-            var lines = kind == "menu" ? items.Cast<object>().ToList() : ((System.Windows.Controls.MenuItem)items[0]).Items.Cast<object>().ToList();
+            var dummy = items.OfType<System.Windows.Controls.MenuItem>().First(m => m.HasItems); // the Training dummy submenu (the first with lines of its own)
+            var lines = kind == "menu" ? items.Cast<object>().ToList() : dummy.Items.Cast<object>().ToList();
             if (kind == "menu-dummy")
             {
-                ((System.Windows.Controls.MenuItem)items[0]).Items.Clear();
+                dummy.Items.Clear();
             }
 
             foreach (object line in lines)
@@ -1417,7 +1421,7 @@ internal static class Program
     }
 
     /// <summary>Draws the checklist window (Tools menu) with two characters made of a real login list into a picture; no window is ever shown.</summary>
-    private static void RunRenderChecklistMode(string path, string language)
+    private static void RunRenderChecklistMode(string path, string language, string page = "")
     {
         var app = new System.Windows.Application();
         app.Resources.MergedDictionaries.Add(
@@ -1446,6 +1450,7 @@ internal static class Program
             // a second character that has used a lot: the Odyle energy is down and the bonus is in use, some counters are used up
             Aion2.Aion2Tickets.ReceiveList(entries, t0.AddSeconds(10));
             Aion2.Aion2Tickets.ReceiveUpdate(new Aion2.TicketReading(Aion2.Aion2Tickets.OdyleId, new Aion2.TicketValue(75, 520, 0)), t0.AddSeconds(11));
+            Aion2.Aion2Tickets.ReceiveUpdate(new Aion2.TicketReading(Aion2.Aion2Tickets.OdyleId, new Aion2.TicketValue(90, 520, 0)), t0.AddSeconds(12), reason: 2); // a recharge tick: +15, the clock
             Aion2.Aion2Tickets.ReceiveUpdate(new Aion2.TicketReading(60000003, new Aion2.TicketValue(0, 0, 0)), t0.AddSeconds(11));
             Aion2.Aion2Tickets.ReceiveUpdate(new Aion2.TicketReading(102, new Aion2.TicketValue(0, 0, 0)), t0.AddSeconds(11));
             Aion2.Aion2Tickets.ReceiveUpdate(new Aion2.TicketReading(Aion2.Aion2Tickets.MissionsId, new Aion2.TicketValue(5, 5, 0)), t0.AddSeconds(11));
@@ -1455,6 +1460,15 @@ internal static class Program
 
         int scale = int.TryParse(Environment.GetEnvironmentVariable("AIONDPS_RENDER_SCALE"), out int sc) && sc is >= 1 and <= 4 ? sc : 1; // 2 = a sharp picture for the website
         var window = new Ui.ChecklistWindow();
+        if (page == "roster")
+        {
+            window.ShowRoster();
+        }
+        else if (page == "character")
+        {
+            window.ShowCharacter("Chumley");
+        }
+
         var content = (System.Windows.FrameworkElement)window.Content;
         int w = (int)window.Width;
         content.Measure(new System.Windows.Size(w, double.PositiveInfinity));

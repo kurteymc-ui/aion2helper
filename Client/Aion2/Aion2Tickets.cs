@@ -58,6 +58,73 @@ public static class Aion2Tickets
     /// <summary>The level the counter needs; 0 = no known limit.</summary>
     public static int UnlockLevel(int ticketId) => UnlockLevels.GetValueOrDefault(ticketId);
 
+    // ---- the Odyle energy between two logins ----
+
+    /// <summary>A ticket of our own: the last regular recharge of the Odyle energy the meter saw (count = how much it brought, time = when, ms since 1970).
+    /// It fixes the character's recharge clock, so the ticks while it is offline land on the right minutes.</summary>
+    public const int OdyleTickId = 99000006;
+
+    /// <summary>The basic Odyle energy recharges by itself, also offline, from level 22: 15 every 3 hours up to the cap (560, 840 with the Special Quai
+    /// membership); none above the cap. The amount the meter saw last wins over the 15.</summary>
+    public static readonly TimeSpan OdyleTickEvery = TimeSpan.FromHours(3);
+
+    public const int OdyleTickAmount = 15;
+
+    /// <summary>A character's Odyle energy now: <paramref name="Count"/> the basic energy (worked out from the recharges since the meter last saw it when
+    /// <paramref name="Estimated"/>), the charged energy (stones; it does not recharge), the cap, the amount of a tick, the next tick and when it is full (UTC;
+    /// null = full already or not known).</summary>
+    public sealed record OdyleState(int Count, int Bonus, int Cap, bool Estimated, int PerTick, DateTime? NextTick, DateTime? FullAt)
+    {
+        public bool Full => Count >= Cap;
+    }
+
+    /// <summary>
+    /// The Odyle energy of <paramref name="character"/> at <paramref name="utcNow"/>: the count the meter saw last, plus the ticks since. The character logged in now
+    /// (<paramref name="online"/>) gets no ticks added: the meter sees each of its recharges as it comes. Null when the energy is not known or still locked (below level 22).
+    /// </summary>
+    public static OdyleState? OdyleNow(TicketCharacter character, DateTime utcNow, bool online)
+    {
+        if (IsLocked(character, OdyleId) || !character.Tickets.TryGetValue(OdyleId, out TicketValue value))
+        {
+            return null;
+        }
+
+        TicketDef? def = Find(OdyleId);
+        bool premium = HasPremium(character, utcNow) != false;
+        int cap = def is null ? (premium ? 840 : 560) : premium ? Math.Max(def.Max, def.SubscribeMax) : def.Max;
+        int per = OdyleTickAmount;
+        DateTime? clock = null;
+        if (character.Tickets.TryGetValue(OdyleTickId, out TicketValue tick) && tick.TimeMs > 0)
+        {
+            per = tick.Count is > 0 and <= 100 ? tick.Count : per;
+            clock = DateTimeOffset.FromUnixTimeMilliseconds(tick.TimeMs).UtcDateTime;
+        }
+
+        DateTime seen = character.SavedAt.Kind == DateTimeKind.Local ? character.SavedAt.ToUniversalTime() : character.SavedAt;
+        int count = value.Count;
+        bool estimated = false;
+        if (!online && utcNow > seen && count < cap)
+        {
+            int ticks = clock is { } c ? Slot(c, utcNow) - Slot(c, seen) : (int)((utcNow - seen).Ticks / OdyleTickEvery.Ticks);
+            count = Math.Min(cap, count + Math.Max(0, ticks) * per);
+            estimated = true;
+        }
+
+        DateTime? next = null, full = null;
+        if (count < cap)
+        {
+            // the next tick: on the character's own clock when the meter saw one; else 3 hours after the last reading (offline) or not known (online)
+            next = clock is { } c ? c + OdyleTickEvery * (Slot(c, utcNow) + 1)
+                : !online && utcNow > seen ? seen + OdyleTickEvery * ((utcNow - seen).Ticks / OdyleTickEvery.Ticks + 1) : null;
+            int need = (cap - count + per - 1) / per;
+            full = (next ?? utcNow + OdyleTickEvery) + OdyleTickEvery * (need - 1);
+        }
+
+        return new OdyleState(count, value.Bonus, cap, estimated, per, next, full);
+    }
+
+    private static int Slot(DateTime clock, DateTime at) => (int)Math.Floor((at - clock).Ticks / (double)OdyleTickEvery.Ticks);
+
     /// <summary>True when the character's level is known and below what the counter needs (a character seen before levels were saved counts as unlocked).</summary>
     public static bool IsLocked(TicketCharacter character, int ticketId) => character.Level > 0 && UnlockLevel(ticketId) > character.Level;
 
@@ -80,7 +147,7 @@ public static class Aion2Tickets
 
     /// <summary>The week's points of the season missions (the weekly reward steps 1,500 / 3,000 / 4,500 / 6,000 / 8,000) as a ticket of our own: count = points, time = when the game
     /// last changed it (ms since 1970). The id is no game id; the game's own achievement id is <see cref="WeeklyPointsAchievement"/>.</summary>
-    public const int WeeklyPointsId = 99000004;
+    public const int WeeklyPointsId = 99000005; // 99000004 until 1.18.8: the same number as AutoLootId, so the one overwrote the other (a saved one is moved, Load)
     public const int WeeklyPointsAchievement = 210000100;
     public const int WeeklyPointsMax = 8000;
 
@@ -654,7 +721,8 @@ public static class Aion2Tickets
         }
     }
 
-    public static void ReceiveUpdate(TicketReading reading, DateTime at)
+    /// <summary>A change of one ticket. <paramref name="reason"/> as the change frame says it (2 refill, 3 used, 1 gained; 0 = not from a change frame).</summary>
+    public static void ReceiveUpdate(TicketReading reading, DateTime at, int reason = 0)
     {
         // The missions' head carries no time of its own: it gets the time it was read, so a daily reset since then is known (a relog keeps it). Stacy's approach (her fork, MIT).
         if (reading.Id == MissionsId && reading.Value.TimeMs == 0)
@@ -679,6 +747,13 @@ public static class Aion2Tickets
                     }
 
                     var tickets = new Dictionary<int, TicketValue>(known.Tickets) { [reading.Id] = reading.Value };
+                    // the basic Odyle energy went up with a regular refill (reason 2; stones change the charged part): a recharge tick, which sets the character's recharge clock
+                    if (reading.Id == OdyleId && reason == 2 && known.Tickets.TryGetValue(OdyleId, out TicketValue before)
+                        && reading.Value.Count - before.Count is > 0 and <= 100 and int rise && reading.Value.Bonus == before.Bonus)
+                    {
+                        tickets[OdyleTickId] = new TicketValue(rise, 0, new DateTimeOffset(at.ToUniversalTime()).ToUnixTimeMilliseconds());
+                    }
+
                     Characters[name] = known with { SavedAt = DateTime.UtcNow, Tickets = tickets };
                 }
                 else
@@ -747,6 +822,12 @@ public static class Aion2Tickets
                 if (Characters.TryGetValue(name, out TicketCharacter? before) && !_pending.ContainsKey(ShopOdyleId) && before.Tickets.TryGetValue(ShopOdyleId, out TicketValue shop))
                 {
                     _pending[ShopOdyleId] = shop;
+                }
+
+                // the Odyle recharge clock the meter learnt stays too (the list carries no clock)
+                if (Characters.TryGetValue(name, out TicketCharacter? ticked) && !_pending.ContainsKey(OdyleTickId) && ticked.Tickets.TryGetValue(OdyleTickId, out TicketValue clock))
+                {
+                    _pending[OdyleTickId] = clock;
                 }
 
                 // the first login of a day sends yesterday's missions count: the old reading stays (stale, so the checklist shows it as an estimate)
@@ -1009,6 +1090,12 @@ public static class Aion2Tickets
             {
                 var tickets = c.Tickets.Where(t => t.Value.Length == 3)
                     .ToDictionary(t => t.Key, t => new TicketValue((int)t.Value[0], (int)t.Value[1], t.Value[2]));
+                // up to 1.18.7 the week's points and the pet auto-loot shared one number: points (a count) go to their own now; auto-loot has none
+                if (tickets.TryGetValue(AutoLootId, out TicketValue shared) && shared.Count > 0)
+                {
+                    tickets.Remove(AutoLootId);
+                    tickets.TryAdd(WeeklyPointsId, shared);
+                }
                 Characters[c.Name] = new TicketCharacter(c.Name, c.ServerId, DateTime.SpecifyKind(DateTimeOffset.FromUnixTimeMilliseconds(c.SavedMs).DateTime, DateTimeKind.Utc), tickets, c.Level, c.Account, c.ClassCode, c.ItemLevel != 0 ? c.ItemLevel : c.CombatPower, c.LastOnlineMs, c.Legion);
             }
         }

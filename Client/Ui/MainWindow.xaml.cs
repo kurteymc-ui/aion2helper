@@ -1399,7 +1399,10 @@ public partial class MainWindow : Window
 
         DateTime now = DateTime.Now;
         // not for every mob: in a dungeon or arena from the entry on, while a boss is fought nearby, and at a training dummy once you hit it
+        // once up, it stays while the player goes on fighting (found by the user: attacking a scarecrow, it left after 30 s when the dummy was not recognised):
+        // what brings it up is a dungeon, a boss or a dummy, what keeps it is any fight of the own character
         bool inFight = !_meterOverlayAutoHide || InInstanceNow() || now - _lastBossFight < _meterOverlayHideAfter || now - _lastDummyHit < _meterOverlayHideAfter
+            || (_meterOverlay.Wanted && now - _lastOwnCombat < _meterOverlayHideAfter)
             || now < _overlayPeekUntil
             || _meterOverlay.IsMouseOver || _overlayMenuOpen || _dummy?.Model.State is DummyState.Armed or DummyState.Running or DummyState.Finished;
         _meterOverlay.ShowOverlay(MeterOverlayActive && _gameGateOpen && inFight);
@@ -5207,17 +5210,24 @@ public partial class MainWindow : Window
     }
     private ChecklistWindow? _checklistWindow;
 
-    private void OnOpenChecklistClicked(object sender, RoutedEventArgs e)
+    private void OnOpenChecklistClicked(object sender, RoutedEventArgs e) => OpenChecklist(false);
+
+    /// <summary>The checklist window (Odyle Energy, daily and weekly counters); <paramref name="roster"/>: on the page of all characters.</summary>
+    private void OpenChecklist(bool roster)
     {
-        if (_checklistWindow is not null)
+        if (_checklistWindow is null)
         {
-            _checklistWindow.Activate();
-            return;
+            _checklistWindow = new ChecklistWindow { Owner = this };
+            _checklistWindow.Closed += (_, _) => _checklistWindow = null;
+            _checklistWindow.Show();
         }
 
-        _checklistWindow = new ChecklistWindow { Owner = this };
-        _checklistWindow.Closed += (_, _) => _checklistWindow = null;
-        _checklistWindow.Show();
+        if (roster)
+        {
+            _checklistWindow.ShowRoster();
+        }
+
+        _checklistWindow.Activate();
     }
 
     private AssistWindow? _assistWindow;
@@ -7758,6 +7768,11 @@ public partial class MainWindow : Window
 
         return new Control[]
         {
+            OverlayItem("Characters: Odyle Energy, Shugo, dailies, weeklies…", () =>
+            {
+                ShowClient();
+                OpenChecklist(true);
+            }),
             DummyMenu(settings),
             new Separator(),
             OverlayItem("A2H colours", () => ChangeOverlaySetting(s => s.OverlayLook = "Themed"), !_overlayClear),

@@ -44,7 +44,7 @@ public sealed class ChecklistWindow : Window
     {
         LocalizationManager loc = LocalizationManager.Instance;
         Title = loc["Checklist.Title"];
-        Width = 700;
+        Width = 1000; // the roster of all characters is a wide table
         SizeToContent = SizeToContent.Height;
         MaxHeight = SystemParameters.WorkArea.Height - 40;
         MinWidth = 640;
@@ -81,8 +81,22 @@ public sealed class ChecklistWindow : Window
     {
         IReadOnlyList<TicketCharacter> all = Aion2Tickets.Snapshot();
         string? current = Aion2Tickets.CurrentName;
-        string? wanted = _selected is not null && all.Any(c => c.Name == _selected) ? _selected : current is not null && all.Any(c => c.Name == current) ? current : all.FirstOrDefault()?.Name;
+        // the roster of all characters first when there are two or more; a character the user picked stays picked
+        bool roster = all.Count(c => c.Tickets.Count > 0) >= 2;
+        string? wanted = _selected == RosterKey && roster ? RosterKey
+            : _selected is not null && all.Any(c => c.Name == _selected) ? _selected
+            : roster ? RosterKey
+            : current is not null && all.Any(c => c.Name == current) ? current : all.FirstOrDefault()?.Name;
         _characters.Children.Clear();
+        if (roster)
+        {
+            _characters.Children.Add(RosterCard(wanted == RosterKey, all.Count(c => c.Tickets.Count > 0), () =>
+            {
+                _selected = RosterKey;
+                Refresh();
+            }));
+        }
+
         foreach (TicketCharacter c in all)
         {
             string name = c.Name;
@@ -203,6 +217,12 @@ public sealed class ChecklistWindow : Window
         LocalizationManager loc = LocalizationManager.Instance;
         string language = loc.Language;
         _body.Children.Clear();
+        if (_selected == RosterKey)
+        {
+            RenderRoster(language);
+            return;
+        }
+
         TicketCharacter? character = Aion2Tickets.Snapshot().FirstOrDefault(c => c.Name == _selected);
         if (character is null)
         {
@@ -267,6 +287,393 @@ public sealed class ChecklistWindow : Window
         legend.TextWrapping = TextWrapping.Wrap;
         legend.Margin = new Thickness(4, 2, 4, 0);
         _body.Children.Add(legend);
+    }
+
+    // ---- the roster: every character at once ----
+
+    private const string RosterKey = "\u0001roster";
+
+    /// <summary>The counters of the roster's table after the Odyle energy and the daily tasks: Shugo Festival, Dimensional Invasion, Nightmare, Ascension Trial
+    /// (the overview's), then the daily dungeon's weekly entries.</summary>
+    private static readonly int[] RosterTickets = { 1, 8, 4, 80000001, DailyDungeonTicket };
+
+    /// <summary>Opens the window on the roster (the meter's menu) or on one character.</summary>
+    public void ShowRoster()
+    {
+        _selected = RosterKey;
+        Refresh();
+    }
+
+    public void ShowCharacter(string name)
+    {
+        _selected = name;
+        Refresh();
+    }
+
+    private static UIElement RosterCard(bool active, int characters, Action choose)
+    {
+        LocalizationManager loc = LocalizationManager.Instance;
+        var lines = new StackPanel();
+        var title = new StackPanel { Orientation = Orientation.Horizontal };
+        TextBlock glyph = Label("", "Brush.Accent", 13);
+        glyph.FontFamily = new FontFamily("Segoe MDL2 Assets");
+        glyph.Margin = new Thickness(0, 0, 8, 0);
+        title.Children.Add(glyph);
+        title.Children.Add(Label(loc["Checklist.Roster"], "Brush.Text", 12.5, bold: true));
+        lines.Children.Add(title);
+        TextBlock info = Label(string.Format(CultureInfo.CurrentCulture, loc["Checklist.RosterCount"], characters), "Brush.TextSubtle", 10.5);
+        info.Margin = new Thickness(0, 2, 0, 0);
+        lines.Children.Add(info);
+        var card = new Border
+        {
+            CornerRadius = new CornerRadius(7), Padding = new Thickness(10, 7, 9, 7), Margin = new Thickness(0, 0, 0, 8), BorderThickness = new Thickness(1),
+            Child = lines, Cursor = Cursors.Hand, Background = Brushes.Transparent,
+        };
+        card.SetResourceReference(Border.BorderBrushProperty, active ? "Brush.Accent" : "Brush.Border");
+        if (active)
+        {
+            card.SetResourceReference(Border.BackgroundProperty, "Brush.ControlRaised");
+        }
+        else
+        {
+            card.MouseEnter += (_, _) => card.SetResourceReference(Border.BackgroundProperty, "Brush.Control");
+            card.MouseLeave += (_, _) => card.Background = Brushes.Transparent;
+        }
+
+        card.MouseLeftButtonDown += (_, _) => choose();
+        return card;
+    }
+
+    /// <summary>"in 5 h 20 m", "in 2 d 4 h", "in 12 m".</summary>
+    private static string InText(TimeSpan left)
+    {
+        LocalizationManager loc = LocalizationManager.Instance;
+        left = left < TimeSpan.Zero ? TimeSpan.Zero : left;
+        string span = left.TotalDays >= 1 ? string.Format(CultureInfo.CurrentCulture, loc["Checklist.DaysHours"], (int)left.TotalDays, left.Hours)
+            : left.TotalHours >= 1 ? string.Format(CultureInfo.CurrentCulture, loc["Checklist.HoursMinutes"], (int)left.TotalHours, left.Minutes)
+            : string.Format(CultureInfo.CurrentCulture, loc["Checklist.MinutesOnly"], Math.Max(1, (int)Math.Ceiling(left.TotalMinutes)));
+        return string.Format(CultureInfo.CurrentCulture, loc["Checklist.In"], span);
+    }
+
+    /// <summary>
+    /// Every character on one page: the Odyle energy now (with the recharges since the meter last saw it), when it is full, the daily tasks, Shugo Festival,
+    /// Dimensional Invasion, Nightmare, Ascension Trial and the daily dungeon, with the next daily and weekly reset on top. A line opens the character.
+    /// </summary>
+    private void RenderRoster(string language)
+    {
+        LocalizationManager loc = LocalizationManager.Instance;
+        DateTime now = DateTime.Now, utcNow = DateTime.UtcNow;
+        string? online = Aion2Tickets.CurrentName;
+        List<TicketCharacter> all = Aion2Tickets.Snapshot().Where(c => c.Tickets.Count > 0).ToList();
+        var odyle = all.ToDictionary(c => c.Name, c => Aion2Tickets.OdyleNow(c, utcNow, c.Name == online));
+
+        // the resets and the energy of the whole roster
+        var head = new StackPanel();
+        var resets = new WrapPanel();
+        if (Aion2Tickets.Find(4) is { } daily && Aion2Tickets.NextReset(daily, now) is { } nextDaily)
+        {
+            resets.Children.Add(Pill(loc["Checklist.DailyReset"], InText(nextDaily - now) + "  ·  " + nextDaily.ToString("t", CultureInfo.CurrentCulture)));
+        }
+
+        if (Aion2Tickets.Find(DailyDungeonTicket) is { } weekly && Aion2Tickets.NextReset(weekly, now) is { } nextWeekly)
+        {
+            resets.Children.Add(Pill(loc["Checklist.WeeklyReset"], InText(nextWeekly - now) + "  ·  " + nextWeekly.ToString("ddd t", CultureInfo.CurrentCulture)));
+        }
+
+        var known = odyle.Values.Where(o => o is not null).Select(o => o!).ToList();
+        if (known.Count > 0)
+        {
+            int full = known.Count(o => o.Full);
+            resets.Children.Add(Pill(loc["Checklist.RosterOdyle"], known.Sum(o => o.Count).ToString("N0", CultureInfo.CurrentCulture)
+                + (full > 0 ? "  ·  " + string.Format(CultureInfo.CurrentCulture, loc[full == 1 ? "Checklist.RosterFullOne" : "Checklist.RosterFullMany"], full) : ""), full > 0 ? "Brush.Warning" : "Brush.Accent"));
+        }
+
+        head.Children.Add(resets);
+        _body.Children.Add(Card(head));
+
+        // the table: the same columns for every character
+        TicketDef?[] defs = RosterTickets.Select(Aion2Tickets.Find).ToArray();
+        var grid = new Grid();
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star), MinWidth = 150 }); // character
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(132) }); // Odyle
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(92) });  // full in
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(62) });  // daily tasks
+        foreach (TicketDef? _ in defs)
+        {
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(70) });
+        }
+
+        var headers = new List<(string Text, string? Tip)>
+        {
+            (loc["Checklist.Character"], null), (loc["Checklist.RosterOdyleHead"], loc["Checklist.RosterOdyleTip"]), (loc["Checklist.RosterFullHead"], loc["Checklist.RosterFullTip"]),
+            (loc["Checklist.RosterTasks"], loc["Checklist.RosterTasksTip"]),
+        };
+        headers.AddRange(defs.Select(d => (d?.ShortIn(language) ?? "", (string?)d?.NameIn(language))));
+        grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        for (int k = 0; k < headers.Count; k++)
+        {
+            TextBlock h = Label(headers[k].Text, "Brush.TextMuted", 11, bold: true);
+            h.TextWrapping = TextWrapping.Wrap;
+            h.Margin = new Thickness(k == 0 ? 0 : 6, 0, 4, 6);
+            h.VerticalAlignment = VerticalAlignment.Bottom;
+            h.HorizontalAlignment = k == 0 ? HorizontalAlignment.Left : HorizontalAlignment.Center;
+            h.TextAlignment = k == 0 ? TextAlignment.Left : TextAlignment.Center;
+            if (headers[k].Tip is { } tip)
+            {
+                h.ToolTip = tip;
+            }
+
+            Grid.SetColumn(h, k);
+            grid.Children.Add(h);
+        }
+
+        int row = 1;
+        var lines = new Dictionary<int, (Border Hit, string Name)>();
+        int RowUnder(object source)
+        {
+            for (DependencyObject? d = source as DependencyObject; d is not null && d != grid; d = VisualTreeHelper.GetParent(d))
+            {
+                if (d is UIElement element && VisualTreeHelper.GetParent(d) == grid)
+                {
+                    return Grid.GetRow(element);
+                }
+            }
+
+            return -1;
+        }
+
+        int lit = -1;
+        grid.Cursor = Cursors.Hand;
+        grid.MouseMove += (_, e) =>
+        {
+            int at = RowUnder(e.OriginalSource);
+            if (at == lit)
+            {
+                return;
+            }
+
+            if (lines.TryGetValue(lit, out var was))
+            {
+                was.Hit.Background = Brushes.Transparent;
+            }
+
+            lit = at;
+            if (lines.TryGetValue(lit, out var line))
+            {
+                line.Hit.SetResourceReference(Border.BackgroundProperty, "Brush.Control");
+            }
+        };
+        grid.MouseLeave += (_, _) =>
+        {
+            if (lines.TryGetValue(lit, out var was))
+            {
+                was.Hit.Background = Brushes.Transparent;
+            }
+
+            lit = -1;
+        };
+        grid.MouseLeftButtonUp += (_, e) =>
+        {
+            if (lines.TryGetValue(RowUnder(e.OriginalSource), out var line))
+            {
+                ShowCharacter(line.Name);
+            }
+        };
+        foreach (TicketCharacter c in all)
+        {
+            grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            string name = c.Name;
+            bool isOnline = name == online;
+            bool premium = Aion2Tickets.HasPremium(c, utcNow) != false;
+            DateTime seenAt = c.SavedAt.ToLocalTime();
+
+            // the line's background (lit under the mouse, see below); a click anywhere on the line opens the character
+            var hit = new Border { Background = Brushes.Transparent, CornerRadius = new CornerRadius(5), Margin = new Thickness(-6, 0, -6, 0) };
+            Grid.SetRow(hit, row);
+            Grid.SetColumnSpan(hit, headers.Count);
+            grid.Children.Add(hit);
+            lines[row] = (hit, name);
+
+            Place(grid, RosterName(c, isOnline, now), row, 0);
+            OdyleCell(grid, odyle[name], row, 1, 2);
+            // the daily tasks: handed in of five (a reset since the reading makes it 0, shown as an estimate)
+            bool stale = c.Tickets.TryGetValue(Aion2Tickets.MissionsId, out TicketValue missions) && Aion2Tickets.MissionsStale(missions, now);
+            if (c.Tickets.ContainsKey(Aion2Tickets.MissionsId))
+            {
+                int done = stale ? 0 : missions.Count;
+                Place(grid, CountCell(done >= Aion2Tickets.MissionsPerDay ? "✓" : $"{(stale ? "~" : "")}{done}/{Aion2Tickets.MissionsPerDay}", done < Aion2Tickets.MissionsPerDay ? "Brush.Accent" : "Brush.Heal", null), row, 3);
+            }
+            else
+            {
+                Place(grid, CountCell("–", "Brush.TextSubtle", loc["Checklist.RosterUnknown"]), row, 3);
+            }
+
+            for (int k = 0; k < defs.Length; k++)
+            {
+                TicketDef? def = defs[k];
+                if (def is null)
+                {
+                    continue;
+                }
+
+                bool locked = Aion2Tickets.IsLocked(c, def.Id);
+                if (locked || !c.Tickets.TryGetValue(def.Id, out TicketValue value))
+                {
+                    Place(grid, CountCell("–", "Brush.TextSubtle", locked ? string.Format(CultureInfo.CurrentCulture, loc["Checklist.RosterLocked"], Aion2Tickets.UnlockLevel(def.Id)) : loc["Checklist.RosterUnknown"]), row, 4 + k);
+                    continue;
+                }
+
+                int count = Aion2Tickets.Expected(def, value.Count, seenAt, now, premium);
+                int cap = premium && def.SubscribeMax > def.Max ? def.SubscribeMax : def.Max;
+                int lost = Aion2Tickets.LostAtNextRefill(def, count, premium);
+                string text = (count != value.Count ? "~" : "") + count.ToString(CultureInfo.CurrentCulture) + (value.Bonus > 0 ? $"+{value.Bonus}" : "");
+                string tip = $"{def.NameIn(language)}: {count} / {Math.Max(cap, count)}" + (lost > 0 ? "  ·  " + string.Format(CultureInfo.CurrentCulture, loc[lost == 1 ? "Checklist.WarnLostOne" : "Checklist.WarnLostMany"], lost) : "");
+                Place(grid, CountCell(text, lost > 0 ? "Brush.Warning" : count > 0 ? "Brush.Accent" : "Brush.TextSubtle", tip, lost > 0), row, 4 + k);
+            }
+
+            row++;
+        }
+
+        var table = new StackPanel();
+        table.Children.Add(grid);
+        _body.Children.Add(Card(table));
+        var note = Label(loc["Checklist.RosterNote"], "Brush.TextSubtle", 11);
+        note.TextWrapping = TextWrapping.Wrap;
+        note.Margin = new Thickness(4, 4, 4, 0);
+        _body.Children.Add(note);
+    }
+
+    private static void Place(Grid grid, UIElement element, int row, int column)
+    {
+        Grid.SetRow(element, row);
+        Grid.SetColumn(element, column);
+        grid.Children.Add(element);
+    }
+
+    /// <summary>A reset or a total on top of the roster: a small caption over the value, in a box.</summary>
+    private static UIElement Pill(string caption, string value, string brush = "Brush.Text")
+    {
+        var stack = new StackPanel();
+        stack.Children.Add(Label(caption, "Brush.TextMuted", 10.5));
+        TextBlock v = Label(value, brush, 13.5, bold: true);
+        v.Margin = new Thickness(0, 1, 0, 0);
+        stack.Children.Add(v);
+        var box = new Border { Padding = new Thickness(10, 5, 12, 6), Margin = new Thickness(0, 2, 8, 2), CornerRadius = new CornerRadius(5), BorderThickness = new Thickness(1), Child = stack };
+        box.SetResourceReference(Border.BackgroundProperty, "Brush.Control");
+        box.SetResourceReference(Border.BorderBrushProperty, "Brush.Border");
+        return box;
+    }
+
+    /// <summary>The character of a roster line: class icon, name in the class colour (a dot when online), level and server, when the meter last saw it.</summary>
+    private static UIElement RosterName(TicketCharacter c, bool online, DateTime now)
+    {
+        LocalizationManager loc = LocalizationManager.Instance;
+        string? className = c.ClassCode > 0 ? Aion2.Protocol.Aion2SkillNames.ClassFromCode(c.ClassCode) : null;
+        var line = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 5, 6, 5), VerticalAlignment = VerticalAlignment.Center, IsHitTestVisible = false };
+        if (className is not null && new ClassIconConverter().Convert(className, typeof(ImageSource), null, CultureInfo.CurrentCulture) is ImageSource icon)
+        {
+            line.Children.Add(new Image { Source = icon, Width = 18, Height = 18, Margin = new Thickness(0, 0, 8, 0), VerticalAlignment = VerticalAlignment.Center });
+        }
+
+        var text = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
+        var top = new StackPanel { Orientation = Orientation.Horizontal };
+        TextBlock name = Label(c.Name, "Brush.Text", 13, bold: true);
+        if (className is not null)
+        {
+            name.Foreground = ClassBrushes.Solid(className);
+        }
+
+        top.Children.Add(name);
+        if (online)
+        {
+            var dot = new System.Windows.Shapes.Ellipse { Width = 7, Height = 7, Margin = new Thickness(6, 1, 0, 0), VerticalAlignment = VerticalAlignment.Center };
+            dot.SetResourceReference(System.Windows.Shapes.Shape.FillProperty, "Brush.Accent");
+            top.Children.Add(dot);
+        }
+
+        text.Children.Add(top);
+        var parts = new List<string>();
+        if (c.Level > 0)
+        {
+            parts.Add(string.Format(CultureInfo.CurrentCulture, loc["Checklist.Level"], c.Level));
+        }
+
+        if (c.ServerId > 0)
+        {
+            parts.Add(Aion2.Protocol.Aion2Servers.NameOf(c.ServerId).Replace("Europe - ", "", StringComparison.Ordinal));
+        }
+
+        parts.Add(online ? loc["Checklist.OnlineNow"] : string.Format(CultureInfo.CurrentCulture, loc["Checklist.RosterSeen"], AgoText(now - c.SavedAt.ToLocalTime())));
+        TextBlock sub = Label(string.Join(" · ", parts), "Brush.TextSubtle", 10.5);
+        sub.TextTrimming = TextTrimming.CharacterEllipsis;
+        text.Children.Add(sub);
+        line.Children.Add(text);
+        return line;
+    }
+
+    private static string AgoText(TimeSpan ago)
+    {
+        LocalizationManager loc = LocalizationManager.Instance;
+        ago = ago < TimeSpan.Zero ? TimeSpan.Zero : ago;
+        string span = ago.TotalDays >= 1 ? string.Format(CultureInfo.CurrentCulture, loc["Checklist.DaysHours"], (int)ago.TotalDays, ago.Hours)
+            : ago.TotalHours >= 1 ? string.Format(CultureInfo.CurrentCulture, loc["Checklist.HoursMinutes"], (int)ago.TotalHours, ago.Minutes)
+            : string.Format(CultureInfo.CurrentCulture, loc["Checklist.MinutesOnly"], Math.Max(1, (int)ago.TotalMinutes));
+        return string.Format(CultureInfo.CurrentCulture, loc["Checklist.Ago"], span);
+    }
+
+    /// <summary>The Odyle energy of a roster line (now / cap with a bar, the charged energy small behind) and when it is full.</summary>
+    private static void OdyleCell(Grid grid, Aion2Tickets.OdyleState? o, int row, int column, int fullColumn)
+    {
+        LocalizationManager loc = LocalizationManager.Instance;
+        if (o is null)
+        {
+            Place(grid, CountCell("–", "Brush.TextSubtle", loc["Checklist.RosterUnknown"]), row, column);
+            return;
+        }
+
+        var stack = new StackPanel { Margin = new Thickness(6, 4, 6, 4), VerticalAlignment = VerticalAlignment.Center, IsHitTestVisible = false };
+        var numbers = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center };
+        numbers.Children.Add(Label((o.Estimated ? "~" : "") + o.Count.ToString("N0", CultureInfo.CurrentCulture), o.Full ? "Brush.Warning" : "Brush.Accent", 13, bold: true));
+        numbers.Children.Add(Label(" / " + o.Cap.ToString("N0", CultureInfo.CurrentCulture), "Brush.TextSubtle", 11.5));
+        if (o.Bonus > 0)
+        {
+            TextBlock bonus = Label("+" + o.Bonus.ToString("N0", CultureInfo.CurrentCulture), "Brush.TextMuted", 11);
+            bonus.Margin = new Thickness(6, 0, 0, 0);
+            numbers.Children.Add(bonus);
+        }
+
+        stack.Children.Add(numbers);
+        var bar = new ProgressBar { Minimum = 0, Maximum = Math.Max(1, o.Cap), Value = Math.Min(o.Count, o.Cap), Height = 4, Margin = new Thickness(0, 3, 0, 0) };
+        bar.SetResourceReference(Control.ForegroundProperty, o.Full ? "Brush.Warning" : "Brush.Accent");
+        bar.SetResourceReference(Control.BackgroundProperty, "Brush.Control");
+        bar.SetResourceReference(Control.BorderBrushProperty, "Brush.Border");
+        stack.Children.Add(bar);
+        var holder = new Border { Background = Brushes.Transparent, Child = stack, ToolTip = string.Format(CultureInfo.CurrentCulture, loc["Checklist.RosterOdyleLine"], o.Count, o.Cap, o.Bonus, o.PerTick) };
+        Place(grid, holder, row, column);
+
+        DateTime now = DateTime.UtcNow;
+        string fullText = o.Full ? loc["Checklist.RosterFull"] : o.FullAt is { } at ? (o.NextTick is null ? "~" : "") + InText(at - now) : "–";
+        string tip = o.Full ? loc["Checklist.RosterFullWaste"]
+            : o.FullAt is { } when ? string.Format(CultureInfo.CurrentCulture, loc["Checklist.RosterFullAt"], when.ToLocalTime().ToString("g", CultureInfo.CurrentCulture))
+              + (o.NextTick is { } tick ? "  ·  " + string.Format(CultureInfo.CurrentCulture, loc["Checklist.RosterNextTick"], o.PerTick, tick.ToLocalTime().ToString("t", CultureInfo.CurrentCulture)) : "")
+            : loc["Checklist.RosterUnknown"];
+        bool soon = !o.Full && o.FullAt is { } f && f - now < TimeSpan.FromHours(6);
+        Place(grid, CountCell(fullText, o.Full ? "Brush.Warning" : soon ? "Brush.Warning" : "Brush.Text", tip, o.Full || soon), row, fullColumn);
+    }
+
+    /// <summary>A number of a roster line, centred, with what it is as a tool tip (a warning triangle in front when part of it is lost or it is full).</summary>
+    private static UIElement CountCell(string text, string brush, string? tip, bool warn = false)
+    {
+        var line = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(4, 0, 4, 0) };
+        if (warn)
+        {
+            var triangle = new System.Windows.Shapes.Polygon { Points = new PointCollection { new Point(5, 0), new Point(10, 9), new Point(0, 9) }, Margin = new Thickness(0, 0, 5, 0), VerticalAlignment = VerticalAlignment.Center };
+            triangle.SetResourceReference(System.Windows.Shapes.Shape.FillProperty, "Brush.Warning");
+            line.Children.Add(triangle);
+        }
+
+        line.Children.Add(Label(text, brush, 13, bold: brush != "Brush.TextSubtle"));
+        return new Border { Background = Brushes.Transparent, Child = line, ToolTip = tip, IsHitTestVisible = tip is not null };
     }
 
     /// <summary>The Odyle energy as the game's tooltip shows it: the basic energy (cap 840 with the subscription) and the charged energy (cap 2000).</summary>
